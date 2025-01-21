@@ -13,7 +13,6 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        console.log(profile);
 
         const { id, displayName, emails } = profile;
         const email = emails![0].value;

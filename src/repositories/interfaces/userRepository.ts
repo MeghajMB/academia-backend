@@ -1,23 +1,14 @@
 import { Document } from "mongoose";
-import { IUser } from "../../interface/userInterface";
+import { IUser, IUserResult } from "../../types/userInterface";
 
 // Interface for the user document
-export interface ICreateUserResult extends Document {
-  name: string;
-  email: string;
-  role: string;
-  password: string;
-  phoneNo?: number;
-  isBlocked: boolean;
-  profilePicture: string;
-  googleId?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
 
 export interface IUserRepository {
-  createUser(user: IUser): Promise<ICreateUserResult>;
-  findById(id: string): Promise<ICreateUserResult | null>;
-  findByEmail(email: string): Promise<ICreateUserResult | null>;
+  createUser(user: IUser): Promise<IUserResult>;
+  findById(id: string): Promise<IUserResult | null>;
+  findByEmail(email: string): Promise<IUserResult | null>;
+  fetchUsersWithPagination(skip:number,limit:number,role:string):Promise<IUserResult[] | null>;
+  fetchUsersWithFilters(filters: { [key: string]: any },skip: number,limit: number,):Promise<IUserResult[] | null> 
+  countDocuments(key:string,value: any): Promise<number>;
   // Additional methods like getUser, updateUser, etc.
 }

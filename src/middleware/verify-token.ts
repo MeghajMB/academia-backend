@@ -1,7 +1,16 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../errors/app-error";
-export const verifyToken = (
+import { redis } from "../config/redisClient";
+import { StatusCode } from "../enums/statusCode.enum";
+
+interface CustomJwtPayload {
+  id: string;
+  email: string;
+  role: string;
+}
+
+export const verifyToken =async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -19,13 +28,27 @@ export const verifyToken = (
     if (!token) {
       throw new AppError("Token is missing", 401);
     }
-    jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET!, (err, decoded) => {
-      if (err) {
-        throw new AppError("Invalid or expired token", 403);
-      }
-      req.user = decoded;
-      next();
-    });
+
+    let decoded: JwtPayload | string;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET!);
+    } catch (err) {
+      throw new AppError("Invalid or expired token", StatusCode.FORBIDDEN);
+    }
+
+    const verifiedUser = decoded as CustomJwtPayload;
+
+    // Check if the user exists in Redis
+    const userExists = await redis.get(`refreshToken:${verifiedUser.id}`);
+    if (!userExists) {
+      throw new AppError("User does not exist or session has expired", StatusCode.FORBIDDEN);
+    }
+
+    // Attach the verified user to the request object
+    req.verifiedUser = verifiedUser;
+    next();
+      
+    
   } catch (error) {
     next(error);
   }

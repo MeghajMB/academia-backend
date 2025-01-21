@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Response, Request } from "express";
-import { IUser } from "../interface/userInterface";
+import { IUser } from "../types/userInterface";
 import { redis } from "../config/redisClient";
 
 export const authenticateGoogle = passport.authenticate("google", {
@@ -12,9 +12,10 @@ export const googleCallback = passport.authenticate("google", {
   failureRedirect: `${process.env.CLIENT_URL}/login`,
 });
 
-export const googleController = async (req: Request, res: Response): Promise<any> => {
+export const googleController = async (req: Request, res: Response): Promise<void> => {
   if (!req.user) {
-    return res.status(400).json({ error: "Authentication failed" });
+    res.status(400).json({ error: "Authentication failed" });
+    return 
   }
   const { user, accessToken, refreshToken } = req.user as {
     user: IUser;

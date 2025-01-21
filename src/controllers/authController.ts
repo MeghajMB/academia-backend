@@ -2,6 +2,7 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthService } from "../services/authService";
 import { AppError } from "../errors/app-error";
+import { StatusCode } from "../enums/statusCode.enum";
 
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -34,12 +35,26 @@ export class AuthController {
       next(error);
     }
   }
+  async resendOtp(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const {email } = req.body;
+      
+      const user = await this.authService.resendOtp(email);
+      res.status(StatusCode.OK).json({ message: "OTP send successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
   //refreshToken
   async refreshToken(
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<any> {
+  ): Promise<void> {
     try {
       const refreshToken = req.cookies.refreshToken;
       if (!refreshToken) throw new AppError("No Token", 401);
@@ -61,6 +76,7 @@ export class AuthController {
           id: data.id,
           name: data.name,
           role: data.role,
+          verified:data.verified
         });
     } catch (error) {
       next(error);
@@ -101,6 +117,16 @@ export class AuthController {
       res.status(201).json({ message: "Success" });
     } catch (error) {
       next(error);
+    }
+  }
+  async registerInstructor(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const {instructorData}=req.body;
+      const currentUser=req.verifiedUser
+      const user=await this.authService.registerInstructor(instructorData,currentUser!);
+      res.status(StatusCode.OK).send({message:'Success'})
+    } catch (error) {
+      next(error)
     }
   }
 }

@@ -1,12 +1,14 @@
 import nodemailer from "nodemailer"
 
-let transporter = nodemailer.createTransport({
-    service: "gmail", // Use your email provider
-    auth: {
-      user: "your-email@gmail.com",
-      pass: "your-password",
-    },
-  });
+const transporter = nodemailer.createTransport({
+  host: 'live.smtp.mailtrap.io',
+  port: 587,
+  secure: false,
+  auth: {
+      user: process.env.MAILTRAP_USER_ID,
+      pass: process.env.MAILTRAP_USER_PASSWORD,
+  },
+});
 
 
 export {transporter}
