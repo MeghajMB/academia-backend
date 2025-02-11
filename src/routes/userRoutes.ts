@@ -17,6 +17,6 @@ const userService = new UserService(userRepository,categoryRepository);
 const userController = new UserController(userService);
 // Dependency injection End
 
-router.get('/profile',verifyToken,verifyUser('instructor','student'), userController.getProfile.bind(userController));
+router.get('/profile/:userId',verifyToken,verifyUser('instructor','student','admin'), userController.getProfile.bind(userController));
 
 export default router;

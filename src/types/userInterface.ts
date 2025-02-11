@@ -25,7 +25,7 @@ export interface IUserResult extends Document {
   googleId: string;
   headline?: string;
   verified: string;
-  rejectedReason: string;
+  rejectedReason?: string;
   biography?: string;
   links?: {
     facebook?: string;

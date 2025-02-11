@@ -1,20 +1,10 @@
 import mongoose, { Document } from "mongoose";
-export interface ICurriculumResult extends Document {
-    courseId: mongoose.Schema.Types.ObjectId;
-    sections: {
-      section: number;
-      title: string;
-      lectures: {
-        order: number;
-        title: string;
-        content: string;
-      }[];
-    }[];
-    createdAt: Date;
-    updatedAt: Date;
-  }
+import { ICurriculumResult } from "../../types/courseInterface";
+
 
 export interface ICurriculumRepository {
   createCurriculum(curriculumData: object,transactionSession:object): Promise<ICurriculumResult|null>;
+  getCurriculum(courseId:string): Promise<ICurriculumResult|null>;
+  addSectionToCurriculum(courseId:string,section:{title:string,description:string}): Promise<ICurriculumResult|null>;
   // Additional methods like getUser, updateUser, etc.
 }

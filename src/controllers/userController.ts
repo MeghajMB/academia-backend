@@ -17,8 +17,11 @@ export class UserController {
   ): Promise<void> {
     
     try {
-      const user=req.verifiedUser;
-      const data=await this.userService.getProfile(user!)
+      const {userId}=req.params;
+      if(!userId){
+        throw new BadRequestError("Specify userid")
+      }
+      const data=await this.userService.getProfile(userId)
       res.status(StatusCode.OK).send(data);
     } catch (error) {
       next(error)

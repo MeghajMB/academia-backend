@@ -4,16 +4,15 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface CourseDocument extends Document {
   userId: mongoose.Schema.Types.ObjectId;
   title: string;
-  price: string;
+  price: number;
   subtitle: string;
   description: string;
-  category: number;
+  category: mongoose.Schema.Types.ObjectId;
   isBlocked: boolean;
   status: "pending" | "accepted" | "rejected" | "notRequested";
   rejected: string;
   imageThumbnail: string;
   promotionalVideo: string;
-  curriculumId: mongoose.Schema.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,7 +28,7 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
       required: true,
     },
     price: {
-      type: String,
+      type: Number,
       required: true,
     },
     subtitle: {
@@ -41,7 +40,8 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
       required: true,
     },
     category: {
-      type: Number,
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"Category",
       required: true,
     },
     isBlocked: {
@@ -64,10 +64,6 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
     promotionalVideo: {
       type: String,
       required: true,
-    },
-    curriculumId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Curriculum",
     }
   },
   {

@@ -13,6 +13,9 @@ export class FileController {
     async generateGetSignedUrl(req:Request,res:Response,next:NextFunction){
         try {
           const key=req.body
+          if(!key){
+            throw new BadRequestError("Must provide the key")
+          }
           const data=await this.fileService.generateGetSignedUrl(key);
           res.status(StatusCode.OK).json(data);
         } catch (error) {
@@ -22,6 +25,9 @@ export class FileController {
     async generatePutSignedUrl(req:Request,res:Response,next:NextFunction){
         try {
           const {key,contentType,isPublic}=req.body;
+          if(!key || !contentType){
+            throw new BadRequestError("Must provide the key and content-type");
+          }
           const data=await this.fileService.generatePutSignedUrl(key,contentType,isPublic);
           res.status(StatusCode.OK).json(data);
         } catch (error) {

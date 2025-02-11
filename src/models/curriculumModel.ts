@@ -1,43 +1,42 @@
 import mongoose, { Schema, Model, Document } from "mongoose";
 
 export interface CurriculumDocument extends Document {
-    courseId: mongoose.Schema.Types.ObjectId;
-    sections: {
-      section: number;
+  userId: mongoose.Schema.Types.ObjectId;
+  courseId:mongoose.Schema.Types.ObjectId;
+  sections: {
+    title: string;
+    lectures: {
       title: string;
-      lectures: {
-        order: number;
-        title: string;
-        content: string;
-      }[];
+      content: string;
     }[];
-    createdAt: Date;
-    updatedAt: Date;
-  }
+  }[];
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 // Curriculum Schema
 const CurriculumSchema = new Schema<CurriculumDocument>(
   {
-    courseId: {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    courseId:{
       type: mongoose.Schema.Types.ObjectId,
       required: true,
     },
     sections: [
       {
-        section: {
-          type: Number,
-          required: true,
-        },
         title: {
           type: String,
           required: true,
         },
+        description:{
+          type:String,
+          required:true
+        },
         lectures: [
           {
-            order: {
-              type: Number,
-              required: true,
-            },
             title: {
               type: String,
               required: true,
@@ -53,11 +52,26 @@ const CurriculumSchema = new Schema<CurriculumDocument>(
   },
   {
     timestamps: true,
+    toJSON: {
+      transform(doc, ret) {
+        ret.id = ret._id;
+        delete ret._id;
+
+        if (ret.sections) {
+          ret.sections.forEach((section: any) => {
+            section.lectures.forEach((lecture: any) => {
+              lecture.id=lecture._id
+              delete lecture._id; 
+            });
+            section.id=section._id
+            delete section._id;
+          });
+        }
+      },
+    },
   }
 );
 
 // Export Mongoose Model
-export const CurriculumModel: Model<CurriculumDocument> = mongoose.model<CurriculumDocument>(
-  "Curriculum",
-  CurriculumSchema
-);
+export const CurriculumModel: Model<CurriculumDocument> =
+  mongoose.model<CurriculumDocument>("Curriculum", CurriculumSchema);

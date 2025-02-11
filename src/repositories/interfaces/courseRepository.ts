@@ -1,26 +1,17 @@
-import mongoose, { Document } from "mongoose";
+import { ICourseResult } from "../../types/courseInterface";
 export interface ICourse{
-    name: string;
-    description: string;
-  }
-export interface ICourseResult extends Document {
-  userId: mongoose.Schema.Types.ObjectId;
+  userId:string;
   title: string;
-  price: string;
+  price: number;
   subtitle: string;
   description: string;
-  category: number;
-  isBlocked: boolean;
-  status: "pending" | "accepted" | "rejected" | "notRequested";
-  rejected: string;
-  imageThumbnail: string;
-  promotionalVideo: string;
-  curriculumId: mongoose.Schema.Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  category: string;
+  imageThumbnail:string;
+  promotionalVideo:string;
   }
 
+
 export interface ICourseRepository {
-  createCourse(course: ICourse,session:object): Promise<ICourseResult|null>;
+  createCourse(course: ICourse,session:object): Promise<ICourseResult>;
   // Additional methods like getUser, updateUser, etc.
 }

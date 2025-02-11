@@ -35,13 +35,13 @@ export class AuthService {
     name: string;
     email: string;
     refreshToken: string;
-    verified:string;
+    verified: string;
   } | null> {
     try {
       const payload = jwt.verify(
         token,
         process.env.JWT_REFRESH_TOKEN_SECRET!
-      ) as null|JwtPayload;
+      ) as null | JwtPayload;
 
       if (!payload) {
         return null;
@@ -82,36 +82,13 @@ export class AuthService {
         name: user.name,
         email: user.email,
         refreshToken,
-        verified:user.verified
+        verified: user.verified,
       };
     } catch (error) {
       return null;
     }
   }
-  async signUp(input: { name: string; email: string; password: string }) {
-    const { name, email, password } = input;
-
-    if (!name || !email || !password) {
-      throw new RequestValidationError([
-        { message: "All fields are required." },
-      ]);
-    }
-
-    if (!validator.isEmail(email)) {
-      throw new RequestValidationError([
-        { message: "Invalid email format.", field: "email" },
-      ]);
-    }
-
-    if (!validator.isLength(password, { min: 6 })) {
-      throw new RequestValidationError([
-        {
-          message: "Password must be at least 6 characters long.",
-          field: "password",
-        },
-      ]);
-    }
-
+  async signUp(name: string, email: string, password: string) {
     const existingUser = await this.userRepository.findByEmail(email);
 
     if (existingUser) {
@@ -127,7 +104,7 @@ export class AuthService {
     console.log("The otp is ", token);
     // sending email
 
-/*     let mailOptions = {
+    /*  let mailOptions = {
         from: `info@demomailtrap.com`,
         to: email,
         subject: "Verification Code",
@@ -150,10 +127,7 @@ export class AuthService {
     return true;
   }
 
-  async verifyOtp(otp: string, email: string) {
-    if (!otp || !email) {
-      throw new AppError("Enter Otp", 400);
-    }
+  async saveUser(otp: string, email: string) {
     const data = await redis.get(`tempUser:${email}`);
     const storedOtp = await redis.get(`otp:${email}`);
 
@@ -173,15 +147,15 @@ export class AuthService {
 
     return { message: "User Created Successfully" };
   }
-  async resendOtp(email:string){
 
+  async sendOtp(email: string): Promise<boolean> {
     let secret = authenticator.generateSecret();
     let token = authenticator.generate(secret);
 
     console.log("The otp is ", token);
     // sending email
 
-/*     let mailOptions = {
+    /* let mailOptions = {
         from: `info@demomailtrap.com`,
         to: email,
         subject: "Verification Code",
@@ -201,6 +175,78 @@ export class AuthService {
       } */
     await redis.set(`otp:${email}`, token, "EX", 69);
     return true;
+  }
+
+  async forgotUserPassword(email: string) {
+    const existingUser = await this.userRepository.findByEmail(email);
+    if (!existingUser) {
+      throw new AppError(
+        "You Dont have an account with us",
+        StatusCode.NOT_FOUND
+      );
+    }
+    if (!existingUser.password) {
+      throw new BadRequestError("You are signed in using google");
+    }
+    const sendOtp = await this.sendOtp(email);
+    return true;
+  }
+  
+  async verifyResetOtp(email: string, otp: string) {
+    const redisKey = `otp:${email}`;
+    const storedOtp = await redis.get(redisKey);
+
+    if (!storedOtp || storedOtp !== otp) {
+      throw new Error("Invalid or expired OTP");
+    }
+
+    // Delete the OTP after successful verification
+    await redis.del(redisKey);
+
+    // Generate reset token
+
+    const resetToken = jwt.sign(
+      { email, purpose: "password-reset" },
+      process.env.JWT_PASSWORD_RESET_SECRET!,
+      { expiresIn: "5m" }
+    );
+
+    // Store reset token in Redis with 5 minutes expiry
+    const resetTokenKey = `pwd_reset_token:${email}`;
+    await redis.set(resetTokenKey, resetToken, "EX", 300);
+
+    return resetToken;
+  }
+
+  async resetPassword(data: {email:string,newPassword:string}, token: string): Promise<void> {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_PASSWORD_RESET_SECRET!) as { email: string };
+      
+      if (decoded.email !== data.email) {
+        throw new BadRequestError('Invalid reset token');
+      }
+      
+      // Check if token exists in Redis
+      const resetTokenKey = `pwd_reset_token:${data.email}`;
+      const storedToken = await redis.get(resetTokenKey);
+      
+      if (!storedToken || storedToken !== token) {
+        throw new BadRequestError('Invalid or expired reset token');
+      }
+      
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+      
+      const existingUser=await this.userRepository.findByEmail(data.email);
+      if(!existingUser){
+        throw new AppError("No user found",StatusCode.NOT_FOUND)
+      }
+      existingUser.password=hashedPassword;
+      await this.userRepository.save(existingUser);
+      // Delete reset token from Redis
+      await redis.del(resetTokenKey);
+  
+
   }
 
   async signIn(email: string, password: string) {
@@ -259,92 +305,13 @@ export class AuthService {
     },
     currentUser: ICurrentUser
   ) {
-    const validateInstructorData = (data: {
-      headline: string;
-      biography: string;
-      facebook: string;
-      linkedin: string;
-      twitter: string;
-      website: string;
-      agreement: boolean;
-    }) => {
-      const errors: { message: string; field?: string }[] = [];
-
-      if (validator.isEmpty(data.headline || "")) {
-        errors.push({
-          message: "Professional headline is required.",
-          field: "headline",
-        });
-      } else if (!validator.isLength(data.headline, { min: 5 })) {
-        errors.push({
-          message: "Headline must be at least 5 characters long.",
-          field: "headline",
-        });
-      }
-
-      if (validator.isEmpty(data.biography || "")) {
-        errors.push({
-          message: "Professional biography is required.",
-          field: "biography",
-        });
-      } else if (!validator.isLength(data.biography, { min: 100 })) {
-        errors.push({
-          message: "Biography must be at least 100 characters long.",
-          field: "biography",
-        });
-      }
-
-      if (!validator.isURL(data.website)) {
-        errors.push({
-          message: "Please enter a valid website URL.",
-          field: "website",
-        });
-      }
-      if (!validator.isURL(data.facebook)) {
-        errors.push({
-          message: "Please enter a valid Facebook URL.",
-          field: "facebook",
-        });
-      }
-      if (!validator.isURL(data.linkedin)) {
-        errors.push({
-          message: "Please enter a valid LinkedIn URL.",
-          field: "linkedin",
-        });
-      }
-      if (!validator.isURL(data.twitter)) {
-        errors.push({
-          message: "Please enter a valid Twitter URL.",
-          field: "twitter",
-        });
-      }
-
-      if (!data.agreement) {
-        errors.push({
-          message: "You must agree to the terms and policies.",
-          field: "agreement",
-        });
-      }
-
-      return errors;
-    };
-    
-    const validationErrors = validateInstructorData(data);
-    if (validationErrors.length > 0) {
-      throw new AppError(
-        "Validation Error",
-        StatusCode.BAD_REQUEST,
-        validationErrors
-      );
-    }
-   
     const user = await this.userRepository.findById(currentUser.id);
     if (!user) {
       throw new NotFoundError("User Not Found");
     }
     const { headline, biography, ...links } = data;
     Object.assign(user, { verified: "pending", headline, biography, links });
-    const updatedUser=await this.userRepository.save(user);
+    const updatedUser = await this.userRepository.save(user);
     return updatedUser;
   }
 }

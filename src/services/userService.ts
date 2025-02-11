@@ -19,12 +19,12 @@ import { NotFoundError } from "../errors/not-found-error";
 export class UserService {
   constructor(private userRepository: UserRepository,private categoryRepository:CategoryRepository) {}
 
-  async getProfile(user:{role:string,email:string,id:string}){
-    const userProfile=await this.userRepository.findById(user.id);
+  async getProfile(userId:string){
+    const userProfile=await this.userRepository.findById(userId);
     if(!userProfile){
         throw new NotFoundError('User Not Found')
     }
-    return {user:userProfile};
+    return userProfile;
   }
   
 }

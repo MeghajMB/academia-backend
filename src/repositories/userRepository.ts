@@ -1,62 +1,130 @@
-import {
-  IUserRepository,
-} from "./interfaces/userRepository";
+import { IUserRepository } from "./interfaces/userRepository";
 import { UserModel } from "../models/userModel";
 
 import { IUser, IUserResult } from "../types/userInterface";
-
+import { DatabaseError } from "../errors/database-error";
+import { StatusCode } from "../enums/statusCode.enum";
 
 export class UserRepository implements IUserRepository {
   async createUser(user: IUser): Promise<IUserResult> {
-    const createdUser = new UserModel(user);
-    const savedUser = await createdUser.save();
-    return savedUser;
+    try {
+      const createdUser = new UserModel(user);
+      const savedUser = await createdUser.save();
+      return savedUser;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
   async findById(id: string): Promise<IUserResult | null> {
-    const user = await UserModel.findById(id);
-    if (!user) return null;
+    try {
+      const user = await UserModel.findById(id);
+      if (!user) return null;
 
-    return user;
+      return user;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
-  async save(user:IUserResult): Promise<IUserResult> {
-   
-    return await user.save();
+  async save(user: IUserResult): Promise<IUserResult> {
+    try {
+      return await user.save();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
   async findByEmail(email: string): Promise<IUserResult | null> {
-    const user = await UserModel.findOne({ email });
-    if (!user) return null;
+    try {
+      const user = await UserModel.findOne({ email });
+      if (!user) return null;
 
-    return user;
+      return user;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
   async fetchUsersWithFilters(
     filters: { [key: string]: any },
     skip: number,
-    limit: number,
+    limit: number
   ): Promise<IUserResult[] | null> {
-    const users = await UserModel.find(filters)
-      .skip(skip)
-      .limit(limit)
-      .sort({ name: 1 });
-    
-    if (!users) return null;
-  
-    return users;
+    try {
+      const users = await UserModel.find(filters)
+        .skip(skip)
+        .limit(limit)
+        .sort({ name: 1 });
+
+      if (!users) return null;
+
+      return users;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
   async fetchUsersWithPagination(
     skip: number,
     limit: number,
     role: string
   ): Promise<IUserResult[] | null> {
-    const user = await UserModel.find({ role })
-      .skip(skip)
-      .limit(limit)
-      .sort({ name: 1 });
-    if (!user) return null;
+    try {
+      const user = await UserModel.find({ role })
+        .skip(skip)
+        .limit(limit)
+        .sort({ name: 1 });
+      if (!user) return null;
 
-    return user;
+      return user;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
-  async countDocuments(key:string,value:any): Promise<number>{
-    const count= await UserModel.countDocuments({[key]:value})
-    return count
+  async countDocuments(key: string, value: any): Promise<number> {
+    try {
+      const count = await UserModel.countDocuments({ [key]: value });
+      return count;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }

@@ -7,14 +7,13 @@ import { transporter } from "../util/emailClient";
 import { redis } from "../config/redisClient";
 
 //errors
-import { RequestValidationError } from "../errors/request-validaion-error";
-import { ExistingUserError } from "../errors/existing-user-error";
 import { AppError } from "../errors/app-error";
 
 //externl dependencies
 import validator from "validator";
 import { StatusCode } from "../enums/statusCode.enum";
 import { NotFoundError } from "../errors/not-found-error";
+import { BadRequestError } from "../errors/bad-request-error";
 
 export class AdminService {
   constructor(
@@ -42,6 +41,7 @@ export class AdminService {
 
     return { users, pagination };
   }
+
   async getInstructorVerificationRequests(page: number, limit: number) {
     const skip = (page - 1) * limit;
     const totalDocuments = await this.userRepository.countDocuments(
@@ -63,6 +63,34 @@ export class AdminService {
 
     return { requests, pagination };
   }
+
+  async rejectVerificationRequest(rejectReason: string, userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new BadRequestError("User Not Found");
+    }
+
+    user.verified = "rejected";
+    user.rejectedReason = rejectReason;
+    await this.userRepository.save(user);
+
+    return user;
+  }
+
+  async approveVerificationRequest(userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new BadRequestError("User Not Found");
+    }
+
+    user.verified = "verified";
+    delete user.rejectedReason;
+    user.role = "instructor";
+    await this.userRepository.save(user);
+
+    return user;
+  }
+
   async getPaginatedCategories(page: number, limit: number) {
     const skip = (page - 1) * limit;
     const totalDocuments = await this.categoryRepository.countDocuments();
@@ -77,6 +105,7 @@ export class AdminService {
 
     return { categories, pagination };
   }
+
   async blockUser(id: string) {
     const user = await this.userRepository.findById(id);
     if (!user) {
@@ -89,6 +118,7 @@ export class AdminService {
     }
     return user;
   }
+
   async blockCategory(id: string) {
     const category = await this.categoryRepository.findById(id);
     if (!category) {
@@ -98,6 +128,7 @@ export class AdminService {
     await this.categoryRepository.save(category);
     return category;
   }
+
   async createCategory(category: { name: string; description: string }) {
     const existingCategory = await this.categoryRepository.findByName(
       category.name
@@ -107,5 +138,32 @@ export class AdminService {
     }
     const newCategory = await this.categoryRepository.createCategory(category);
     return newCategory;
+  }
+  async editCategory(
+    category: { name: string; description: string },
+    categoryId: string
+  ) {
+    const existingCategory = await this.categoryRepository.findById(categoryId);
+
+    if (!existingCategory) {
+      throw new AppError("Category doesn't exist", StatusCode.NOT_FOUND);
+    }
+  
+    // Check if another category already exists with the same name
+    const duplicateCategory = await this.categoryRepository.findByName(category.name);
+  
+    if (duplicateCategory && duplicateCategory.id !== categoryId) {
+      throw new AppError("Category with this name already exists", StatusCode.CONFLICT);
+    }
+  
+    // Update the category
+    const updatedCategory = await this.categoryRepository.updateCategory(
+      categoryId,
+      category
+    );
+    if(!updatedCategory){
+      throw new AppError("Category not found", StatusCode.NOT_FOUND);
+    }
+    return updatedCategory;
   }
 }

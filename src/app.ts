@@ -9,14 +9,17 @@ import instructorRoutes from "./routes/instructorRoutes";
 import userRoutes from "./routes/userRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
 import fileRoutes from "./routes/fileRoutes"
+import courseRoutes from "./routes/courseRoutes"
 
 import { errorHandler } from "./middleware/error-handler";
 
+import { morganLogger } from "./middleware/logging";
 import passport from "passport";
 import "./config/passport";
 
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import morgan from "morgan";
 
 const app = express();
 
@@ -31,6 +34,11 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(morganLogger); // Log to file
+
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms', {
+  stream: process.stdout, // Log to console
+}));
 
 app.use(passport.initialize());
 
@@ -39,6 +47,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/instructor", instructorRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/category", categoryRoutes);
+app.use("/api/course", courseRoutes);
 app.use("/api/files",fileRoutes);
 
 app.use(

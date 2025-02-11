@@ -41,12 +41,55 @@ export class AdminController {
     try {
       const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
 
-      const data = await this.adminService.getInstructorVerificationRequests(pageNumber,this.pagLimit);
+      const data = await this.adminService.getInstructorVerificationRequests(
+        pageNumber,
+        this.pagLimit
+      );
       res.status(200).send(data);
     } catch (error) {
       next(error);
     }
   }
+  async rejectVerificationRequest(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { rejectReason,userId } = req.body;
+
+    try {
+      if (!rejectReason || !userId) {
+        throw new BadRequestError("Must Specify the reason");
+      }
+      const data = await this.adminService.rejectVerificationRequest(
+        rejectReason,
+        userId
+      );
+      res.status(200).send(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+  async approveVerificationRequest(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { userId } = req.body;
+
+    try {
+      if (!userId) {
+        throw new BadRequestError("Must Specify userId");
+      }
+      const data = await this.adminService.approveVerificationRequest(
+        userId
+      );
+      res.status(200).send(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async blockUser(
     req: Request,
     res: Response,
@@ -54,6 +97,9 @@ export class AdminController {
   ): Promise<void> {
     try {
       const id = req.params.userId;
+      if (!id) {
+        throw new BadRequestError("Mention the id");
+      }
       const data = await this.adminService.blockUser(id);
       res.status(200).send({ message: "success" });
     } catch (error) {
@@ -84,7 +130,28 @@ export class AdminController {
   ): Promise<void> {
     try {
       const category = req.body;
+      if (!category) {
+        throw new BadRequestError("Give the category");
+      }
       const data = await this.adminService.createCategory(category);
+      res.status(StatusCode.OK).send(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async editCategory(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const {category,categoryId} = req.body;
+      console.log(req.body)
+      if (!category || !categoryId) {
+        throw new BadRequestError("Give the category");
+      }
+      const data = await this.adminService.editCategory(category,categoryId);
       res.status(StatusCode.OK).send(data);
     } catch (error) {
       next(error);
@@ -97,6 +164,9 @@ export class AdminController {
   ): Promise<void> {
     try {
       const categoryId = req.params.categoryId;
+      if (!categoryId) {
+        throw new BadRequestError("Mention the category id");
+      }
       const data = await this.adminService.blockCategory(categoryId);
       res.status(StatusCode.OK).send(data);
     } catch (error) {

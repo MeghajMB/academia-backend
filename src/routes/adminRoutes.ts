@@ -29,12 +29,21 @@ router.get('/get-users',verifyToken,verifyUser('admin'), adminController.getUser
 router.put('/block-user/:userId',verifyToken,verifyUser('admin'), adminController.blockUser.bind(adminController));
 // fetch requests for instructors
 router.get('/instructor-requests',verifyToken,verifyUser('admin'), adminController.getInstructorVerificationRequests.bind(adminController));
+// approve instructor profile
+router.post('/instructor-request/approve',verifyToken,verifyUser('admin'), adminController.getInstructorVerificationRequests.bind(adminController));
+// reject instructor profile
+router.post('/instructor-request/reject',verifyToken,verifyUser('admin'), adminController.rejectVerificationRequest.bind(adminController));
+// approve instructor profile
+router.put('/instructor-request/approve',verifyToken,verifyUser('admin'), adminController.approveVerificationRequest.bind(adminController));
+
 
 //Category Routes
 // fetch paginated categories
 router.get('/get-categories',verifyToken,verifyUser('admin'), adminController.getCategories.bind(adminController));
 //create category
 router.post('/create-category',verifyToken,verifyUser('admin'), adminController.createCategory.bind(adminController));
+//edit category
+router.post('/edit-category',verifyToken,verifyUser('admin'), adminController.editCategory.bind(adminController));
 //block category
 router.put('/block-category/:categoryId',verifyToken,verifyUser('admin'), adminController.blockCategory.bind(adminController));
 

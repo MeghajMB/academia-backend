@@ -21,7 +21,11 @@ router.post("/refresh", authController.refreshToken.bind(authController));
 // Otp Routes For SignIn
 router.post("/signup", authController.signUp.bind(authController));
 router.post("/verify-otp", authController.verifyOtp.bind(authController));
-router.post("/resend-otp",authController.resendOtp.bind(authController))
+router.post("/resend-otp",authController.resendOtp.bind(authController));
+//forgot password
+router.post("/forgot-password",authController.forgotPassword.bind(authController));
+router.post("/verify-reset-password",authController.verifyResetOtp.bind(authController));
+router.post("/reset-password",authController.resetPassword.bind(authController));
 
 //Login
 router.post("/signin", authController.signIn.bind(authController));
