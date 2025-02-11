@@ -34,4 +34,48 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+  async fetchCoursesWithInstrucorIdAndStatus(
+    instructorId: string,
+    status: string
+  ): Promise<ICourseResult[] | null> {
+    try {
+      const courses = await CourseModel.find({
+        userId: instructorId,
+        status: status,
+      }).populate("category");
+      return courses;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async submitCourseForReview(
+    instructorId: string,
+    courseId: string
+  ): Promise<ICourseResult | null> {
+    try {
+      const course = await CourseModel.findOneAndUpdate(
+        { _id: courseId, userId: instructorId },
+        { status: "pending" },
+        { new: true }
+      ).populate("category");
+
+      return course;
+
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 }

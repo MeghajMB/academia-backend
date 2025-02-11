@@ -8,6 +8,8 @@ export interface CurriculumDocument extends Document {
     lectures: {
       title: string;
       content: string;
+      status:"processed"|"processing";
+      length:number;
     }[];
   }[];
   createdAt: Date;
@@ -45,6 +47,16 @@ const CurriculumSchema = new Schema<CurriculumDocument>(
               type: String,
               required: true,
             },
+            status:{
+              type:String,
+              enum:['processing','processed'],
+              default:'processing',
+              required:true,
+            },
+            length:{
+              type:Number,
+              required:true
+            }
           },
         ],
       },

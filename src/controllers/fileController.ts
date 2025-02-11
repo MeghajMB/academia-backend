@@ -24,11 +24,11 @@ export class FileController {
     }
     async generatePutSignedUrl(req:Request,res:Response,next:NextFunction){
         try {
-          const {key,contentType,isPublic}=req.body;
+          const {key,contentType,isPublic,isTemp}=req.body;
           if(!key || !contentType){
             throw new BadRequestError("Must provide the key and content-type");
           }
-          const data=await this.fileService.generatePutSignedUrl(key,contentType,isPublic);
+          const data=await this.fileService.generatePutSignedUrl(key,contentType,isPublic,isTemp);
           res.status(StatusCode.OK).json(data);
         } catch (error) {
           next(error)

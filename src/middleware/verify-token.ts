@@ -17,7 +17,6 @@ export const verifyToken =async (
 ) => {
   try {
     const authHeader = req.headers["authorization"]; // Can also use req.headers.Authorization
-
     if (!authHeader) {
       throw new AppError("Authorization header is missing", 401);
     }

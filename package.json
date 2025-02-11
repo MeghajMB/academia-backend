@@ -12,6 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.731.1",
+    "@aws-sdk/client-sqs": "^3.743.0",
+    "@aws-sdk/cloudfront-signer": "^3.734.0",
     "@aws-sdk/s3-request-presigner": "^3.731.1",
     "@types/morgan": "^1.9.9",
     "@types/sanitize-html": "^2.13.0",
@@ -29,6 +31,7 @@
     "otplib": "^12.0.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "razorpay": "^2.9.5",
     "rotating-file-stream": "^3.2.5",
     "sanitize-html": "^2.14.0",
     "ts-node": "^10.9.2",

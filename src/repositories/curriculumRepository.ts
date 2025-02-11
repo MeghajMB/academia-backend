@@ -38,6 +38,7 @@ export class CurriculumRepository implements ICurriculumRepository {
       );
     }
   }
+
   async addSectionToCurriculum(
     courseId: string,
     section: { title: string; description: string }
@@ -59,4 +60,61 @@ export class CurriculumRepository implements ICurriculumRepository {
       );
     }
   }
+
+  async addLectureToCurriculum(
+    courseId: string,
+    sectionId: string,
+    lectureData: { title: string; content: string }
+  ): Promise<ICurriculumResult | null> {
+    try {
+      const updatedCurriculum = await CurriculumModel.findOneAndUpdate(
+        { courseId, "sections._id": sectionId },
+        {
+          $push: { "sections.$.lectures": lectureData }, // Push to matched section
+        },
+        { new: true }
+      );
+
+      return updatedCurriculum;
+    } catch (error) {
+      console.error("Error adding lecture:", error);
+      throw new DatabaseError("An unexpected database error occurred");
+    }
+  }
+  
+  async updateLectureWithProcessedKey(
+    userId: string,
+    courseId: string,
+    sectionId: string,
+    lectureId: string,
+    key: string
+  ) {
+    try {
+      const updatedCurriculum = await CurriculumModel.findOneAndUpdate(
+        {
+          courseId: courseId,
+          userId: userId,
+        },
+        {
+          $set: {
+            "sections.$[section].lectures.$[lecture].content": key,
+            "sections.$[section].lectures.$[lecture].status": "processed",
+          },
+        },
+        {
+          arrayFilters: [
+            { "section._id": sectionId },
+            { "lecture._id": lectureId },
+          ],
+          new: true,
+        }
+      );
+
+      return updatedCurriculum;
+    } catch (error) {
+      console.error("Error adding lecture:", error);
+      throw new DatabaseError("An unexpected database error occurred");
+    }
+  }
+
 }

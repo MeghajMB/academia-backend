@@ -10,6 +10,7 @@ import userRoutes from "./routes/userRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
 import fileRoutes from "./routes/fileRoutes"
 import courseRoutes from "./routes/courseRoutes"
+import paymentRoutes from "./routes/paymentRoutes"
 
 import { errorHandler } from "./middleware/error-handler";
 
@@ -49,6 +50,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/course", courseRoutes);
 app.use("/api/files",fileRoutes);
+app.use('/api/payment',paymentRoutes)
 
 app.use(
   errorHandler as (
