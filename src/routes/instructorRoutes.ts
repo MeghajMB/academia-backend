@@ -7,9 +7,10 @@ import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
 import { CourseService } from "../services/courseService";
 import { CourseRepository } from "../repositories/courseRepository";
-import { CurriculumRepository } from "../repositories/curriculumRepository";
 import { CategoryRepository } from "../repositories/categoryRepository";
 import { FileService } from "../services/fileService";
+import { SectionRepository } from "../repositories/sectionRepository";
+import { LectureRepository } from "../repositories/lectureRepository";
 
 const router = Router();
 
@@ -17,12 +18,13 @@ const router = Router();
 const userRepository = new UserRepository();
 const courseRepository=new CourseRepository()
 const categoryRepository=new CategoryRepository()
-const curriculumRepository=new CurriculumRepository()
+const sectionRepository= new SectionRepository();
+const lectureRepository=new LectureRepository()
 
 const fileService=new FileService()
 
 //services
-const courseService=new CourseService(courseRepository,curriculumRepository,fileService)
+const courseService=new CourseService(courseRepository,lectureRepository,sectionRepository,fileService)
 const instructorService = new InstructorService(userRepository,categoryRepository,courseService);
 
 const instructorController = new InstructorController(instructorService);
@@ -30,10 +32,6 @@ const instructorController = new InstructorController(instructorService);
 
 router.get('/profile',verifyToken,verifyUser('instructor'), instructorController.getProfile.bind(instructorController));
 
-//create course 
-router.post('/create-course',verifyToken,verifyUser('instructor'), instructorController.createCourse.bind(instructorController));
-//add section
-router.post('/create-section',verifyToken,verifyUser('instructor'), instructorController.createSection.bind(instructorController));
 
 
 export default router;

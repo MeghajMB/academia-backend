@@ -21,6 +21,7 @@ import "./config/passport";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import morgan from "morgan";
+import { StatusCode } from "./enums/statusCode.enum";
 
 const app = express();
 
@@ -28,10 +29,11 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL,
     credentials: true,
-    methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD", "DELETE"],
+    methods: ["POST","PATCH", "PUT", "GET", "OPTIONS", "HEAD", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -60,5 +62,9 @@ app.use(
     next: NextFunction
   ) => void
 );
+
+app.use((req,res,next)=>{
+  res.status(StatusCode.NOT_FOUND).send({message:'Data not found'})
+})
 
 export { app };

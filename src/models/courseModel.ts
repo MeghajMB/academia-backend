@@ -8,9 +8,12 @@ export interface CourseDocument extends Document {
   subtitle: string;
   description: string;
   category: mongoose.Schema.Types.ObjectId;
+  totalDuration: number;
+  totalLectures: number;
+  totalSections: number;
   isBlocked: boolean;
-  status: "pending" | "accepted" | "rejected" | "notRequested";
-  rejected: string;
+  status: "pending" | "accepted" | "rejected" | "draft";
+  rejectedReason: string;
   imageThumbnail: string;
   promotionalVideo: string;
   createdAt: Date;
@@ -41,21 +44,24 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref:"Category",
+      ref: "Category",
       required: true,
     },
     isBlocked: {
       type: Boolean,
       default: false,
     },
+    totalDuration: { type: Number, default: 0 },
+    totalLectures: { type: Number, default: 0 },
+    totalSections: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected", "notRequested"],
-      default: "notRequested",
+      enum: ["pending", "accepted", "rejected", "draft"],
+      default: "draft",
     },
-    rejected: {
+    rejectedReason: {
       type: String,
-      default: null,
+      default: "",
     },
     imageThumbnail: {
       type: String,
@@ -64,7 +70,7 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
     promotionalVideo: {
       type: String,
       required: true,
-    }
+    },
   },
   {
     timestamps: true,
@@ -77,7 +83,5 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
   }
 );
 
-export const CourseModel: Model<CourseDocument> = mongoose.model<CourseDocument>(
-  "Course",
-  CourseSchema
-);
+export const CourseModel: Model<CourseDocument> =
+  mongoose.model<CourseDocument>("Course", CourseSchema);

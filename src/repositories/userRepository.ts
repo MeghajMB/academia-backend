@@ -1,7 +1,7 @@
-import { IUserRepository } from "./interfaces/userRepository";
+import { IUserRepository } from "./interfaces/IUserRepository";
 import { UserModel } from "../models/userModel";
 
-import { IUser, IUserResult } from "../types/userInterface";
+import { IUser, IUserResult } from "../types/user.interface";
 import { DatabaseError } from "../errors/database-error";
 import { StatusCode } from "../enums/statusCode.enum";
 

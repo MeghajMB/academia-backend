@@ -10,11 +10,10 @@ export const errorHandler = (
   next: NextFunction
 ) => {
 
-
   if (err instanceof CustomError || err instanceof AppError) {
     return res.status(err.statusCode).send({ errors: err.serializeErrors() });
   }
-  console.log(err)
+
   return res
     .status(400)
     .send({ errors: [{ message: "Something Went Wrong" }] });

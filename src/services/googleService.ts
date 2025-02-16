@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Response, Request } from "express";
-import { IUser } from "../types/userInterface";
+import { IUser } from "../types/user.interface";
 import { redis } from "../config/redisClient";
 
 export const authenticateGoogle = passport.authenticate("google", {

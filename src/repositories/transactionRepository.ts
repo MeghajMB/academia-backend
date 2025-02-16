@@ -1,5 +1,5 @@
 import { Transaction } from "../models/transactionModel";
-import { ITransactionRepository } from "./interfaces/transactionRepository";
+import { ITransactionRepository } from "./interfaces/ITransactionRepository";
 
 export class TransactionRepository implements ITransactionRepository {
     

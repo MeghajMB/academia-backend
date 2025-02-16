@@ -173,4 +173,63 @@ export class AdminController {
       next(error);
     }
   }
+  async getCourseReviewRequests(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { page=1 } = req.query;
+    try {
+
+      const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
+
+      const data = await this.adminService.getCourseReviewRequests(
+        pageNumber,
+        this.pagLimit
+      );
+      res.status(200).send(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+  async rejectCourseReviewRequest(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { rejectReason,courseId } = req.body;
+
+    try {
+      if (!rejectReason || !courseId) {
+        throw new BadRequestError("Must Specify the reason");
+      }
+      const data = await this.adminService.rejectCourseReviewRequest(
+        rejectReason,
+        courseId
+      );
+      res.status(StatusCode.OK).send(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+  async approveCourseReviewRequest(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { courseId } = req.body;
+
+    try {
+      if (!courseId) {
+        throw new BadRequestError("Must Specify userId");
+      }
+      const data = await this.adminService.approveCourseReviewRequest(
+        courseId
+      );
+      res.status(StatusCode.OK).send(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
 }

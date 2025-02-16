@@ -1,9 +1,13 @@
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client } from "../util/awsClient";
-import { getSignedCookies } from "@aws-sdk/cloudfront-signer";
+import {
+  CloudfrontSignedCookiesOutput,
+  getSignedCookies,
+} from "@aws-sdk/cloudfront-signer";
+import { IFileService } from "./interfaces/IFileService";
 
-export class FileService {
+export class FileService implements IFileService {
   private bucketName = process.env.AWS_BUCKET_NAME!;
   private tempBucketName = process.env.AWS_TEMP_BUCKET_NAME;
 
@@ -36,8 +40,9 @@ export class FileService {
     const signedUrl = await getSignedUrl(s3Client, command);
     return signedUrl;
   }
-  async generateCloudFrontGetSignedCookies(videoPath: string) {
-
+  async generateCloudFrontGetSignedCookies(
+    videoPath: string
+  ): Promise<CloudfrontSignedCookiesOutput> {
     const dateLessThan = Math.floor(Date.now() / 1000) + 3600;
     const policy = {
       Statement: [
@@ -51,7 +56,7 @@ export class FileService {
         },
       ],
     };
-    
+
     const policyString = JSON.stringify(policy);
 
     const signedCookies = getSignedCookies({

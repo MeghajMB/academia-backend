@@ -11,9 +11,8 @@ const router = Router();
 
 // Dependency injection Begin
 const userRepository = new UserRepository();
-const categoryRepository=new CategoryRepository()
 
-const userService = new UserService(userRepository,categoryRepository);
+const userService = new UserService(userRepository);
 const userController = new UserController(userService);
 // Dependency injection End
 

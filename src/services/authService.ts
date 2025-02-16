@@ -1,23 +1,24 @@
 // src/services/AuthService.ts
-import { UserRepository } from "../repositories/userRepository";
+import { IUserRepository } from "../repositories/interfaces/IUserRepository";
+
 //services
 
-import { transporter } from "../util/emailClient";
+
 import { redis } from "../config/redisClient";
 
 //errors
-import { RequestValidationError } from "../errors/request-validaion-error";
 import { ExistingUserError } from "../errors/existing-user-error";
 import { AppError } from "../errors/app-error";
 
 //externl dependencies
 import bcrypt from "bcryptjs";
 import { authenticator } from "otplib";
-import validator from "validator";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { BadRequestError } from "../errors/bad-request-error";
 import { StatusCode } from "../enums/statusCode.enum";
 import { NotFoundError } from "../errors/not-found-error";
+import { IAuthService } from "./interfaces/IAuthService";
+import { IUserResult } from "../types/user.interface";
 
 interface ICurrentUser {
   email: string;
@@ -25,8 +26,8 @@ interface ICurrentUser {
   role: string;
 }
 
-export class AuthService {
-  constructor(private userRepository: UserRepository) {}
+export class AuthService implements IAuthService {
+  constructor(private userRepository: IUserRepository) {}
 
   async refreshToken(token: string): Promise<{
     accessToken: string;
@@ -191,7 +192,7 @@ export class AuthService {
     const sendOtp = await this.sendOtp(email);
     return true;
   }
-  
+
   async verifyResetOtp(email: string, otp: string) {
     const redisKey = `otp:${email}`;
     const storedOtp = await redis.get(redisKey);
@@ -218,35 +219,39 @@ export class AuthService {
     return resetToken;
   }
 
-  async resetPassword(data: {email:string,newPassword:string}, token: string): Promise<void> {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_PASSWORD_RESET_SECRET!) as { email: string };
-      
-      if (decoded.email !== data.email) {
-        throw new BadRequestError('Invalid reset token');
-      }
-      
-      // Check if token exists in Redis
-      const resetTokenKey = `pwd_reset_token:${data.email}`;
-      const storedToken = await redis.get(resetTokenKey);
-      
-      if (!storedToken || storedToken !== token) {
-        throw new BadRequestError('Invalid or expired reset token');
-      }
-      
-      // Hash new password
-      const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-      
-      const existingUser=await this.userRepository.findByEmail(data.email);
-      if(!existingUser){
-        throw new AppError("No user found",StatusCode.NOT_FOUND)
-      }
-      existingUser.password=hashedPassword;
-      await this.userRepository.save(existingUser);
-      // Delete reset token from Redis
-      await redis.del(resetTokenKey);
-  
+  async resetPassword(
+    data: { email: string; newPassword: string },
+    token: string
+  ): Promise<void> {
+    // Verify token
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_PASSWORD_RESET_SECRET!
+    ) as { email: string };
 
+    if (decoded.email !== data.email) {
+      throw new BadRequestError("Invalid reset token");
+    }
+
+    // Check if token exists in Redis
+    const resetTokenKey = `pwd_reset_token:${data.email}`;
+    const storedToken = await redis.get(resetTokenKey);
+
+    if (!storedToken || storedToken !== token) {
+      throw new BadRequestError("Invalid or expired reset token");
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+    const existingUser = await this.userRepository.findByEmail(data.email);
+    if (!existingUser) {
+      throw new AppError("No user found", StatusCode.NOT_FOUND);
+    }
+    existingUser.password = hashedPassword;
+    await this.userRepository.save(existingUser);
+    // Delete reset token from Redis
+    await redis.del(resetTokenKey);
   }
 
   async signIn(email: string, password: string) {
@@ -304,7 +309,7 @@ export class AuthService {
       agreement: boolean;
     },
     currentUser: ICurrentUser
-  ) {
+  ): Promise<IUserResult> {
     const user = await this.userRepository.findById(currentUser.id);
     if (!user) {
       throw new NotFoundError("User Not Found");

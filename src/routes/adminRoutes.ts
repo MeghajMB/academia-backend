@@ -6,17 +6,17 @@ import { CategoryRepository } from "../repositories/categoryRepository";
 import {AdminService} from "../services/adminService"
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
-import { CategoryService } from "../services/categoryService";
+import { CourseRepository } from "../repositories/courseRepository";
 
 const router = Router();
 
 // Dependency injection Begin
 //repositories
 const userRepository = new UserRepository();
-const categoryRepository=new CategoryRepository()
+const categoryRepository=new CategoryRepository();
+const courseRepository=new CourseRepository();
 //services
-const adminService = new AdminService(userRepository,categoryRepository);
-const categoryService=new CategoryService(categoryRepository)
+const adminService = new AdminService(userRepository,categoryRepository,courseRepository);
 //controller
 const adminController = new AdminController(adminService);
 // Dependency injection End
@@ -46,5 +46,12 @@ router.post('/create-category',verifyToken,verifyUser('admin'), adminController.
 router.post('/edit-category',verifyToken,verifyUser('admin'), adminController.editCategory.bind(adminController));
 //block category
 router.put('/block-category/:categoryId',verifyToken,verifyUser('admin'), adminController.blockCategory.bind(adminController));
+
+//course
+router.get('/course-review-requests',verifyToken,verifyUser('admin'), adminController.getCourseReviewRequests.bind(adminController));
+// reject instructor profile
+router.post('/course-review-requests/reject',verifyToken,verifyUser('admin'), adminController.rejectCourseReviewRequest.bind(adminController));
+// approve instructor profile
+router.put('/course-review-requests/approve',verifyToken,verifyUser('admin'), adminController.approveCourseReviewRequest.bind(adminController));
 
 export default router;

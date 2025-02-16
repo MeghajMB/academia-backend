@@ -15,8 +15,9 @@ import { StatusCode } from "../enums/statusCode.enum";
 import { NotFoundError } from "../errors/not-found-error";
 import { razorpay } from "../config/razorPay";
 import { BadRequestError } from "../errors/bad-request-error";
+import { IPaymentService } from "./interfaces/IPaymentService";
 
-export class PaymentService {
+export class PaymentService implements IPaymentService {
   constructor(private transactionRepository: TransactionRepository) {}
 
   async createRazorPayOrder(amount: number, currency: string) {

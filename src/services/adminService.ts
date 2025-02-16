@@ -1,24 +1,25 @@
-// src/services/AuthService.ts
-import { UserRepository } from "../repositories/userRepository";
-import { CategoryRepository } from "../repositories/categoryRepository";
-//services
+// repository
+import { IUserRepository } from "../repositories/interfaces/IUserRepository";
+import { ICategoryRepository } from "../repositories/interfaces/ICategoryRepository";
+import { ICourseRepository } from "../repositories/interfaces/ICourseRepository";
 
-import { transporter } from "../util/emailClient";
-import { redis } from "../config/redisClient";
+//services
+import { IAdminService } from "./interfaces/IAdminService";
 
 //errors
 import { AppError } from "../errors/app-error";
-
-//externl dependencies
-import validator from "validator";
-import { StatusCode } from "../enums/statusCode.enum";
 import { NotFoundError } from "../errors/not-found-error";
 import { BadRequestError } from "../errors/bad-request-error";
 
-export class AdminService {
+//externl dependencies
+import { redis } from "../config/redisClient";
+import { StatusCode } from "../enums/statusCode.enum";
+
+export class AdminService implements IAdminService {
   constructor(
-    private userRepository: UserRepository,
-    private categoryRepository: CategoryRepository
+    private userRepository: IUserRepository,
+    private categoryRepository: ICategoryRepository,
+    private courseRepository: ICourseRepository
   ) {}
 
   async getUsers(role: string, page: number, limit: number) {
@@ -148,22 +149,62 @@ export class AdminService {
     if (!existingCategory) {
       throw new AppError("Category doesn't exist", StatusCode.NOT_FOUND);
     }
-  
+
     // Check if another category already exists with the same name
-    const duplicateCategory = await this.categoryRepository.findByName(category.name);
-  
+    const duplicateCategory = await this.categoryRepository.findByName(
+      category.name
+    );
+
     if (duplicateCategory && duplicateCategory.id !== categoryId) {
-      throw new AppError("Category with this name already exists", StatusCode.CONFLICT);
+      throw new AppError(
+        "Category with this name already exists",
+        StatusCode.CONFLICT
+      );
     }
-  
+
     // Update the category
     const updatedCategory = await this.categoryRepository.updateCategory(
       categoryId,
       category
     );
-    if(!updatedCategory){
+    if (!updatedCategory) {
       throw new AppError("Category not found", StatusCode.NOT_FOUND);
     }
     return updatedCategory;
+  }
+  async getCourseReviewRequests(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const totalDocuments = await this.courseRepository.countDocuments(
+      "status",
+      "pending"
+    );
+    const filters = { status: "pending" };
+    const reviewRequests =
+      await this.courseRepository.fetchPaginatedCoursesWithFilters(
+        filters,
+        skip,
+        totalDocuments
+      );
+    const pagination = {
+      totalDocuments,
+      totalPages: Math.ceil(totalDocuments / limit),
+      currentPage: page,
+      limit,
+    };
+
+    return { reviewRequests, pagination };
+  }
+  async rejectCourseReviewRequest(rejectReason: string, courseId: string) {
+    const course = await this.courseRepository.rejectCourseReviewRequest(
+      courseId,
+      rejectReason
+    );
+
+    return course;
+  }
+
+  async approveCourseReviewRequest(courseId: string) {
+    const course = await this.courseRepository.approveCourseReviewRequest(courseId);
+    return course;
   }
 }

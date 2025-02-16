@@ -2,7 +2,7 @@ import {
   ICategory,
   ICategoryRepository,
   ICategoryResult,
-} from "./interfaces/categoryRepository";
+} from "./interfaces/ICategoryRepository";
 import { CategoryModel } from "../models/categoyModel";
 import { DatabaseError } from "../errors/database-error";
 import { StatusCode } from "../enums/statusCode.enum";
@@ -85,7 +85,7 @@ export class CategoryRepository implements ICategoryRepository {
   async updateCategory(
     categoryId: string,
     updatedData: { name: string; description: string }
-  ) {
+  ): Promise<ICategoryResult|null> {
     try {
       const updatedCategory = await CategoryModel.findByIdAndUpdate(
         categoryId,
@@ -110,9 +110,6 @@ export class CategoryRepository implements ICategoryRepository {
     try {
       return await category.save();
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
       throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
     }
   }
