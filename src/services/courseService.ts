@@ -2,7 +2,10 @@
 import { BadRequestError } from "../errors/bad-request-error";
 import { ICourseRepository } from "../repositories/interfaces/ICourseRepository";
 import mongoose from "mongoose";
-import { ICourseResult } from "../types/course.interface";
+import {
+  ICourseResult,
+  ICourseResultWithUserId,
+} from "../types/course.interface";
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
 import { sqsClient } from "../util/awsClient";
 import { FileService } from "./fileService";
@@ -12,7 +15,7 @@ import { CloudfrontSignedCookiesOutput } from "@aws-sdk/cloudfront-signer";
 import {
   ICourseService,
   ICreateCourse,
-  ICurriculumResult,
+  IGetCourseDetails,
   IUpdatedSection,
 } from "./interfaces/ICourseService";
 import {
@@ -23,19 +26,22 @@ import {
   ISectionRepository,
   ISectionResult,
 } from "../repositories/interfaces/ISectionRepository";
+import { IEnrollmentRepository } from "../repositories/interfaces/IEnrollmentRepository";
+import { IEnrollmentDocument } from "../models/enrollmentModel";
 
 export class CourseService implements ICourseService {
   constructor(
     private courseRepository: ICourseRepository,
     private lectureRepository: ILectureRepository,
     private sectionRepository: ISectionRepository,
+    private enrollmentRepository: IEnrollmentRepository,
     private fileService: FileService
   ) {}
 
   async createCourse(
     courseData: ICreateCourse,
     userId: string
-  ): Promise<ICourseResult | void> {
+  ): Promise<ICourseResult> {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
@@ -67,64 +73,190 @@ export class CourseService implements ICourseService {
     }
   }
 
-  async getCurriculum(courseId: string): Promise<IUpdatedSection[]> {
-    const sections = await this.sectionRepository.getSectionsWithCourseId(
-      courseId
-    );
-    if (sections.length == 0) {
-      throw new BadRequestError("No course");
+  async changeOrderOfLecture(
+    draggedLectureId: string,
+    targetLectureId: string,
+    id: string
+  ): Promise<unknown> {
+    if (draggedLectureId == targetLectureId) {
+      return { message: "success" };
     }
-    const lectures = await this.lectureRepository.getLecturesWithCourseId(
-      courseId
+    const draggedLecture = await this.lectureRepository.findById(
+      draggedLectureId
     );
-    if (lectures.length == 0) {
-      throw new BadRequestError("No course");
+    const targetLecture = await this.lectureRepository.findById(
+      targetLectureId
+    );
+    if (
+      !draggedLecture ||
+      !targetLecture ||
+      draggedLecture.courseId.userId.toString() !== id ||
+      targetLecture.courseId.userId.toString() !== id
+    ) {
+      throw new BadRequestError("No lecture");
     }
 
-    const curriculum = sections.map((section) => ({
-      id: (section._id as mongoose.ObjectId).toString(),
-      courseId: section.courseId.toString(),
-      title: section.title,
-      order: section.order,
-      lectures: lectures
-        .filter(
-          (lecture) =>
-            lecture.sectionId.toString() ===
-            (section._id as mongoose.ObjectId).toString()
-        )
-        .map((lecture) => ({
-          id: (lecture._id as mongoose.ObjectId).toString(),
-          sectionId: lecture.sectionId.toString(),
-          courseId: lecture.courseId.toString(),
-          title: lecture.title,
-          videoUrl: lecture.videoUrl,
-          duration: lecture.duration,
-          order: lecture.order,
-          status: lecture.status,
-        })),
-    }));
+    if (draggedLecture.sectionId.toString() == targetLecture.sectionId.toString()) {
+      await this.lectureRepository.updateOrderOfLectureInSameSection(
+        draggedLecture.sectionId,
+        draggedLecture._id as mongoose.ObjectId,
+        draggedLecture.order,
+        targetLecture.order
+      );
 
-    return curriculum;
-  }
-
-  async getCurriculumOfInstructor(
-    courseId: string,
-    userId: string
-  ): Promise<IUpdatedSection[]> {
-    const existingCourse = await this.courseRepository.findById(courseId);
-    if (existingCourse?.userId.toString() !== userId) {
-      throw new AppError(
-        "You dont have access to this file",
-        StatusCode.FORBIDDEN
+    } else {
+      await this.lectureRepository.updateOrderOfLectureInDifferentSection(
+        draggedLecture._id as mongoose.ObjectId,
+        draggedLecture.sectionId,
+        targetLecture.sectionId,
+        draggedLecture.order,
+        targetLecture.order
       );
     }
 
+    return { message: "success" };
+  }
+  async editLecture(
+    lectureId: string,
+    lectureData: { title: string; videoUrl: string; duration: number },
+    id: string
+  ): Promise<ILectureResult> {
+    const updatedLectures = await this.lectureRepository.editLecture(
+      lectureId,
+      lectureData
+    );
+    if (!updatedLectures) {
+      throw new BadRequestError("Bad request");
+    }
+    return updatedLectures;
+  }
+
+  async enrollStudent(
+    courseId: string,
+    userId: string,
+    transactionId: string,
+    session: { session: mongoose.mongo.ClientSession }
+  ): Promise<IEnrollmentDocument> {
+    try {
+      const listedCourse = await this.enrollmentRepository.create(
+        courseId,
+        userId,
+        transactionId,
+        session
+      );
+      return listedCourse;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getCourseDetails(
+    courseId: string,
+    userId: string
+  ): Promise<IGetCourseDetails> {
+    const course = await this.courseRepository.findByIdWithInstructorData(
+      courseId
+    );
+
+    if (!course || course.status !== "listed") {
+      throw new BadRequestError("No course");
+    }
+
+    let enrollmentStatus;
+
+    const enrolledCourse = await this.enrollmentRepository.findOneByfilter({
+      courseId,
+      studentId: userId,
+    });
+    if (enrolledCourse) {
+    }
+    if (course.userId.id == userId || enrolledCourse) {
+      enrollmentStatus = "enrolled";
+    } else {
+      enrollmentStatus = "not enrolled";
+    }
+
+    const image = await this.fileService.generateGetSignedUrl(
+      course.imageThumbnail
+    );
+    const video = await this.fileService.generateGetSignedUrl(
+      course.promotionalVideo
+    );
+
+    const courseDetails = {
+      courseId: course._id as string,
+      instructorId: course.userId.id,
+      instructorName: course.userId.name,
+      totalDuration: course.totalDuration,
+      totalLectures: course.totalLectures,
+      imageThumbnail: image,
+      promotionalVideo: video,
+      canReview: !!enrolledCourse,
+      hasReviewed: !!enrolledCourse?.reviewStatus,
+      category: course.category.name,
+      title: course.title,
+      price: course.price,
+      subtitle: course.subtitle,
+      description: course.description,
+      enrollmentStatus: enrollmentStatus as "enrolled" | "not enrolled",
+    };
+
+    return courseDetails;
+  }
+
+  async getNewCourses(): Promise<ICourseResult[]> {
+    const courses = await this.courseRepository.findNewCourses();
+    if (!courses) {
+      throw new BadRequestError("No new courses available");
+    }
+
+    await Promise.all(
+      courses.map(async (course) => {
+        course.imageThumbnail = await this.fileService.generateGetSignedUrl(
+          course.imageThumbnail
+        );
+      })
+    );
+    return courses;
+  }
+
+  async getCurriculum(
+    courseId: string,
+    userId: string,
+    status: string,
+    role: string
+  ): Promise<IUpdatedSection[]> {
+    const existingCourse = await this.courseRepository.findById(courseId);
+    if (status == "instructor") {
+      if (existingCourse?.userId.toString() !== userId) {
+        throw new AppError(
+          "You dont have access to this file",
+          StatusCode.FORBIDDEN
+        );
+      }
+    }
+
+    if (status == "student" && existingCourse?.userId.toString() !== userId) {
+      const enrolledCourse = await this.enrollmentRepository.findOneByfilter({
+        courseId: courseId,
+        studentId: userId,
+      });
+
+      if (!enrolledCourse) {
+        throw new AppError(
+          "You dont have access to this course",
+          StatusCode.FORBIDDEN
+        );
+      }
+    }
     const sections = await this.sectionRepository.getSectionsWithCourseId(
       courseId
     );
+
     const lectures = await this.lectureRepository.getLecturesWithCourseId(
       courseId
     );
+
     const curriculum = sections.map((section) => ({
       id: (section._id as mongoose.ObjectId).toString(),
       courseId: section.courseId.toString(),
@@ -151,7 +283,7 @@ export class CourseService implements ICourseService {
     return curriculum;
   }
 
-  async getCourseOfInstructor(
+  async getCoursesOfInstructor(
     instructorId: string,
     status: string
   ): Promise<ICourseResult[]> {
@@ -159,15 +291,19 @@ export class CourseService implements ICourseService {
       status !== "pending" &&
       status !== "accepted" &&
       status !== "rejected" &&
-      status !== "draft"
+      status !== "draft" &&
+      status !== "all"
     ) {
       throw new BadRequestError("enter a valid status");
     }
-    const course =
-      await this.courseRepository.fetchCoursesWithInstrucorIdAndStatus(
-        instructorId,
-        status
-      );
+    let filter: { userId: string; status?: string } = { userId: instructorId };
+
+    if (status !== "all") {
+      filter.status = status;
+    }
+
+    const course = await this.courseRepository.findCoursesWithFilter(filter);
+
     if (!course) {
       throw new BadRequestError("No course");
     }
@@ -179,10 +315,44 @@ export class CourseService implements ICourseService {
     courseId: string
   ): Promise<{ message: string }> {
     try {
-      const course = await this.courseRepository.submitCourseForReview(
-        instructorId,
-        courseId
-      );
+      const status = "pending";
+      const course =
+        await this.courseRepository.changeCourseStatusWithInstructorIdAndCourseId(
+          instructorId,
+          courseId,
+          status
+        );
+      if (!course) {
+        throw new BadRequestError("No course");
+      }
+      return { message: "success" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async listCourse(
+    instructorId: string,
+    courseId: string
+  ): Promise<{ message: string }> {
+    try {
+      const status = "listed";
+      const existingCourse = await this.courseRepository.findById(courseId);
+      if (existingCourse?.status !== "accepted") {
+        throw new BadRequestError("The course is not approved");
+      }
+      if (existingCourse?.userId.toString() !== instructorId) {
+        throw new AppError(
+          "You dont have access to this course",
+          StatusCode.FORBIDDEN
+        );
+      }
+      const course =
+        await this.courseRepository.changeCourseStatusWithInstructorIdAndCourseId(
+          instructorId,
+          courseId,
+          status
+        );
       if (!course) {
         throw new BadRequestError("No course");
       }
@@ -285,7 +455,7 @@ export class CourseService implements ICourseService {
     }
   }
 
-  async generateLecturePreviewLectureUrl(
+  async generateLectureUrl(
     courseId: string,
     lectureId: string,
     userId: string,
@@ -301,10 +471,16 @@ export class CourseService implements ICourseService {
         throw new BadRequestError("Course not found");
       }
       if (role !== "admin" && existingCourse.userId!.toString() !== userId) {
-        throw new AppError(
-          "You dont have access to this file",
-          StatusCode.FORBIDDEN
-        );
+        const enrolledCourse = await this.enrollmentRepository.findOneByfilter({
+          studentId: userId,
+          courseId,
+        });
+        if (!enrolledCourse) {
+          throw new AppError(
+            "You dont have access to this file",
+            StatusCode.FORBIDDEN
+          );
+        }
       }
 
       const existingLecture = await this.lectureRepository.findById(lectureId);

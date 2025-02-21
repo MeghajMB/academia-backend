@@ -22,7 +22,7 @@ export class AdminService implements IAdminService {
     private courseRepository: ICourseRepository
   ) {}
 
-  async getUsers(role: string, page: number, limit: number) {
+  async getUsers(role: string, page: number, limit: number,search:string) {
     const skip = (page - 1) * limit;
     const totalDocuments = await this.userRepository.countDocuments(
       "role",
@@ -31,7 +31,8 @@ export class AdminService implements IAdminService {
     const users = await this.userRepository.fetchUsersWithPagination(
       skip,
       limit,
-      role
+      role,
+      search
     );
     const pagination = {
       totalDocuments,
@@ -173,6 +174,7 @@ export class AdminService implements IAdminService {
     return updatedCategory;
   }
   async getCourseReviewRequests(page: number, limit: number) {
+    
     const skip = (page - 1) * limit;
     const totalDocuments = await this.courseRepository.countDocuments(
       "status",
@@ -195,16 +197,17 @@ export class AdminService implements IAdminService {
     return { reviewRequests, pagination };
   }
   async rejectCourseReviewRequest(rejectReason: string, courseId: string) {
+
     const course = await this.courseRepository.rejectCourseReviewRequest(
       courseId,
       rejectReason
     );
 
-    return course;
+    return {message:"success"};
   }
 
   async approveCourseReviewRequest(courseId: string) {
     const course = await this.courseRepository.approveCourseReviewRequest(courseId);
-    return course;
+    return {message:"success"};
   }
 }

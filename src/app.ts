@@ -11,6 +11,7 @@ import categoryRoutes from "./routes/categoryRoutes";
 import fileRoutes from "./routes/fileRoutes"
 import courseRoutes from "./routes/courseRoutes"
 import paymentRoutes from "./routes/paymentRoutes"
+import reviewRoutes from "./routes/reviewRoutes"
 
 import { errorHandler } from "./middleware/error-handler";
 
@@ -53,6 +54,7 @@ app.use("/api/category", categoryRoutes);
 app.use("/api/course", courseRoutes);
 app.use("/api/files",fileRoutes);
 app.use('/api/payment',paymentRoutes)
+app.use("/api/review", reviewRoutes);
 
 app.use(
   errorHandler as (
@@ -64,7 +66,7 @@ app.use(
 );
 
 app.use((req,res,next)=>{
-  res.status(StatusCode.NOT_FOUND).send({message:'Data not found'})
+  res.status(StatusCode.NOT_FOUND).send({message:'Invalid Route'})
 })
 
 export { app };

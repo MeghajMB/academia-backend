@@ -1,5 +1,5 @@
 export interface IAdminService {
-    getUsers(role: string, page: number, limit: number): Promise<any>;
+    getUsers(role: string, page: number, limit: number,search:string): Promise<any>;
     getInstructorVerificationRequests(page: number, limit: number): Promise<any>;
     rejectVerificationRequest(rejectReason: string, userId: string): Promise<any>;
     approveVerificationRequest(userId: string): Promise<any>;

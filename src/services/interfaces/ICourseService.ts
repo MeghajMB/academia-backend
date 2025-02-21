@@ -3,6 +3,7 @@ import { ILectureResult } from "../../repositories/interfaces/ILectureRepository
 import { ICourseResult } from "../../types/course.interface";
 import { ISectionResult } from "../../repositories/interfaces/ISectionRepository";
 import { CloudfrontSignedCookiesOutput } from "@aws-sdk/cloudfront-signer";
+import { IEnrollmentDocument } from "../../models/enrollmentModel";
 
 export interface ICreateCourse {
   category: string;
@@ -39,18 +40,51 @@ export interface IUpdatedLecture {
   status: string;
 }
 
+export interface IGetCourseDetails {
+  courseId: string;
+  instructorId: string;
+  instructorName: string;
+  totalDuration: number;
+  totalLectures: number;
+  imageThumbnail: string;
+  promotionalVideo: string;
+  category: string;
+  title: string;
+  price: number;
+  subtitle: string;
+  description: string;
+  enrollmentStatus: "enrolled" | "not enrolled";
+  canReview: boolean;
+  hasReviewed: boolean;
+}
+
 export interface ICourseService {
   createCourse(
     courseData: ICreateCourse,
     userId: string
-  ): Promise<ICourseResult | void>;
+  ): Promise<ICourseResult>;
+  getNewCourses(): Promise<ICourseResult[]>;
+  editLecture(
+    lectureId: string,
+    lectureData: { title: string; videoUrl: string; duration: number },
+    id: string
+  ): Promise<ILectureResult>;
   getCurriculum(
-    courseId: string
+    courseId: string,
+    userId: string,
+    status: string,
+    role: string
   ): Promise<IUpdatedSection[]>;
-  getCurriculumOfInstructor(
+  getCourseDetails(
     courseId: string,
     userId: string
-  ): Promise<IUpdatedSection[]>;
+  ): Promise<IGetCourseDetails>;
+  enrollStudent(
+    courseId: string,
+    userId: string,
+    transactionId: string,
+    session: { session: mongoose.mongo.ClientSession }
+  ): Promise<IEnrollmentDocument>;
   addSection(
     section: { title: string; description: string },
     courseId: string,
@@ -62,7 +96,7 @@ export interface ICourseService {
     sectionID: string,
     lectureData: { title: string; videoUrl: string; duration: number }
   ): Promise<ILectureResult>;
-  getCourseOfInstructor(
+  getCoursesOfInstructor(
     instructorId: string,
     status: string
   ): Promise<ICourseResult[]>;
@@ -70,6 +104,15 @@ export interface ICourseService {
     instructorId: string,
     courseId: string
   ): Promise<{ message: string }>;
+  listCourse(
+    instructorId: string,
+    courseId: string
+  ): Promise<{ message: string }>;
+  changeOrderOfLecture(
+    draggedLectureId: string,
+    targetLectureId: string,
+    id: string
+  ): Promise<unknown>;
   addLectureAfterProcessing(
     userId: string,
     courseId: string,
@@ -77,7 +120,7 @@ export interface ICourseService {
     lectureId: string,
     key: string
   ): Promise<Boolean | void>;
-  generateLecturePreviewLectureUrl(
+  generateLectureUrl(
     courseId: string,
     lectureId: string,
     userId: string,

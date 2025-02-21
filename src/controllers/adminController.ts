@@ -15,17 +15,19 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { role, page = 1 } = req.query;
+    const { role, page = 1,search="" } = req.query;
+    console.log(role)
     try {
       const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
 
-      if (!role) {
+      if (!role || typeof search !=='string') {
         throw new BadRequestError("Mention The Role");
       }
       const data = await this.adminService.getUsers(
         role.toString(),
         pageNumber,
-        this.pagLimit
+        this.pagLimit,
+        search
       );
       res.status(200).send(data);
     } catch (error) {

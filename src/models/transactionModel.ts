@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export type TransactionStatus = "pending" | "success" | "failed";
 export type PurchaseType = "course" | "service" | "coins";
 
-interface ITransaction extends Document {
+export interface ITransaction extends Document {
   userId: string;
   amount: number;
   status: TransactionStatus;
@@ -23,11 +23,19 @@ const TransactionSchema = new Schema<ITransaction>(
     purchaseType: { type: String, enum: ["course", "service", "coins"], required: true },
     purchaseId: { type: String },
     orderId: { type: String },
-    paymentId: { type: String },
+    paymentId: { type: String,required:true },
     paymentMethod: { type: String },
     details: { type: Object }, // Flexible field for additional details
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      transform(doc, ret) {
+        ret.id = ret._id;
+        delete ret._id;
+      },
+    },
+  }
 );
 
 export const Transaction = mongoose.model<ITransaction>("Transaction", TransactionSchema);

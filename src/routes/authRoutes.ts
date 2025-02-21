@@ -2,10 +2,14 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/authController";
 import { UserRepository } from "../repositories/userRepository";
-import {AuthService} from "../services/authService"
+import { AuthService } from "../services/authService";
 import { verifyToken } from "../middleware/verify-token";
 
-import {authenticateGoogle,googleController,googleCallback} from "../services/googleService"
+import {
+  authenticateGoogle,
+  googleController,
+  googleCallback,
+} from "../services/googleService";
 import { verifyUser } from "../middleware/verify-user";
 
 const router = Router();
@@ -21,11 +25,20 @@ router.post("/refresh", authController.refreshToken.bind(authController));
 // Otp Routes For SignIn
 router.post("/signup", authController.signUp.bind(authController));
 router.post("/verify-otp", authController.verifyOtp.bind(authController));
-router.post("/resend-otp",authController.resendOtp.bind(authController));
+router.post("/resend-otp", authController.resendOtp.bind(authController));
 //forgot password
-router.post("/forgot-password",authController.forgotPassword.bind(authController));
-router.post("/verify-reset-password",authController.verifyResetOtp.bind(authController));
-router.post("/reset-password",authController.resetPassword.bind(authController));
+router.post(
+  "/forgot-password",
+  authController.forgotPassword.bind(authController)
+);
+router.post(
+  "/verify-reset-password",
+  authController.verifyResetOtp.bind(authController)
+);
+router.post(
+  "/reset-password",
+  authController.resetPassword.bind(authController)
+);
 
 //Login
 router.post("/signin", authController.signIn.bind(authController));
@@ -34,10 +47,15 @@ router.post("/signin", authController.signIn.bind(authController));
 router.post("/signout", authController.signOut.bind(authController));
 
 //Instructor Creation
-router.post("/register-instructor",verifyToken,verifyUser('student'), authController.registerInstructor.bind(authController));
+router.post(
+  "/register-instructor",
+  verifyToken,
+  verifyUser("student"),
+  authController.registerInstructor.bind(authController)
+);
 
 //Google SignIn Route
-router.get("/google",authenticateGoogle);
-router.get("/google/callback",googleCallback,googleController);
+router.get("/google", authenticateGoogle);
+router.get("/google/callback", googleCallback, googleController);
 
 export default router;

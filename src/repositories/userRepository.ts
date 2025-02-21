@@ -93,10 +93,15 @@ export class UserRepository implements IUserRepository {
   async fetchUsersWithPagination(
     skip: number,
     limit: number,
-    role: string
+    role: string,
+    search:string
   ): Promise<IUserResult[] | null> {
     try {
-      const user = await UserModel.find({ role })
+      let query: any = { role };
+      if (search) {
+        query.name = { $regex: search, $options: "i" }; // Case-insensitive search
+      }
+      const user = await UserModel.find(query)
         .skip(skip)
         .limit(limit)
         .sort({ name: 1 });

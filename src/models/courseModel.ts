@@ -1,7 +1,7 @@
 // src/infrastructure/database/UserModel.ts
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-export interface CourseDocument extends Document {
+export interface ICourseDocument extends Document {
   userId: mongoose.Schema.Types.ObjectId;
   title: string;
   price: number;
@@ -12,7 +12,7 @@ export interface CourseDocument extends Document {
   totalLectures: number;
   totalSections: number;
   isBlocked: boolean;
-  status: "pending" | "accepted" | "rejected" | "draft";
+  status: "pending" | "accepted" | "rejected" | "draft"|"listed";
   rejectedReason: string;
   imageThumbnail: string;
   promotionalVideo: string;
@@ -20,10 +20,11 @@ export interface CourseDocument extends Document {
   updatedAt: Date;
 }
 
-const CourseSchema: Schema<CourseDocument> = new Schema(
+const CourseSchema: Schema<ICourseDocument> = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref:"User",
       required: true,
     },
     title: {
@@ -56,7 +57,7 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
     totalSections: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected", "draft"],
+      enum: ["pending", "accepted", "rejected", "draft","listed"],
       default: "draft",
     },
     rejectedReason: {
@@ -83,5 +84,5 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
   }
 );
 
-export const CourseModel: Model<CourseDocument> =
-  mongoose.model<CourseDocument>("Course", CourseSchema);
+export const CourseModel: Model<ICourseDocument> =
+  mongoose.model<ICourseDocument>("Course", CourseSchema);

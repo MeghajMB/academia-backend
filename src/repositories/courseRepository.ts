@@ -1,16 +1,20 @@
+import { FilterQuery } from "mongoose";
 import { StatusCode } from "../enums/statusCode.enum";
 import { BadRequestError } from "../errors/bad-request-error";
 import { DatabaseError } from "../errors/database-error";
-import { CourseModel } from "../models/courseModel";
-import { ICourseResult } from "../types/course.interface";
+import { CourseModel, ICourseDocument } from "../models/courseModel";
+import {
+  ICourseResult,
+  ICourseResultWithUserId,
+} from "../types/course.interface";
 import { ICourse, ICourseRepository } from "./interfaces/ICourseRepository";
 
 export class CourseRepository implements ICourseRepository {
   async createCourse(course: ICourse, session: object): Promise<ICourseResult> {
     try {
       const createdCourse = new CourseModel(course);
-      const savedCourse = await createdCourse.save(session);
-      return savedCourse;
+      await createdCourse.save(session);
+      return createdCourse;
     } catch (error: unknown) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -20,7 +24,9 @@ export class CourseRepository implements ICourseRepository {
   }
   async findById(courseId: string): Promise<ICourseResult | null> {
     try {
-      const existingCourse = await CourseModel.findById(courseId);
+      const existingCourse = await CourseModel.findById(courseId).populate(
+        "category"
+      );
       return existingCourse;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -29,6 +35,38 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+  async findByIdWithInstructorData(
+    courseId: string
+  ): Promise<ICourseResultWithUserId | null> {
+    try {
+      const existingCourse = await CourseModel.findById(courseId)
+        .populate("category")
+        .populate("userId");
+      return existingCourse as ICourseResultWithUserId | null;
+    } catch (error: unknown) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async findNewCourses(): Promise<ICourseResult[]> {
+    try {
+      const newCourses = await CourseModel.find({ status: "listed" })
+        .populate("category")
+        .sort({ createdAt: -1 })
+        .limit(4);
+
+      return newCourses;
+    } catch (error: unknown) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   async findCourseByName(title: string): Promise<ICourseResult | null> {
     try {
       const existingCourse = await CourseModel.findOne({ title: title });
@@ -43,6 +81,7 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+
   async fetchCoursesWithInstrucorIdAndStatus(
     instructorId: string,
     status: string
@@ -60,15 +99,29 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+  async findCoursesWithFilter(
+    filter: FilterQuery<ICourseDocument>
+  ): Promise<ICourseResult[] | null> {
+    try {
+      const courses = await CourseModel.find(filter).populate("category");
+      return courses;
+    } catch (error: unknown) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 
-  async submitCourseForReview(
+  async changeCourseStatusWithInstructorIdAndCourseId(
     instructorId: string,
-    courseId: string
+    courseId: string,
+    status: string
   ): Promise<ICourseResult | null> {
     try {
       const course = await CourseModel.findOneAndUpdate(
         { _id: courseId, userId: instructorId },
-        { status: "pending" },
+        { status: status, rejectedReason: "" },
         { new: true }
       );
 
@@ -89,7 +142,6 @@ export class CourseRepository implements ICourseRepository {
 
       return count;
     } catch (error: unknown) {
-
       if (error instanceof Error) {
         console.log(error.message);
       }
@@ -97,7 +149,6 @@ export class CourseRepository implements ICourseRepository {
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR
       );
-
     }
   }
   async fetchPaginatedCoursesWithFilters(
@@ -109,7 +160,7 @@ export class CourseRepository implements ICourseRepository {
       const courses = await CourseModel.find(filters)
         .skip(skip)
         .limit(limit)
-        .populate('category')
+        .populate("category");
 
       return courses;
     } catch (error: unknown) {
@@ -122,7 +173,10 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
-  async rejectCourseReviewRequest(courseId: string,rejectReason:string): Promise<ICourseResult | null> {
+  async rejectCourseReviewRequest(
+    courseId: string,
+    rejectReason: string
+  ): Promise<ICourseResult | null> {
     try {
       const course = await CourseModel.findById(courseId);
       if (!course) {
@@ -142,7 +196,9 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
-  async approveCourseReviewRequest(courseId: string): Promise<ICourseResult | null> {
+  async approveCourseReviewRequest(
+    courseId: string
+  ): Promise<ICourseResult | null> {
     try {
       const course = await CourseModel.findById(courseId);
       if (!course) {
@@ -152,7 +208,6 @@ export class CourseRepository implements ICourseRepository {
       delete (course as any).rejected;
       await course.save();
       return course;
-      
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error.message);
@@ -163,5 +218,4 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
-
 }

@@ -13,6 +13,11 @@ const categoryService = new CategoryService(categoryRepository);
 const categoryController = new CategoryController(categoryService);
 
 // Routes
-router.get('/all', verifyToken,verifyUser('instructor','student'), categoryController.getAllCategories.bind(categoryController));
+router.get(
+  "/all",
+  verifyToken,
+  verifyUser("instructor", "student"),
+  categoryController.getAllCategories.bind(categoryController)
+);
 
 export default router;
