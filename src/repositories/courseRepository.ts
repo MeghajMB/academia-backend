@@ -136,6 +136,7 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+  
   async countDocuments(key: string, value: string): Promise<number> {
     try {
       const count = await CourseModel.countDocuments({ key: value });
@@ -151,6 +152,27 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+
+  async toggleCourseStatus(courseId: string): Promise<ICourseResult | null> {
+    try {
+      const updatedCourse = await CourseModel.findByIdAndUpdate(
+        courseId,
+        [{ $set: { isBlocked: { $not: "$isBlocked" } } }], // MongoDB toggle
+        { new: true }
+      );
+
+      return updatedCourse;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   async fetchPaginatedCoursesWithFilters(
     filters: { [key: string]: any },
     skip: number,
@@ -173,6 +195,7 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+
   async rejectCourseReviewRequest(
     courseId: string,
     rejectReason: string

@@ -25,7 +25,7 @@ const adminService = new AdminService(
 const adminController = new AdminController(adminService);
 // Dependency injection End
 
-//User Routes
+/* GET Routes */
 
 // fetch instructors or students
 router.get(
@@ -34,13 +34,6 @@ router.get(
   verifyUser("admin"),
   adminController.getUsers.bind(adminController)
 );
-// block/unblock user
-router.put(
-  "/block-user/:userId",
-  verifyToken,
-  verifyUser("admin"),
-  adminController.blockUser.bind(adminController)
-);
 // fetch requests for instructors
 router.get(
   "/instructor-requests",
@@ -48,6 +41,30 @@ router.get(
   verifyUser("admin"),
   adminController.getInstructorVerificationRequests.bind(adminController)
 );
+// fetch paginated categories
+router.get(
+  "/get-categories",
+  verifyToken,
+  verifyUser("admin"),
+  adminController.getCategories.bind(adminController)
+);
+//fetch review course requests
+router.get(
+  "/course-review-requests",
+  verifyToken,
+  verifyUser("admin"),
+  adminController.getCourseReviewRequests.bind(adminController)
+);
+//fetch paginated courses
+router.get(
+  "/get-courses",
+  verifyToken,
+  verifyUser("admin"),
+  adminController.getCourses.bind(adminController)
+);
+
+/* POST Routes */
+
 // approve instructor profile
 router.post(
   "/instructor-request/approve",
@@ -61,22 +78,6 @@ router.post(
   verifyToken,
   verifyUser("admin"),
   adminController.rejectVerificationRequest.bind(adminController)
-);
-// approve instructor profile
-router.put(
-  "/instructor-request/approve",
-  verifyToken,
-  verifyUser("admin"),
-  adminController.approveVerificationRequest.bind(adminController)
-);
-
-//Category Routes
-// fetch paginated categories
-router.get(
-  "/get-categories",
-  verifyToken,
-  verifyUser("admin"),
-  adminController.getCategories.bind(adminController)
 );
 //create category
 router.post(
@@ -92,20 +93,36 @@ router.post(
   verifyUser("admin"),
   adminController.editCategory.bind(adminController)
 );
+
+/* PUT Routes */
+
+// block/unblock user
+router.put(
+  "/block-user/:userId",
+  verifyToken,
+  verifyUser("admin"),
+  adminController.blockUser.bind(adminController)
+);
+// block/unblock course
+router.put(
+  "/block-course/:courseId",
+  verifyToken,
+  verifyUser("admin"),
+  adminController.blockCourse.bind(adminController)
+);
+// approve instructor profile
+router.put(
+  "/instructor-request/approve",
+  verifyToken,
+  verifyUser("admin"),
+  adminController.approveVerificationRequest.bind(adminController)
+);
 //block category
 router.put(
   "/block-category/:categoryId",
   verifyToken,
   verifyUser("admin"),
   adminController.blockCategory.bind(adminController)
-);
-
-//course
-router.get(
-  "/course-review-requests",
-  verifyToken,
-  verifyUser("admin"),
-  adminController.getCourseReviewRequests.bind(adminController)
 );
 // reject instructor profile
 router.put(

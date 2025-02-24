@@ -34,6 +34,28 @@ export class AdminController {
       next(error);
     }
   }
+  async getCourses(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { page = 1,search="" } = req.query;
+    try {
+      const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
+
+      if (typeof search !=='string') {
+        throw new BadRequestError("Mention The Role");
+      }
+      const data = await this.adminService.getCourses(
+        pageNumber,
+        this.pagLimit,
+        search
+      );
+      res.status(200).send(data);
+    } catch (error) {
+      next(error);
+    }
+  }
   async getInstructorVerificationRequests(
     req: Request,
     res: Response,
@@ -108,6 +130,24 @@ export class AdminController {
       next(error);
     }
   }
+
+  async blockCourse(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const id = req.params.courseId;
+      if (!id) {
+        throw new BadRequestError("Mention the id");
+      }
+      const data = await this.adminService.blockOrUnblockCourse(id);
+      res.status(200).send({ message: "success" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getCategories(
     req: Request,
     res: Response,

@@ -98,6 +98,21 @@ router.post(
   courseController.addProcessedLecture.bind(courseController)
 );
 
+/* PUT Routes */
+
+router.put(
+  "/lectures/update-order",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.changeOrderOfLecture.bind(courseController)
+);
+router.put(
+  "/edit-lecture",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.editLecture.bind(courseController)
+);
+
 /* PATCH Routes */
 
 //submit coure for review of admin
@@ -114,21 +129,5 @@ router.patch(
   verifyUser("instructor"),
   courseController.listCourse.bind(courseController)
 );
-
-/* PUT Routes */
-router.put(
-  "/lectures/update-order",
-  verifyToken,
-  verifyUser("instructor"),
-  courseController.changeOrderOfLecture.bind(courseController)
-);
-router.put(
-  "/edit-lecture",
-  verifyToken,
-  verifyUser("instructor"),
-  courseController.editLecture.bind(courseController)
-);
-
-//list the course
 
 export default router;

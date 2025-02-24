@@ -22,7 +22,7 @@ export class AdminService implements IAdminService {
     private courseRepository: ICourseRepository
   ) {}
 
-  async getUsers(role: string, page: number, limit: number,search:string) {
+  async getUsers(role: string, page: number, limit: number, search: string) {
     const skip = (page - 1) * limit;
     const totalDocuments = await this.userRepository.countDocuments(
       "role",
@@ -42,6 +42,30 @@ export class AdminService implements IAdminService {
     };
 
     return { users, pagination };
+  }
+  async getCourses(page: number, limit: number, search: string) {
+    const skip = (page - 1) * limit;
+    const totalDocuments = await this.courseRepository.countDocuments(
+      "status",
+      "listed"
+    );
+    const filters = {
+      status: "listed",
+    };
+    const courses =
+      await this.courseRepository.fetchPaginatedCoursesWithFilters(
+        filters,
+        skip,
+        limit
+      );
+    const pagination = {
+      totalDocuments,
+      totalPages: Math.ceil(totalDocuments / limit),
+      currentPage: page,
+      limit,
+    };
+
+    return { courses, pagination };
   }
 
   async getInstructorVerificationRequests(page: number, limit: number) {
@@ -120,94 +144,133 @@ export class AdminService implements IAdminService {
     }
     return user;
   }
+  async blockOrUnblockCourse(id: string) {
+    try {
+      const course = await this.courseRepository.toggleCourseStatus(id);
+      if(!course){
+        throw new AppError("Course not found",StatusCode.NOT_FOUND)
+      }
+      return course;
+    } catch (error) {
+      throw error;
+    }
+  }
 
   async blockCategory(id: string) {
-    const category = await this.categoryRepository.findById(id);
-    if (!category) {
-      throw new NotFoundError("Category Not Found");
+    try {
+      const category = await this.categoryRepository.findById(id);
+      if (!category) {
+        throw new NotFoundError("Category Not Found");
+      }
+      category.isBlocked = !category.isBlocked;
+      await this.categoryRepository.save(category);
+      return category;
+    } catch (error) {
+      throw error;
     }
-    category.isBlocked = !category.isBlocked;
-    await this.categoryRepository.save(category);
-    return category;
   }
 
   async createCategory(category: { name: string; description: string }) {
-    const existingCategory = await this.categoryRepository.findByName(
-      category.name
-    );
-    if (existingCategory) {
-      throw new AppError("Category already exists", StatusCode.CONFLICT);
+    try {
+      const existingCategory = await this.categoryRepository.findByName(
+        category.name
+      );
+      if (existingCategory) {
+        throw new AppError("Category already exists", StatusCode.CONFLICT);
+      }
+      const newCategory = await this.categoryRepository.createCategory(
+        category
+      );
+      return newCategory;
+    } catch (error) {
+      throw error;
     }
-    const newCategory = await this.categoryRepository.createCategory(category);
-    return newCategory;
   }
   async editCategory(
     category: { name: string; description: string },
     categoryId: string
   ) {
-    const existingCategory = await this.categoryRepository.findById(categoryId);
-
-    if (!existingCategory) {
-      throw new AppError("Category doesn't exist", StatusCode.NOT_FOUND);
-    }
-
-    // Check if another category already exists with the same name
-    const duplicateCategory = await this.categoryRepository.findByName(
-      category.name
-    );
-
-    if (duplicateCategory && duplicateCategory.id !== categoryId) {
-      throw new AppError(
-        "Category with this name already exists",
-        StatusCode.CONFLICT
+    try {
+      const existingCategory = await this.categoryRepository.findById(
+        categoryId
       );
-    }
 
-    // Update the category
-    const updatedCategory = await this.categoryRepository.updateCategory(
-      categoryId,
-      category
-    );
-    if (!updatedCategory) {
-      throw new AppError("Category not found", StatusCode.NOT_FOUND);
+      if (!existingCategory) {
+        throw new AppError("Category doesn't exist", StatusCode.NOT_FOUND);
+      }
+
+      // Check if another category already exists with the same name
+      const duplicateCategory = await this.categoryRepository.findByName(
+        category.name
+      );
+
+      if (duplicateCategory && duplicateCategory.id !== categoryId) {
+        throw new AppError(
+          "Category with this name already exists",
+          StatusCode.CONFLICT
+        );
+      }
+
+      // Update the category
+      const updatedCategory = await this.categoryRepository.updateCategory(
+        categoryId,
+        category
+      );
+      if (!updatedCategory) {
+        throw new AppError("Category not found", StatusCode.NOT_FOUND);
+      }
+      return updatedCategory;
+    } catch (error) {
+      throw error;
     }
-    return updatedCategory;
   }
   async getCourseReviewRequests(page: number, limit: number) {
-    
-    const skip = (page - 1) * limit;
-    const totalDocuments = await this.courseRepository.countDocuments(
-      "status",
-      "pending"
-    );
-    const filters = { status: "pending" };
-    const reviewRequests =
-      await this.courseRepository.fetchPaginatedCoursesWithFilters(
-        filters,
-        skip,
-        totalDocuments
+    try {
+      const skip = (page - 1) * limit;
+      const totalDocuments = await this.courseRepository.countDocuments(
+        "status",
+        "pending"
       );
-    const pagination = {
-      totalDocuments,
-      totalPages: Math.ceil(totalDocuments / limit),
-      currentPage: page,
-      limit,
-    };
+      const filters = { status: "pending" };
+      const reviewRequests =
+        await this.courseRepository.fetchPaginatedCoursesWithFilters(
+          filters,
+          skip,
+          totalDocuments
+        );
+      const pagination = {
+        totalDocuments,
+        totalPages: Math.ceil(totalDocuments / limit),
+        currentPage: page,
+        limit,
+      };
 
-    return { reviewRequests, pagination };
+      return { reviewRequests, pagination };
+    } catch (error) {
+      throw error;
+    }
   }
   async rejectCourseReviewRequest(rejectReason: string, courseId: string) {
+    try {
+      const course = await this.courseRepository.rejectCourseReviewRequest(
+        courseId,
+        rejectReason
+      );
 
-    const course = await this.courseRepository.rejectCourseReviewRequest(
-      courseId,
-      rejectReason
-    );
-
-    return {message:"success"};
+      return { message: "success" };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async approveCourseReviewRequest(courseId: string) {
-    const course = await this.courseRepository.approveCourseReviewRequest(courseId);
-    return {message:"success"};
+    try {
+      const course = await this.courseRepository.approveCourseReviewRequest(
+        courseId
+      );
+      return { message: "success" };
+    } catch (error) {
+      throw error;
+    }
   }
 }

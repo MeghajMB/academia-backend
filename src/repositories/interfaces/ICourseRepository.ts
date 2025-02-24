@@ -24,6 +24,7 @@ export interface ICourseRepository {
   findCourseByName(title: string): Promise<ICourseResult | null>;
   findCoursesWithFilter(filter: FilterQuery<ICourseDocument>):  Promise<ICourseResult[] | null>;
   findById(courseId: string): Promise<ICourseResult | null>;
+  toggleCourseStatus(courseId: string): Promise<ICourseResult | null>;
   findByIdWithInstructorData(courseId: string): Promise<ICourseResultWithUserId | null>
   countDocuments(key: string, value: string): Promise<number>;
   fetchPaginatedCoursesWithFilters(

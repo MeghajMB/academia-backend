@@ -9,7 +9,6 @@ export class ReviewController {
 
   async addReview(req: Request, res: Response, next: NextFunction) {
     try {
-        console.log("asd")
       const user = req.verifiedUser!;
       const { courseId, rating, comment } = req.body;
 
@@ -53,10 +52,11 @@ export class ReviewController {
       const { reviewId } = req.params;
       const user = req.verifiedUser!;
       await this.reviewService.deleteReview(reviewId, user.id);
-      res.status(StatusCode.OK).json({ message: "Review deleted successfully" });
+      res
+        .status(StatusCode.OK)
+        .json({ message: "Review deleted successfully" });
     } catch (error) {
       next(error);
     }
   }
-
 }
