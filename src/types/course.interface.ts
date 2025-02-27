@@ -1,6 +1,7 @@
 import mongoose, { Document } from "mongoose";
 import { IUserResult } from "./user.interface";
 import { ICategoryResult } from "../repositories/interfaces/ICategoryRepository";
+import { IEnrollmentDocument } from "../models/enrollmentModel";
 
 export interface ICourseResult extends Document {
   userId: mongoose.ObjectId;
@@ -36,4 +37,8 @@ export interface ICourseResultWithUserId extends Document {
   promotionalVideo: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface IEnrollmentWithCourse extends Omit<IEnrollmentDocument, "courseId"> {
+  courseId: ICourseResult;
 }

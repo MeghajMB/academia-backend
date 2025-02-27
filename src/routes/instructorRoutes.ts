@@ -31,8 +31,10 @@ const courseService = new CourseService(
   lectureRepository,
   sectionRepository,
   enrollmentRepository,
+  userRepository,
   fileService
 );
+
 const instructorService = new InstructorService(
   userRepository,
   categoryRepository,

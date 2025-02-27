@@ -24,13 +24,16 @@ const courseRepository = new CourseRepository();
 const lectureRepository = new LectureRepository();
 const sectionRepository = new SectionRepository();
 const enrollmentRepository = new EnrollmentRepository();
+const userRepository=new UserRepository()
 
 const fileService = new FileService();
+
 const courseService = new CourseService(
   courseRepository,
   lectureRepository,
   sectionRepository,
   enrollmentRepository,
+  userRepository,
   fileService
 );
 
@@ -48,6 +51,7 @@ router.post(
   verifyUser("instructor", "student", "admin"),
   paymentController.createOrder.bind(paymentController)
 );
+
 router.post(
   "/success",
   verifyToken,

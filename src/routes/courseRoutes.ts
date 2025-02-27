@@ -9,6 +9,7 @@ import { FileService } from "../services/fileService";
 import { LectureRepository } from "../repositories/lectureRepository";
 import { SectionRepository } from "../repositories/sectionRepository";
 import { EnrollmentRepository } from "../repositories/enrollmentRepository";
+import { UserRepository } from "../repositories/userRepository";
 
 const router = Router();
 
@@ -17,6 +18,7 @@ const courseRepository = new CourseRepository();
 const lectureRepository = new LectureRepository();
 const sectionRepository = new SectionRepository();
 const enrollmentRepository = new EnrollmentRepository();
+const userRepository = new UserRepository();
 
 const fileService = new FileService();
 
@@ -25,6 +27,7 @@ const courseService = new CourseService(
   lectureRepository,
   sectionRepository,
   enrollmentRepository,
+  userRepository,
   fileService
 );
 const courseController = new CourseController(courseService);
@@ -68,6 +71,13 @@ router.get(
   verifyUser("instructor", "admin"),
   courseController.getCoursesOfInstructor.bind(courseController)
 );
+//fetch the enrolled course list of user
+router.get(
+  "/enrolled-courses",
+  verifyToken,
+  verifyUser("student","instructor"),
+  courseController.getEnrolledCoursesOfUser.bind(courseController)
+);
 
 /* POST routes */
 
@@ -97,15 +107,24 @@ router.post(
   "/processed-lecture",
   courseController.addProcessedLecture.bind(courseController)
 );
+// Mark Lecture as Completed
+router.post(
+  "/progress",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.markLectureAsCompleted.bind(courseController)
+);
 
 /* PUT Routes */
 
+//Change order of lectures
 router.put(
   "/lectures/update-order",
   verifyToken,
   verifyUser("instructor"),
   courseController.changeOrderOfLecture.bind(courseController)
 );
+//edit the lecture
 router.put(
   "/edit-lecture",
   verifyToken,

@@ -6,6 +6,7 @@ import { DatabaseError } from "../errors/database-error";
 import { StatusCode } from "../enums/statusCode.enum";
 
 export class UserRepository implements IUserRepository {
+
   async createUser(user: IUser): Promise<IUserResult> {
     try {
       const createdUser = new UserModel(user);
@@ -21,6 +22,29 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
+
+  async awardPurpleCoins(userId: string, coins: number): Promise<IUserResult|null> {
+    try {
+      const user = await UserModel.findByIdAndUpdate(
+        userId,
+        { $inc: { purpleCoin: coins } }, // Increment purpleCoin by the given amount
+        { new: true } // Return the updated user document
+      );
+  
+  
+      return user;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+  
+
   async findById(id: string): Promise<IUserResult | null> {
     try {
       const user = await UserModel.findById(id);
@@ -37,6 +61,7 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
+
   async save(user: IUserResult): Promise<IUserResult> {
     try {
       return await user.save();
@@ -50,6 +75,7 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
+
   async findByEmail(email: string): Promise<IUserResult | null> {
     try {
       const user = await UserModel.findOne({ email });
@@ -66,6 +92,7 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
+
   async fetchUsersWithFilters(
     filters: { [key: string]: any },
     skip: number,
@@ -81,15 +108,14 @@ export class UserRepository implements IUserRepository {
 
       return users;
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
+      console.error(error)
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR
       );
     }
   }
+
   async fetchUsersWithPagination(
     skip: number,
     limit: number,
@@ -118,6 +144,7 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
+
   async countDocuments(key: string, value: any): Promise<number> {
     try {
       const count = await UserModel.countDocuments({ [key]: value });
@@ -132,4 +159,5 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
+
 }

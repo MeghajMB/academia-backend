@@ -160,6 +160,20 @@ export class LectureRepository implements ILectureRepository {
       );
     }
   }
+  
+  async getTotalLecturesOfCourse(courseId: string): Promise<number> {
+    try {
+      const lectureCount = await LectureModel.countDocuments({
+        courseId: courseId,
+      });
+      return lectureCount;
+    } catch (error: unknown) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 
   async editLecture(
     lectureId: string,

@@ -11,5 +11,6 @@ export interface IUserRepository {
   fetchUsersWithFilters(filters: { [key: string]: any },skip: number,limit: number,):Promise<IUserResult[] | null> 
   countDocuments(key:string,value: any): Promise<number>;
   save(user: IUserResult): Promise<IUserResult>;
+  awardPurpleCoins(userId:string,coins:number): Promise<IUserResult|null>;
   // Additional methods like getUser, updateUser, etc.
 }

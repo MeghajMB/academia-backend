@@ -25,7 +25,7 @@ export class ReviewService {
     }
 
     // Check if student has completed the course
-    const enrollment = await this.enrollmentRepository.findOneByfilter({
+    const enrollment = await this.enrollmentRepository.findOneByFilter({
       courseId: reviewData.courseId,
       studentId: studentId,
       status: "active",

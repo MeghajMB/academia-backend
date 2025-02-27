@@ -64,6 +64,7 @@ export interface ICourseService {
     userId: string
   ): Promise<ICourseResult>;
   getNewCourses(): Promise<ICourseResult[]>;
+  markLectureAsCompleted(id:string, courseId:string,lectureId:string): Promise<{message:string}|null>;
   editLecture(
     lectureId: string,
     lectureData: { title: string; videoUrl: string; duration: number },
@@ -75,6 +76,9 @@ export interface ICourseService {
     status: string,
     role: string
   ): Promise<IUpdatedSection[]>;
+  getEnrolledCoursesOfUser(
+    studentId: string
+  ): Promise<any>;
   getCourseDetails(
     courseId: string,
     userId: string
@@ -83,7 +87,7 @@ export interface ICourseService {
     courseId: string,
     userId: string,
     transactionId: string,
-    session: { session: mongoose.mongo.ClientSession }
+    session: mongoose.mongo.ClientSession
   ): Promise<IEnrollmentDocument>;
   addSection(
     section: { title: string; description: string },

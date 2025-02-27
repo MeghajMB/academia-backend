@@ -38,6 +38,7 @@ export interface ILectureRepository {
     key: string
   ): Promise<ILectureResult | null>;
   countDocumentWithSectionId(sectionId: string): Promise<number>;
+  getTotalLecturesOfCourse(courseId: string): Promise<number>;
   create(lectureData: {
     title: string;
     videoUrl: string;
