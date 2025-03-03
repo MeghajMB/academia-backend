@@ -39,7 +39,7 @@ export class BaseRepository<T extends Document> implements IRepository<T> {
     }
   }
 
-  async update(id: string, data: Partial<T>): Promise<T | null> {
+  async update(id: string, data: Partial<T>): Promise<T> {
     try {
       const updatedEntity = await this.model.findByIdAndUpdate(id, data, {
         new: true,

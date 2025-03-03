@@ -1,18 +1,19 @@
 import mongoose, { Schema, Model, Document } from "mongoose";
 
-export interface LectureDocument extends Document {
+export interface ILectureDocument extends Document {
   sectionId: mongoose.Schema.Types.ObjectId;
   courseId: mongoose.Schema.Types.ObjectId;
   title: string;
   videoUrl: string;
   duration: number;
   order: number;
-  status: "processing" | "processed";
+  status: "processing" | "processed"|"archived";
+  scheduledDeletionDate: Date
   createdAt: Date;
   updatedAt: Date;
 }
 
-const LectureSchema = new Schema<LectureDocument>(
+const LectureSchema = new Schema<ILectureDocument>(
   {
     sectionId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -30,9 +31,10 @@ const LectureSchema = new Schema<LectureDocument>(
     order: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["processing", "processed"],
+      enum: ["processing", "processed","archived"],
       default: "processing",
     },
+    scheduledDeletionDate: { type: Date }
   },
   {
     timestamps: true,
@@ -45,7 +47,7 @@ const LectureSchema = new Schema<LectureDocument>(
   }
 );
 
-export const LectureModel: Model<LectureDocument> = mongoose.model(
+export const LectureModel: Model<ILectureDocument> = mongoose.model(
   "Lecture",
   LectureSchema
 );

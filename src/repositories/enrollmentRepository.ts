@@ -52,24 +52,6 @@ export class EnrollmentRepository
     }
   }
 
-  async update(
-    id: string,
-    data: Partial<IEnrollmentDocument>
-  ): Promise<IEnrollmentDocument | null> {
-    try {
-      const enrollment = await EnrollmentModel.findByIdAndUpdate(id, data, {
-        new: true,
-      });
-      return enrollment;
-    } catch (error) {
-      console.error("Database Error in update:", error);
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-
   async findOneByFilter(
     filter: Partial<Record<keyof IEnrollmentDocument, any>>
   ): Promise<IEnrollmentDocument | null> {

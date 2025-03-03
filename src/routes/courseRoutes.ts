@@ -49,6 +49,13 @@ router.get(
   verifyUser("instructor", "student", "admin"),
   courseController.getCourseDetails.bind(courseController)
 );
+//fetch the Course Creation Details
+router.get(
+  "/create-course/:courseId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.getCourseCreationDetails.bind(courseController)
+);
 //fetch the new courses
 router.get(
   "/new",
@@ -131,6 +138,20 @@ router.put(
   verifyUser("instructor"),
   courseController.editLecture.bind(courseController)
 );
+//edit the Section
+router.put(
+  "/edit-section",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.editSection.bind(courseController)
+);
+//Edit Course
+router.put(
+  "/edit-course/:courseId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.editCourseCreationDetails.bind(courseController)
+);
 
 /* PATCH Routes */
 
@@ -147,6 +168,23 @@ router.patch(
   verifyToken,
   verifyUser("instructor"),
   courseController.listCourse.bind(courseController)
+);
+
+/* DELETE Routes */
+
+//delete course lecture
+router.delete(
+  "/delete-lecture/:lectureId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.deleteLecture.bind(courseController)
+);
+//delete course section
+router.delete(
+  "/delete-section/:sectionId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.deleteSection.bind(courseController)
 );
 
 export default router;

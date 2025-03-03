@@ -8,8 +8,16 @@ import {
   ICourseResultWithUserId,
 } from "../types/course.interface";
 import { ICourse, ICourseRepository } from "./interfaces/ICourseRepository";
+import { BaseRepository } from "./base/baseRepository";
 
-export class CourseRepository implements ICourseRepository {
+export class CourseRepository
+  extends BaseRepository<ICourseDocument>
+  implements ICourseRepository
+{
+  constructor() {
+    super(CourseModel);
+  }
+  
   async createCourse(course: ICourse, session: object): Promise<ICourseResult> {
     try {
       const createdCourse = new CourseModel(course);
@@ -22,20 +30,8 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
-  async findById(courseId: string): Promise<ICourseResult | null> {
-    try {
-      const existingCourse = await CourseModel.findById(courseId).populate(
-        "category"
-      );
-      return existingCourse;
-    } catch (error: unknown) {
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-  async findByIdWithInstructorData(
+
+  async findByIdWithPopulatedData(
     courseId: string
   ): Promise<ICourseResultWithUserId | null> {
     try {
@@ -99,6 +95,7 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+
   async findCoursesWithFilter(
     filter: FilterQuery<ICourseDocument>
   ): Promise<ICourseResult[] | null> {
@@ -136,7 +133,7 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
-  
+
   async countDocuments(key: string, value: string): Promise<number> {
     try {
       const count = await CourseModel.countDocuments({ key: value });
@@ -219,6 +216,7 @@ export class CourseRepository implements ICourseRepository {
       );
     }
   }
+
   async approveCourseReviewRequest(
     courseId: string
   ): Promise<ICourseResult | null> {

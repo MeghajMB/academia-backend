@@ -29,6 +29,10 @@ import {
 import { IEnrollmentRepository } from "../repositories/interfaces/IEnrollmentRepository";
 import { IEnrollmentDocument } from "../models/enrollmentModel";
 import { IUserRepository } from "../repositories/interfaces/IUserRepository";
+import { ICourseDocument } from "../models/courseModel";
+import { ILectureDocument } from "../models/lectureModel";
+import moment from "moment";
+import { ISectionDocument } from "../models/sectionModel";
 
 export class CourseService implements ICourseService {
   constructor(
@@ -83,12 +87,10 @@ export class CourseService implements ICourseService {
     if (draggedLectureId == targetLectureId) {
       return { message: "success" };
     }
-    const draggedLecture = await this.lectureRepository.findById(
-      draggedLectureId
-    );
-    const targetLecture = await this.lectureRepository.findById(
-      targetLectureId
-    );
+    const draggedLecture =
+      await this.lectureRepository.findByIdWithPopulatedData(draggedLectureId);
+    const targetLecture =
+      await this.lectureRepository.findByIdWithPopulatedData(targetLectureId);
     if (
       !draggedLecture ||
       !targetLecture ||
@@ -125,14 +127,45 @@ export class CourseService implements ICourseService {
     lectureData: { title: string; videoUrl: string; duration: number },
     id: string
   ): Promise<ILectureResult> {
-    const updatedLectures = await this.lectureRepository.editLecture(
-      lectureId,
-      lectureData
-    );
-    if (!updatedLectures) {
-      throw new BadRequestError("Bad request");
+    try {
+      const updatedLectures = await this.lectureRepository.editLecture(
+        lectureId,
+        lectureData
+      );
+      if (!updatedLectures) {
+        throw new BadRequestError("Bad request");
+      }
+      return updatedLectures;
+    } catch (error) {
+      throw error;
     }
-    return updatedLectures;
+  }
+
+  async editSection(
+    sectionId: string,
+    sectionData: { title: string; description: string },
+    instructorId: string
+  ): Promise<ISectionResult> {
+    try {
+      const existingSection =
+        await this.sectionRepository.findByIdWithPopulatedData(sectionId);
+      if (
+        !existingSection ||
+        existingSection.courseId.userId.toString() !== instructorId
+      ) {
+        throw new BadRequestError("Something happened");
+      }
+      const updatedLectures = await this.sectionRepository.update(
+        sectionId,
+        sectionData
+      );
+      if (!updatedLectures) {
+        throw new BadRequestError("Bad request");
+      }
+      return updatedLectures;
+    } catch (error) {
+      throw error;
+    }
   }
   //write code for generating certificate and updating the status to completed
   async markLectureAsCompleted(
@@ -160,7 +193,7 @@ export class CourseService implements ICourseService {
         );
 
         // Fetch course once to get instructor (avoid redundant DB calls)
-        const course = await this.courseRepository.findById(
+        const course = await this.courseRepository.findByIdWithPopulatedData(
           String(enrollment.courseId)
         );
         if (!course) {
@@ -232,28 +265,138 @@ export class CourseService implements ICourseService {
     courseId: string,
     userId: string
   ): Promise<IGetCourseDetails> {
-    const course = await this.courseRepository.findByIdWithInstructorData(
+    try {
+      const course = await this.courseRepository.findByIdWithPopulatedData(
+        courseId
+      );
+
+      if (!course || course.status !== "listed") {
+        throw new BadRequestError("No course");
+      }
+
+      let enrollmentStatus;
+
+      const enrolledCourse = await this.enrollmentRepository.findOneByFilter({
+        courseId,
+        studentId: userId,
+      });
+
+      if (course.userId.id == userId || enrolledCourse) {
+        enrollmentStatus = "enrolled";
+      } else {
+        enrollmentStatus = "not enrolled";
+      }
+
+      const image = await this.fileService.generateGetSignedUrl(
+        course.imageThumbnail
+      );
+      const video = await this.fileService.generateGetSignedUrl(
+        course.promotionalVideo
+      );
+
+      const courseDetails = {
+        courseId: course._id as string,
+        instructorId: course.userId.id,
+        instructorName: course.userId.name,
+        totalDuration: course.totalDuration,
+        totalLectures: course.totalLectures,
+        imageThumbnail: image,
+        promotionalVideo: video,
+        canReview: !!enrolledCourse,
+        hasReviewed: !!enrolledCourse?.reviewStatus,
+        category: course.category.name,
+        title: course.title,
+        price: course.price,
+        subtitle: course.subtitle,
+        description: course.description,
+        enrollmentStatus: enrollmentStatus as "enrolled" | "not enrolled",
+      };
+
+      return courseDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async editCourseCreationDetails(
+    courseId: string,
+    userId: string,
+    courseData: ICreateCourse
+  ): Promise<ICourseResult> {
+    try {
+      const course = await this.courseRepository.findById(courseId);
+
+      if (!course) {
+        throw new BadRequestError("No course");
+      }
+      if (course.userId.toString() !== userId) {
+        throw new AppError(
+          "You dont havve acces to this file",
+          StatusCode.FORBIDDEN
+        );
+      }
+      let updatedData: {
+        category: mongoose.Types.ObjectId;
+        description: string;
+        price: number;
+        subtitle: string;
+        title: string;
+        imageThumbnail?: string;
+        promotionalVideo?: string;
+      } = {
+        category: new mongoose.Types.ObjectId(courseData.category),
+        description: courseData.description,
+        price: courseData.price,
+        subtitle: courseData.subtitle,
+        title: courseData.title,
+      };
+
+      if (courseData.imageThumbnail) {
+        updatedData.imageThumbnail = courseData.imageThumbnail;
+      }
+      if (courseData.promotionalVideo) {
+        updatedData.imageThumbnail = courseData.promotionalVideo;
+      }
+      const updatedCourse = await this.courseRepository.update(
+        courseId,
+        updatedData as unknown as Partial<ICourseDocument>
+      );
+
+      return updatedCourse;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getCourseCreationDetails(
+    courseId: string,
+    userId: string
+  ): Promise<{
+    courseId: string;
+    imageThumbnail: string;
+    promotionalVideo: string;
+    category: string;
+    title: string;
+    price: number;
+    subtitle: string;
+    description: string;
+  }> {
+    const course = await this.courseRepository.findByIdWithPopulatedData(
       courseId
     );
 
-    if (!course || course.status !== "listed") {
+    if (!course) {
       throw new BadRequestError("No course");
     }
-
-    let enrollmentStatus;
-
-    const enrolledCourse = await this.enrollmentRepository.findOneByFilter({
-      courseId,
-      studentId: userId,
-    });
-    if (enrolledCourse) {
+    if (course.userId.id !== userId) {
+      throw new AppError(
+        "You dont havve acces to this file",
+        StatusCode.FORBIDDEN
+      );
     }
-    if (course.userId.id == userId || enrolledCourse) {
-      enrollmentStatus = "enrolled";
-    } else {
-      enrollmentStatus = "not enrolled";
-    }
-
+    const sectionCount = await this.sectionRepository.countDocumentsByCourseId(
+      courseId
+    );
     const image = await this.fileService.generateGetSignedUrl(
       course.imageThumbnail
     );
@@ -263,20 +406,19 @@ export class CourseService implements ICourseService {
 
     const courseDetails = {
       courseId: course._id as string,
-      instructorId: course.userId.id,
-      instructorName: course.userId.name,
-      totalDuration: course.totalDuration,
-      totalLectures: course.totalLectures,
       imageThumbnail: image,
       promotionalVideo: video,
-      canReview: !!enrolledCourse,
-      hasReviewed: !!enrolledCourse?.reviewStatus,
-      category: course.category.name,
+      category: course.category.id as string,
       title: course.title,
       price: course.price,
       subtitle: course.subtitle,
       description: course.description,
-      enrollmentStatus: enrollmentStatus as "enrolled" | "not enrolled",
+      rejectedReason: course.rejectedReason,
+      canSubmitReview: sectionCount
+        ? course.status !== "listed" && course.status !== "pending"
+          ? true
+          : false
+        : false,
     };
 
     return courseDetails;
@@ -373,6 +515,7 @@ export class CourseService implements ICourseService {
         courseId: section.courseId.toString(),
         title: section.title,
         order: section.order,
+        description: section.description,
         lectures: lectures
           .filter(
             (lecture) =>
@@ -430,6 +573,72 @@ export class CourseService implements ICourseService {
       throw new BadRequestError("No course");
     }
     return course;
+  }
+
+  async deleteLecture(
+    instructorId: string,
+    lectureId: string
+  ): Promise<{ message: string; status: "archived" | "deleted" }> {
+    try {
+      const lecture = await this.lectureRepository.findByIdWithPopulatedData(
+        lectureId
+      );
+      if (lecture?.courseId.userId.toString() !== instructorId) {
+        throw new AppError(
+          "Youd dont have the necessary permissions",
+          StatusCode.FORBIDDEN
+        );
+      }
+      if (lecture.courseId.status === "listed") {
+        const scheduledDeletionDate = moment().add(30, "days").toDate();
+        await this.lectureRepository.update(lectureId, {
+          status: "archived",
+          scheduledDeletionDate,
+        });
+      } else {
+        await this.lectureRepository.delete(lectureId);
+      }
+
+      return {
+        message: "success",
+        status: lecture.courseId.status === "listed" ? "archived" : "deleted",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteSection(
+    instructorId: string,
+    sectionId: string
+  ): Promise<{ message: string; status: "archived" | "deleted" }> {
+    try {
+      const section = await this.sectionRepository.findByIdWithPopulatedData(
+        sectionId
+      );
+      if (section?.courseId.userId.toString() !== instructorId) {
+        throw new AppError(
+          "Youd dont have the necessary permissions",
+          StatusCode.FORBIDDEN
+        );
+      }
+      if (section.courseId.status === "listed") {
+        const scheduledDeletionDate = moment().add(30, "days").toDate();
+        await this.lectureRepository.scheduleDeletionDateForLectures(
+          sectionId,
+          scheduledDeletionDate
+        );
+      } else {
+        await this.lectureRepository.deleteLecturesByFilter({ sectionId });
+      }
+
+      return {
+        message: "success",
+        status: section.courseId.status === "listed" ? "archived" : "deleted",
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async submitCourseForReview(
@@ -502,7 +711,9 @@ export class CourseService implements ICourseService {
       courseId,
       order: sectionCount,
     };
-    const section = await this.sectionRepository.create(updatedSectionData);
+    const section = await this.sectionRepository.create(
+      updatedSectionData as unknown as Partial<ISectionDocument>
+    );
     if (!section) {
       throw new BadRequestError("No course");
     }
@@ -530,7 +741,9 @@ export class CourseService implements ICourseService {
       order: lectureCount,
     };
 
-    const newLecture = await this.lectureRepository.create(updatedLectureData);
+    const newLecture = await this.lectureRepository.create(
+      updatedLectureData as unknown as Partial<ILectureDocument>
+    );
     //send an event to sqs
     const params = {
       MessageBody: JSON.stringify({
@@ -587,12 +800,13 @@ export class CourseService implements ICourseService {
     url: string;
   }> {
     try {
-      const existingCourse = await this.courseRepository.findById(courseId);
+      const existingCourse =
+        await this.courseRepository.findByIdWithPopulatedData(courseId);
 
       if (!existingCourse) {
         throw new BadRequestError("Course not found");
       }
-      if (role !== "admin" && existingCourse.userId!.toString() !== userId) {
+      if (role !== "admin" && existingCourse.userId!.id.toString() !== userId) {
         const enrolledCourse = await this.enrollmentRepository.findOneByFilter({
           studentId: userId,
           courseId,
@@ -605,7 +819,8 @@ export class CourseService implements ICourseService {
         }
       }
 
-      const existingLecture = await this.lectureRepository.findById(lectureId);
+      const existingLecture =
+        await this.lectureRepository.findByIdWithPopulatedData(lectureId);
       if (!existingLecture) {
         throw new BadRequestError("Lecture not found");
       }

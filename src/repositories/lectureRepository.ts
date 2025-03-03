@@ -1,33 +1,26 @@
 import { BulkWriteResult } from "mongodb";
 import { StatusCode } from "../enums/statusCode.enum";
 import { DatabaseError } from "../errors/database-error";
-import { LectureModel } from "../models/lectureModel";
+import { ILectureDocument, LectureModel } from "../models/lectureModel";
 import {
   ILectureRepository,
   ILectureResult,
   ILectureResultPopulated,
 } from "./interfaces/ILectureRepository";
 import mongoose from "mongoose";
+import { BaseRepository } from "./base/baseRepository";
 
-export class LectureRepository implements ILectureRepository {
-  async create(lectureData: {
-    title: string;
-    videoUrl: string;
-    duration: number;
-    order: number;
-  }): Promise<ILectureResult> {
-    try {
-      const newLecture = await LectureModel.create(lectureData);
-      return newLecture;
-    } catch (error: unknown) {
-      console.log(error);
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
+export class LectureRepository
+  extends BaseRepository<ILectureDocument>
+  implements ILectureRepository
+{
+  constructor() {
+    super(LectureModel);
   }
-  async findById(lectureId: string): Promise<ILectureResultPopulated | null> {
+
+  async findByIdWithPopulatedData(
+    lectureId: string
+  ): Promise<ILectureResultPopulated | null> {
     try {
       const lecture = await LectureModel.findById(lectureId).populate(
         "courseId"
@@ -51,15 +44,15 @@ export class LectureRepository implements ILectureRepository {
     targetOrder: number
   ): Promise<ILectureResult | null> {
     try {
-      if(draggedOrder>targetOrder){
-      await LectureModel.updateMany(
-        {
-          sectionId,
-          order: { $gte: targetOrder, $lt: draggedOrder },
-        },
-        { $inc: { order: 1 } }
-      );
-      }else{
+      if (draggedOrder > targetOrder) {
+        await LectureModel.updateMany(
+          {
+            sectionId,
+            order: { $gte: targetOrder, $lt: draggedOrder },
+          },
+          { $inc: { order: 1 } }
+        );
+      } else {
         await LectureModel.updateMany(
           {
             sectionId,
@@ -68,7 +61,6 @@ export class LectureRepository implements ILectureRepository {
           { $inc: { order: -1 } }
         );
       }
-
 
       const updatedLecture = await LectureModel.findByIdAndUpdate(lectureId, {
         order: targetOrder,
@@ -92,17 +84,17 @@ export class LectureRepository implements ILectureRepository {
   ): Promise<ILectureResult | null> {
     try {
       await LectureModel.updateMany(
-        { draggedSectionId, order: { $gt: draggedLectureOrder } },
+        { sectionId: draggedSectionId, order: { $gte: draggedLectureOrder } },
         { $inc: { order: -1 } }
       );
 
       await LectureModel.updateMany(
-        { targetSectionId, order: { $gte: targetOrder } },
+        { sectionId: targetSectionId, order: { $gte: targetOrder } },
         { $inc: { order: 1 } }
       );
       const lecture = await LectureModel.findByIdAndUpdate(
         lectureId,
-        { sectionId: targetSectionId },
+        { sectionId: targetSectionId, order: targetOrder },
         { new: true }
       );
       return lecture;
@@ -160,7 +152,7 @@ export class LectureRepository implements ILectureRepository {
       );
     }
   }
-  
+
   async getTotalLecturesOfCourse(courseId: string): Promise<number> {
     try {
       const lectureCount = await LectureModel.countDocuments({
@@ -170,6 +162,37 @@ export class LectureRepository implements ILectureRepository {
     } catch (error: unknown) {
       throw new DatabaseError(
         "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async deleteLecturesByFilter(
+    filters: Partial<Record<keyof ILectureDocument, any>>
+  ): Promise<number> {
+    try {
+      const result = await LectureModel.deleteMany(filters);
+      return result.deletedCount; // Returns the number of deleted lectures
+    } catch (error: unknown) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async scheduleDeletionDateForLectures(
+    sectionId: string,
+    scheduledDeletionDate: Date
+  ): Promise<void> {
+    try {
+      await LectureModel.updateMany(
+        { sectionId },
+        { $set: { scheduledDeletionDate, status: "archived" } }
+      );
+    } catch (error) {
+      throw new DatabaseError(
+        "Failed to schedule deletion for lectures",
         StatusCode.INTERNAL_SERVER_ERROR
       );
     }

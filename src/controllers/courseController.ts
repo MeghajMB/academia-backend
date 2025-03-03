@@ -101,7 +101,9 @@ export class CourseController {
     try {
       const { id } = req.verifiedUser!;
 
-      const enrolledCourses = await this.courseService.getEnrolledCoursesOfUser(id);
+      const enrolledCourses = await this.courseService.getEnrolledCoursesOfUser(
+        id
+      );
       res.status(StatusCode.OK).send(enrolledCourses);
     } catch (error) {
       next(error);
@@ -153,6 +155,50 @@ export class CourseController {
       const curriculum = await this.courseService.getCourseDetails(
         courseId,
         userId
+      );
+      res.status(StatusCode.OK).send(curriculum);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getCourseCreationDetails(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { courseId } = req.params;
+      const userId = req.verifiedUser?.id!;
+      if (!courseId) {
+        throw new BadRequestError("Provide the id");
+      }
+      const curriculum = await this.courseService.getCourseCreationDetails(
+        courseId,
+        userId
+      );
+      res.status(StatusCode.OK).send(curriculum);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async editCourseCreationDetails(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { courseId } = req.params;
+      const courseDetails = req.body;
+      const userId = req.verifiedUser?.id!;
+      if (!courseId) {
+        throw new BadRequestError("Provide the id");
+      }
+      const curriculum = await this.courseService.editCourseCreationDetails(
+        courseId,
+        userId,
+        courseDetails
       );
       res.status(StatusCode.OK).send(curriculum);
     } catch (error) {
@@ -308,6 +354,41 @@ export class CourseController {
     }
   }
 
+  async deleteLecture(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.verifiedUser!;
+      const { lectureId } = req.params;
+      if (!lectureId || !id) {
+        throw new BadRequestError("Must inclue every details");
+      }
+      const courses = await this.courseService.deleteLecture(id, lectureId);
+      res.status(StatusCode.OK).send(courses);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteSection(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.verifiedUser!;
+      const { sectionId } = req.params;
+      if (!sectionId || !id) {
+        throw new BadRequestError("Must inclue every details");
+      }
+      const courses = await this.courseService.deleteSection(id, sectionId);
+      res.status(StatusCode.OK).send(courses);
+    } catch (error) {
+      next(error);
+    }
+  }
   async submitCourseForReview(
     req: Request,
     res: Response,
@@ -418,6 +499,32 @@ export class CourseController {
       const response = await this.courseService.editLecture(
         lectureId,
         lectureData,
+        id
+      );
+      res.status(StatusCode.OK).send(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+  async editSection(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.verifiedUser!;
+      const { sectionId, sectionData } = req.body as {
+        sectionId: string;
+        sectionData: { title: string; description: string };
+      };
+
+      if (!sectionId || !sectionData) {
+        throw new BadRequestError("Must inclue every details");
+      }
+
+      const response = await this.courseService.editSection(
+        sectionId,
+        sectionData,
         id
       );
       res.status(StatusCode.OK).send(response);
