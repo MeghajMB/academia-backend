@@ -1,23 +1,27 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IEnrollmentDocument extends Document {
-  studentId:  mongoose.Schema.Types.ObjectId;
+  studentId: mongoose.Schema.Types.ObjectId;
   courseId: mongoose.Schema.Types.ObjectId;
   transactionId: mongoose.Schema.Types.ObjectId; // Payment reference
   purchaseDate: Date;
   status: string;
-  reviewStatus:boolean;
+  reviewStatus: boolean;
   progress: {
     completedLectures: string[];
     percentage: number;
+    awarded50Percent: boolean,
+    awarded100Percent: boolean, 
   };
+  completedAt?: Date;
+  certificateUrl?: string; 
   createdAt: Date;
   updatedAt: Date;
 }
 const EnrollmentSchema: Schema<IEnrollmentDocument> = new mongoose.Schema(
   {
     studentId: {
-      type:  mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
@@ -37,16 +41,20 @@ const EnrollmentSchema: Schema<IEnrollmentDocument> = new mongoose.Schema(
       enum: ["active", "refunded", "expired"],
       default: "active",
     },
-    reviewStatus:{
-      type:Boolean,
-      default:false
-    },
+    reviewStatus: {
+      type: Boolean,
+      default: false,
+    }, // check if the user has reviewed
     progress: {
       completedLectures: [
         { type: mongoose.Schema.Types.ObjectId, ref: "Lecture" },
       ], // Track completed lectures
       percentage: { type: Number, default: 0 }, // Course completion percentage
+      awarded50Percent: { type: Boolean, default: false },
+      awarded100Percent: { type: Boolean, default: false }, 
     },
+    completedAt: { type: Date, default: null },
+    certificateUrl: { type: String, default: null },
   },
   {
     timestamps: true,

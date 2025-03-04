@@ -17,18 +17,22 @@ export class FileService implements IFileService {
     isPublic: boolean = false,
     isTemp: boolean = false
   ): Promise<string> {
-    const bucketName = isTemp ? this.tempBucketName : this.bucketName;
-    const command = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-      ContentType: contentType,
-    });
+    try {
+      const bucketName = isTemp ? this.tempBucketName : this.bucketName;
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        ContentType: contentType,
+      });
 
-    const signedUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: 3600, // URL expiration time
-    });
+      const signedUrl = await getSignedUrl(s3Client, command, {
+        expiresIn: 3600, // URL expiration time
+      });
 
-    return signedUrl;
+      return signedUrl;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async generateGetSignedUrl(key: string) {

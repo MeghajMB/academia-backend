@@ -24,6 +24,10 @@ import cors from "cors";
 import morgan from "morgan";
 import { StatusCode } from "./enums/statusCode.enum";
 
+//jobs
+import "./jobs/deleteExpiredLecture";
+
+
 const app = express();
 
 app.use(

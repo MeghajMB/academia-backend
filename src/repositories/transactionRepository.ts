@@ -9,7 +9,7 @@ export class TransactionRepository implements ITransactionRepository {
     purchaseType: "course" | "service" | "coins",
     purchaseId: string,
     paymentId: string,
-    session: { session: mongoose.mongo.ClientSession }
+    session: mongoose.mongo.ClientSession 
   ): Promise<ITransaction> {
     const transaction = new Transaction({
       userId,
@@ -20,7 +20,7 @@ export class TransactionRepository implements ITransactionRepository {
       paymentId,
     });
 
-    await transaction.save(session);
+    await transaction.save({session});
     return transaction;
   }
 

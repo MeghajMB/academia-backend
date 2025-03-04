@@ -64,26 +64,55 @@ export interface ICourseService {
     userId: string
   ): Promise<ICourseResult>;
   getNewCourses(): Promise<ICourseResult[]>;
+  markLectureAsCompleted(
+    id: string,
+    courseId: string,
+    lectureId: string
+  ): Promise<{ message: string } | null>;
   editLecture(
     lectureId: string,
     lectureData: { title: string; videoUrl: string; duration: number },
     id: string
   ): Promise<ILectureResult>;
+  editSection(
+    sectionId : string,
+    sectionData: { title: string; description: string },
+    instructorId: string
+  ): Promise<ISectionResult>;
   getCurriculum(
     courseId: string,
     userId: string,
     status: string,
     role: string
   ): Promise<IUpdatedSection[]>;
+  getEnrolledCoursesOfUser(studentId: string): Promise<any>;
   getCourseDetails(
     courseId: string,
     userId: string
   ): Promise<IGetCourseDetails>;
+  getCourseCreationDetails(
+    courseId: string,
+    userId: string
+  ): Promise<{
+    courseId: string;
+    imageThumbnail: string;
+    promotionalVideo: string;
+    category: string;
+    title: string;
+    price: number;
+    subtitle: string;
+    description: string;
+  }>;
+  editCourseCreationDetails(
+    courseId:string,
+    userId: string,
+    courseData: ICreateCourse,
+  ): Promise<ICourseResult>;
   enrollStudent(
     courseId: string,
     userId: string,
     transactionId: string,
-    session: { session: mongoose.mongo.ClientSession }
+    session: mongoose.mongo.ClientSession
   ): Promise<IEnrollmentDocument>;
   addSection(
     section: { title: string; description: string },
@@ -104,6 +133,14 @@ export interface ICourseService {
     instructorId: string,
     courseId: string
   ): Promise<{ message: string }>;
+  deleteLecture(
+    instructorId: string,
+    lectureId: string
+  ): Promise<{ message: string,status:"archived"|"deleted" }>;
+  deleteSection(
+    instructorId: string,
+    sectionId: string
+  ): Promise<{ message: string,status:"archived"|"deleted" }>;
   listCourse(
     instructorId: string,
     courseId: string

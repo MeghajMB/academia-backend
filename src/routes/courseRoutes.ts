@@ -9,6 +9,7 @@ import { FileService } from "../services/fileService";
 import { LectureRepository } from "../repositories/lectureRepository";
 import { SectionRepository } from "../repositories/sectionRepository";
 import { EnrollmentRepository } from "../repositories/enrollmentRepository";
+import { UserRepository } from "../repositories/userRepository";
 
 const router = Router();
 
@@ -17,6 +18,7 @@ const courseRepository = new CourseRepository();
 const lectureRepository = new LectureRepository();
 const sectionRepository = new SectionRepository();
 const enrollmentRepository = new EnrollmentRepository();
+const userRepository = new UserRepository();
 
 const fileService = new FileService();
 
@@ -25,6 +27,7 @@ const courseService = new CourseService(
   lectureRepository,
   sectionRepository,
   enrollmentRepository,
+  userRepository,
   fileService
 );
 const courseController = new CourseController(courseService);
@@ -45,6 +48,13 @@ router.get(
   verifyToken,
   verifyUser("instructor", "student", "admin"),
   courseController.getCourseDetails.bind(courseController)
+);
+//fetch the Course Creation Details
+router.get(
+  "/create-course/:courseId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.getCourseCreationDetails.bind(courseController)
 );
 //fetch the new courses
 router.get(
@@ -67,6 +77,13 @@ router.get(
   verifyToken,
   verifyUser("instructor", "admin"),
   courseController.getCoursesOfInstructor.bind(courseController)
+);
+//fetch the enrolled course list of user
+router.get(
+  "/enrolled-courses",
+  verifyToken,
+  verifyUser("student","instructor"),
+  courseController.getEnrolledCoursesOfUser.bind(courseController)
 );
 
 /* POST routes */
@@ -97,6 +114,44 @@ router.post(
   "/processed-lecture",
   courseController.addProcessedLecture.bind(courseController)
 );
+// Mark Lecture as Completed
+router.post(
+  "/progress",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.markLectureAsCompleted.bind(courseController)
+);
+
+/* PUT Routes */
+
+//Change order of lectures
+router.put(
+  "/lectures/update-order",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.changeOrderOfLecture.bind(courseController)
+);
+//edit the lecture
+router.put(
+  "/edit-lecture",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.editLecture.bind(courseController)
+);
+//edit the Section
+router.put(
+  "/edit-section",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.editSection.bind(courseController)
+);
+//Edit Course
+router.put(
+  "/edit-course/:courseId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.editCourseCreationDetails.bind(courseController)
+);
 
 /* PATCH Routes */
 
@@ -115,20 +170,21 @@ router.patch(
   courseController.listCourse.bind(courseController)
 );
 
-/* PUT Routes */
-router.put(
-  "/lectures/update-order",
-  verifyToken,
-  verifyUser("instructor"),
-  courseController.changeOrderOfLecture.bind(courseController)
-);
-router.put(
-  "/edit-lecture",
-  verifyToken,
-  verifyUser("instructor"),
-  courseController.editLecture.bind(courseController)
-);
+/* DELETE Routes */
 
-//list the course
+//delete course lecture
+router.delete(
+  "/delete-lecture/:lectureId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.deleteLecture.bind(courseController)
+);
+//delete course section
+router.delete(
+  "/delete-section/:sectionId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.deleteSection.bind(courseController)
+);
 
 export default router;

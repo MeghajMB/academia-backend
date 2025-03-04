@@ -1,17 +1,28 @@
 import { StatusCode } from "../enums/statusCode.enum";
 import { DatabaseError } from "../errors/database-error";
-import { SectionModel } from "../models/sectionModel";
+import { ISectionDocument, SectionModel } from "../models/sectionModel";
+import { BaseRepository } from "./base/baseRepository";
 import {
   ISectionRepository,
   ISectionResult,
+  ISectionResultWithCourse,
 } from "./interfaces/ISectionRepository";
 
-export class SectionRepository implements ISectionRepository {
-
-  async findById(sectionId: string): Promise<ISectionResult | null> {
+export class SectionRepository
+  extends BaseRepository<ISectionDocument>
+  implements ISectionRepository
+{
+  constructor() {
+    super(SectionModel);
+  }
+  async findByIdWithPopulatedData(
+    sectionId: string
+  ): Promise<ISectionResultWithCourse | null> {
     try {
-      const section = await SectionModel.findById(sectionId);
-      return section;
+      const section = await SectionModel.findById(sectionId).populate(
+        "courseId"
+      );
+      return section as unknown as ISectionResultWithCourse | null;
     } catch (error: unknown) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -19,6 +30,7 @@ export class SectionRepository implements ISectionRepository {
       );
     }
   }
+
   async getSectionsWithCourseId(courseId: string): Promise<ISectionResult[]> {
     try {
       const sections = await SectionModel.find({ courseId: courseId }).sort({
@@ -32,27 +44,12 @@ export class SectionRepository implements ISectionRepository {
       );
     }
   }
+
   async countDocumentsByCourseId(courseId: string): Promise<number> {
     try {
       const sectionCount = await SectionModel.countDocuments({ courseId });
       return sectionCount;
     } catch (error: unknown) {
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-  async create(sectionData: {
-    title: string;
-    description: string;
-    courseId: string;
-  }): Promise<ISectionResult> {
-    try {
-      const newSection = new SectionModel(sectionData);
-      await newSection.save();
-      return newSection;
-    } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR

@@ -9,7 +9,6 @@ export class ReviewController {
 
   async addReview(req: Request, res: Response, next: NextFunction) {
     try {
-        console.log("asd")
       const user = req.verifiedUser!;
       const { courseId, rating, comment } = req.body;
 
@@ -27,7 +26,7 @@ export class ReviewController {
     }
   }
 
-  async getReviewsByCourse(req: Request, res: Response, next: NextFunction) {
+  async getReviewsOfCourse(req: Request, res: Response, next: NextFunction) {
     try {
       const { courseId } = req.params;
       const reviews = await this.reviewService.getReviewsByCourse(courseId);
@@ -48,15 +47,29 @@ export class ReviewController {
     }
   }
 
-  async deleteReview(req: Request, res: Response, next: NextFunction) {
+  async getReviewStatiticsOfCourse(req: Request, res: Response, next: NextFunction) {
     try {
-      const { reviewId } = req.params;
-      const user = req.verifiedUser!;
-      await this.reviewService.deleteReview(reviewId, user.id);
-      res.status(StatusCode.OK).json({ message: "Review deleted successfully" });
+      const { courseId } = req.params;
+      if(!courseId){
+        throw new BadRequestError("Provide the courseId")
+      }
+      const reviews = await this.reviewService.getReviewStatiticsOfCourse(courseId);
+      res.status(StatusCode.OK).send(reviews);
     } catch (error) {
       next(error);
     }
   }
 
+  async deleteReview(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { reviewId } = req.params;
+      const user = req.verifiedUser!;
+      await this.reviewService.deleteReview(reviewId, user.id);
+      res
+        .status(StatusCode.OK)
+        .json({ message: "Review deleted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

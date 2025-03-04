@@ -106,14 +106,14 @@ export class PaymentService implements IPaymentService {
           paymentDetails.paymentType,
           paymentDetails.itemId,
           razorpayPaymentId,
-          { session }
+          session 
         );
 
         enrollent = await this.courseService.enrollStudent(
           paymentDetails.itemId,
           paymentDetails.userId,
           transaction._id as string,
-          { session }
+          session 
         );
 
       } else {

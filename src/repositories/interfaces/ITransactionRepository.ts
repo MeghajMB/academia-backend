@@ -8,7 +8,7 @@ export interface ITransactionRepository {
     purchaseType: "course" | "service" | "coins",
     purchaseId: string,
     paymentId:string,
-    session:{session:mongoose.mongo.ClientSession}
+    session:mongoose.mongo.ClientSession
   ): Promise<ITransaction>;
   getUserTransactions(userId: string): Promise<any>;
   // Additional methods like getUser, updateUser, etc.
