@@ -5,16 +5,43 @@ import { ReviewRepository } from "../repositories/reviewRepository";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
 import { EnrollmentRepository } from "../repositories/enrollmentRepository";
+import { CourseRepository } from "../repositories/courseRepository";
 
 const router = Router();
 
 // Dependency Injection
 const reviewRepository = new ReviewRepository();
 const enrollmentRepository = new EnrollmentRepository();
-const reviewService = new ReviewService(reviewRepository, enrollmentRepository);
+const courseRepository = new CourseRepository();
+const reviewService = new ReviewService(reviewRepository, enrollmentRepository,courseRepository);
 const reviewController = new ReviewController(reviewService);
 
 // Routes
+
+/* GET Routes */
+
+//get reviews of a course
+router.get(
+  "/get/:courseId",
+  reviewController.getReviewsOfCourse.bind(reviewController)
+);
+
+//get reviews of a student
+router.get(
+  "/student/:studentId",
+  reviewController.getReviewsByStudent.bind(reviewController)
+);
+
+//get the statictics of a course
+router.get(
+  "/course/statitics/:courseId",
+  reviewController.getReviewStatiticsOfCourse.bind(reviewController)
+);
+
+
+/* POST Routes */
+
+//add a review
 router.post(
   "/add-review",
   verifyToken,
@@ -22,16 +49,9 @@ router.post(
   reviewController.addReview.bind(reviewController)
 );
 
-router.get(
-  "/get/:courseId",
-  reviewController.getReviewsByCourse.bind(reviewController)
-);
+/* DELETE Routes */
 
-router.get(
-  "/student/:studentId",
-  reviewController.getReviewsByStudent.bind(reviewController)
-);
-
+//delete review
 router.delete(
   "/:reviewId",
   verifyToken,

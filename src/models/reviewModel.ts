@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-export interface ReviewDocument extends Document {
+export interface IReviewDocument extends Document {
   courseId: mongoose.Schema.Types.ObjectId|string; // The course being reviewed
   studentId: mongoose.Schema.Types.ObjectId|string; // The student who wrote the review
   rating: number; // Rating (1-5)
@@ -9,7 +9,7 @@ export interface ReviewDocument extends Document {
   updatedAt: Date;
 }
 
-const ReviewSchema: Schema<ReviewDocument> = new mongoose.Schema(
+const ReviewSchema: Schema<IReviewDocument> = new mongoose.Schema(
   {
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -44,5 +44,5 @@ const ReviewSchema: Schema<ReviewDocument> = new mongoose.Schema(
   }
 );
 
-export const ReviewModel: Model<ReviewDocument> =
-  mongoose.model<ReviewDocument>("Review", ReviewSchema);
+export const ReviewModel: Model<IReviewDocument> =
+  mongoose.model<IReviewDocument>("Review", ReviewSchema);

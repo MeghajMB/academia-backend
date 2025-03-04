@@ -1,21 +1,34 @@
 import mongoose from "mongoose";
 import { ReviewModel } from "../models/reviewModel";
-import { ReviewDocument } from "../models/reviewModel";
+import { IReviewDocument } from "../models/reviewModel";
 import { DatabaseError } from "../errors/database-error";
 import { StatusCode } from "../enums/statusCode.enum";
+import { ReviewWithPopulatedStudentId } from "../types/review.interface";
+import { BaseRepository } from "./base/baseRepository";
+import { IReviewRepository } from "./interfaces/IReviewRepository";
 
-export class ReviewRepository {
-  async createReview(reviewData: Partial<ReviewDocument>) {
-    return ReviewModel.create(reviewData);
+export class ReviewRepository
+  extends BaseRepository<IReviewDocument>
+  implements IReviewRepository
+{
+  constructor() {
+    super(ReviewModel);
+  }
+  async createReview(reviewData: Partial<IReviewDocument>) {
+    try {
+      return ReviewModel.create(reviewData);
+    } catch (error) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async findReviewsByCourse(courseId: string) {
     try {
-      const reviews = ReviewModel.find({ courseId }).populate(
-        "studentId",
-        "name"
-      );
-      return reviews;
+      const reviews = ReviewModel.find({ courseId }).populate("studentId");
+      return reviews as unknown as ReviewWithPopulatedStudentId[];
     } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -25,33 +38,81 @@ export class ReviewRepository {
   }
 
   async findReviewsByStudent(studentId: string) {
-    return ReviewModel.find({ studentId }).populate("courseId", "title");
+    try {
+      return ReviewModel.find({ studentId }).populate("courseId");
+    } catch (error) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async findByCourseAndStudent(courseId: string, studentId: string) {
-    return ReviewModel.findOne({ courseId, studentId });
+    try {
+      return ReviewModel.findOne({ courseId, studentId });
+    } catch (error) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async findReviewById(reviewId: string) {
-    return ReviewModel.findById(reviewId);
+    try {
+      return ReviewModel.findById(reviewId);
+    } catch (error) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async deleteReview(reviewId: string) {
-    return ReviewModel.findByIdAndDelete(reviewId);
+    try {
+      return ReviewModel.findByIdAndDelete(reviewId);
+    } catch (error) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
-  async getAverageRating(courseId: string) {
-    const result = await ReviewModel.aggregate([
-      { $match: { courseId: new mongoose.Types.ObjectId(courseId) } },
-      {
-        $group: {
-          _id: "$courseId",
-          averageRating: { $avg: "$rating" },
-          totalReviews: { $sum: 1 },
+  async getCourseReviewStats(courseId: string): Promise<
+    {
+      totalReviews: number;
+      averageRating: number;
+      ratings: { rating: number; count: number }[];
+    }[]
+  > {
+    try {
+      return ReviewModel.aggregate([
+        { $match: { courseId: new mongoose.Types.ObjectId(courseId) } },
+        {
+          $group: {
+            _id: "$rating",
+            count: { $sum: 1 },
+          },
         },
-      },
-    ]);
-
-    return result.length ? result[0] : { averageRating: 0, totalReviews: 0 };
+        {
+          $group: {
+            _id: null,
+            totalReviews: { $sum: "$count" },
+            averageRating: { $avg: "$_id" },
+            ratings: {
+              $push: {
+                rating: "$_id",
+                count: "$count",
+              },
+            },
+          },
+        },
+      ]);
+    } catch (error) {
+      throw new DatabaseError("Something Unexpected Happened");
+    }
   }
 }

@@ -26,7 +26,7 @@ export class ReviewController {
     }
   }
 
-  async getReviewsByCourse(req: Request, res: Response, next: NextFunction) {
+  async getReviewsOfCourse(req: Request, res: Response, next: NextFunction) {
     try {
       const { courseId } = req.params;
       const reviews = await this.reviewService.getReviewsByCourse(courseId);
@@ -42,6 +42,19 @@ export class ReviewController {
       const reviews = await this.reviewService.getReviewsByStudent(studentId);
       if (!reviews.length) throw new NotFoundError("No reviews found");
       res.status(StatusCode.OK).json(reviews);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getReviewStatiticsOfCourse(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { courseId } = req.params;
+      if(!courseId){
+        throw new BadRequestError("Provide the courseId")
+      }
+      const reviews = await this.reviewService.getReviewStatiticsOfCourse(courseId);
+      res.status(StatusCode.OK).send(reviews);
     } catch (error) {
       next(error);
     }

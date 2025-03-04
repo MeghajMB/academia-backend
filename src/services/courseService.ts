@@ -705,7 +705,6 @@ export class CourseService implements ICourseService {
     const sectionCount = await this.sectionRepository.countDocumentsByCourseId(
       courseId
     );
-
     const updatedSectionData = {
       ...sectionData,
       courseId,
@@ -714,9 +713,10 @@ export class CourseService implements ICourseService {
     const section = await this.sectionRepository.create(
       updatedSectionData as unknown as Partial<ISectionDocument>
     );
-    if (!section) {
-      throw new BadRequestError("No course");
-    }
+    //update total count of section in course
+    await this.courseRepository.update(courseId, {
+      totalSections: sectionCount,
+    });
     return section;
   }
 
@@ -733,6 +733,7 @@ export class CourseService implements ICourseService {
     }
     const lectureCount =
       await this.lectureRepository.countDocumentWithSectionId(sectionId);
+
     const updatedLectureData = {
       ...lectureData,
       sectionId,
@@ -744,6 +745,11 @@ export class CourseService implements ICourseService {
     const newLecture = await this.lectureRepository.create(
       updatedLectureData as unknown as Partial<ILectureDocument>
     );
+    //update total cuont of lectures in course
+    await this.courseRepository.update(courseId, {
+      totalLectures: lectureCount,
+      totalDuration: updatedLectureData.duration,
+    });
     //send an event to sqs
     const params = {
       MessageBody: JSON.stringify({

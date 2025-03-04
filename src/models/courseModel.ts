@@ -12,10 +12,21 @@ export interface ICourseDocument extends Document {
   totalLectures: number;
   totalSections: number;
   isBlocked: boolean;
-  status: "pending" | "accepted" | "rejected" | "draft"|"listed";
+  status: "pending" | "accepted" | "rejected" | "draft" | "listed";
   rejectedReason: string;
   imageThumbnail: string;
   promotionalVideo: string;
+  reviewStats?: {
+    averageRating: number;
+    totalReviews: number;
+    ratingDistribution?: {
+      fiveStars: number;
+      fourStars: number;
+      threeStars: number;
+      twoStars: number;
+      oneStar: number;
+    };
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,7 +35,7 @@ const CourseSchema: Schema<ICourseDocument> = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref:"User",
+      ref: "User",
       required: true,
     },
     title: {
@@ -57,7 +68,7 @@ const CourseSchema: Schema<ICourseDocument> = new Schema(
     totalSections: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected", "draft","listed"],
+      enum: ["pending", "accepted", "rejected", "draft", "listed"],
       default: "draft",
     },
     rejectedReason: {
@@ -71,6 +82,17 @@ const CourseSchema: Schema<ICourseDocument> = new Schema(
     promotionalVideo: {
       type: String,
       required: true,
+    },
+    reviewStats: {
+      averageRating: { type: Number, default: 0 },
+      totalReviews: { type: Number, default: 0 },
+      ratingDistribution: {
+        fiveStars: { type: Number, default: 0 },
+        fourStars: { type: Number, default: 0 },
+        threeStars: { type: Number, default: 0 },
+        twoStars: { type: Number, default: 0 },
+        oneStar: { type: Number, default: 0 },
+      },
     },
   },
   {
