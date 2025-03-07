@@ -11,7 +11,7 @@ export interface ILectureResult extends Document {
   duration: number;
   order: number;
   status: string;
-  scheduledDeletionDate: Date
+  scheduledDeletionDate: Date;
 }
 export interface ILectureResultPopulated extends ILectureResult {
   courseId: ICourseResult; // Override courseId to be the populated Course document
@@ -21,11 +21,11 @@ export interface ILectureRepository extends IRepository<ILectureDocument> {
   getLecturesWithCourseId(courseId: string): Promise<ILectureResult[]>;
   deleteLecturesByFilter(
     filters: Partial<Record<keyof ILectureDocument, any>>
-  ): Promise<number>
+  ): Promise<number>;
   scheduleDeletionDateForLectures(
     sectionId: string,
     scheduledDeletionDate: Date
-  ): Promise<void>
+  ): Promise<void>;
   editLecture(
     lectureId: string,
     lectureData: { title: string; videoUrl: string; duration: number }

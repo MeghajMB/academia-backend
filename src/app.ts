@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 dotenv.config(/* { path: "./src/.env" } */);
 
+//routes
 import authRoutes from "./routes/authRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import instructorRoutes from "./routes/instructorRoutes";
@@ -12,6 +13,8 @@ import fileRoutes from "./routes/fileRoutes"
 import courseRoutes from "./routes/courseRoutes"
 import paymentRoutes from "./routes/paymentRoutes"
 import reviewRoutes from "./routes/reviewRoutes"
+import gigRoutes from "./routes/gigRoutes"
+import bidRoutes from "./routes/bidRoutes"
 
 import { errorHandler } from "./middleware/error-handler";
 
@@ -59,6 +62,8 @@ app.use("/api/course", courseRoutes);
 app.use("/api/files",fileRoutes);
 app.use('/api/payment',paymentRoutes)
 app.use("/api/review", reviewRoutes);
+app.use("/api/gig", gigRoutes);
+app.use("/api/bid", bidRoutes);
 
 app.use(
   errorHandler as (

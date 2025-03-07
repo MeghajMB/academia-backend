@@ -18,6 +18,7 @@ export interface IEnrollmentDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
 const EnrollmentSchema: Schema<IEnrollmentDocument> = new mongoose.Schema(
   {
     studentId: {
