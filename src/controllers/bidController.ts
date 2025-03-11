@@ -1,9 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { BidService } from "../services/bidService";
 import { StatusCode } from "../enums/statusCode.enum";
-import { v4 as uuidv4 } from "uuid";
-//import { consumeBidResponses } from "../services/kafkaService";
-import { produceMessage } from "../kafka/producer";
+import { BadRequestError } from "../errors/bad-request-error";
 export class BidController {
   constructor(private bidService: BidService) {}
 
@@ -11,10 +9,13 @@ export class BidController {
     try {
       const { gigId, bidAmt } = req.body;
       const id = req.verifiedUser!.id;
-
-      const correlationId = uuidv4(); // Unique ID for this request
-
-      await produceMessage({ data: { gigId, bidAmt }, id }, correlationId);
+      if (!gigId || !bidAmt) {
+        throw new BadRequestError("Must have all data");
+      }
+      const bid = await this.bidService.createBid(
+        { gigId, bidAmt: Number(bidAmt) },
+        id
+      );
       res.status(200).send({ message: "success" });
     } catch (error) {
       next(error);

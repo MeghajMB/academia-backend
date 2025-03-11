@@ -9,7 +9,7 @@ export interface IGigDocument extends Document {
   minBid: number; // Minimum bid amount
   currentBid: number; // Current highest bid amount
   currentBidder: mongoose.Schema.Types.ObjectId | null; // User ID of highest bidder
-  status: "active" | "expired"; // Bidding status
+  status: "active" | "expired" | "completed" | "no-bids" | "missed"; // active for active gigs,completed when instructor successfuluy completes it,no-bids when there are no bids,missed when the instructor didnt take the session
   biddingExpiresAt: Date; // Bidding expiry time
   serviceDate: Date; // Date of the actual service
   createdAt: Date;
@@ -25,7 +25,11 @@ const GigSchema = new Schema<IGigDocument>(
     minBid: { type: Number, required: true, min: 1 },
     currentBid: { type: Number, default: 0 },
     currentBidder: { type: Schema.Types.ObjectId, ref: "User", default: null },
-    status: { type: String, enum: ["active", "expired"], default: "active" },
+    status: {
+      type: String,
+      enum: ["active", "expired", "completed", "no-bids", "missed"],
+      default: "active",
+    },
     biddingExpiresAt: { type: Date, required: true },
     serviceDate: {
       type: Date,

@@ -2,9 +2,25 @@ import { BidModel, IBidDocument } from "../models/../models/bidModel";
 import mongoose from "mongoose";
 
 export class BidRepository {
-  async createBid(bidData: Partial<IBidDocument>): Promise<IBidDocument> {
-    const bid = new BidModel(bidData);
-    return await bid.save();
+  async createOrUpdateBid(bidData: {
+    gigId: string;
+    amount: number;
+    userId: string;
+  }): Promise<IBidDocument> {
+    try {
+      const existingBid = await BidModel.findOne({
+        userId: bidData.userId,
+        gigId: bidData.gigId,
+      });
+      if (existingBid) {
+        existingBid.amount = bidData.amount;
+        return existingBid;
+      }
+      const bid = new BidModel(bidData);
+      return await bid.save();
+    } catch (error) {
+      throw error;
+    }
   }
   async getHighestBid(
     gigId: string

@@ -7,63 +7,66 @@ import { redis } from "../config/redisClient";
 import { BadRequestError } from "../errors/bad-request-error";
 import { UserRepository } from "../repositories/userRepository";
 import { ObjectId, Types } from "mongoose";
+import { produceMessage } from "../kafka/producer";
+import { GigRepository } from "../repositories/gigRepository";
 
 export class BidService {
   constructor(
     private bidRepository: BidRepository,
-    private userRepository: UserRepository
+    private userRepository: UserRepository,
+    private gigRepository: GigRepository
   ) {}
 
   async placeBid(bidData: { gigId: string; bidAmt: number }, id: string) {
     try {
       const highestBidKey = `topBid:${bidData.gigId}`;
-      /* const user = await this.userRepository.findById(
-        bidData.userId as unknown as string
-      );
-      if (!user) throw new BadRequestError("User not found");
-
-      // **Check if user has enough gold coins**
-      if (user.goldCoin < bidData.amount!) {
-        throw new BadRequestError("Insufficient gold coins for bidding");
-      } */
-
-      // **Fetch highest bid from Redis**
       const cachedHighestBid = await redis.get(highestBidKey);
-      console.log(cachedHighestBid)
       if (cachedHighestBid) {
         const topBid = JSON.parse(cachedHighestBid);
         if (bidData.bidAmt! <= topBid.amount) {
           return { error: "Bid must be higher than current bid" };
         }
-      } else {
-        // **If cache is empty, check the database**
-        const dbHighestBid = await this.bidRepository.getHighestBid(
-          bidData.gigId
-        );
-        if (dbHighestBid && bidData.bidAmt! <= dbHighestBid.amount) {
-          return { error: "Bid must be higher than current bid" };
-        }
+      }
+      const gig = await this.gigRepository.findById(bidData.gigId);
+      if (!gig) {
+        throw new Error("Gig not found");
+      }
 
-        // **Cache the highest bid**
-        if (dbHighestBid) {
-          await redis.setex(
-            highestBidKey,
-            300,
-            JSON.stringify({
-              userId: dbHighestBid.userId,
-              amount: dbHighestBid.amount,
-            })
-          );
-        }
+      if (new Date(gig.biddingExpiresAt).getTime() < Date.now()) {
+        return { success: false, message: "Bidding time has ended" };
+      }
+      await produceMessage({ data: bidData, id });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async createBid(bidData: { gigId: string; bidAmt: number }, id: string) {
+    try {
+      const highestBidKey = `topBid:${bidData.gigId}`;
+      const user = await this.userRepository.findById(id);
+      if (!user) throw new BadRequestError("User not found");
+
+      // **Check if user has enough gold coins**
+      if (Number(user.goldCoin) < bidData.bidAmt!) {
+        throw new BadRequestError("Insufficient gold coins for bidding");
+      }
+
+      const dbHighestBid = await this.bidRepository.getHighestBid(
+        bidData.gigId
+      );
+
+      if (dbHighestBid && bidData.bidAmt! <= dbHighestBid.amount) {
+        return { error: "Bid must be higher than current bid" };
       }
 
       // **Deduct coins before placing the bid**
       //await this.userRepository.deductGoldCoins(user.id, bidData.amount!);
       // **Create new bid**
-      const newBid = await this.bidRepository.createBid({
-        gigId: bidData.gigId as unknown as Types.ObjectId,
+      const newBid = await this.bidRepository.createOrUpdateBid({
+        gigId: bidData.gigId,
         amount: bidData.bidAmt,
-        userId: id as unknown as Types.ObjectId,
+        userId: id,
       });
 
       // **Update Redis cache**
@@ -81,7 +84,7 @@ export class BidService {
 
       return newBid;
     } catch (error) {
-      return error
+      return error;
     }
   }
 

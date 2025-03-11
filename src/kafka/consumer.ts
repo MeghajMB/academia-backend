@@ -2,6 +2,8 @@ import { Kafka } from "kafkajs";
 import { BidService } from "../services/bidService";
 import { BidRepository } from "../repositories/bidRepository";
 import { UserRepository } from "../repositories/userRepository";
+import { GigRepository } from "../repositories/gigRepository";
+import { redis } from "../config/redisClient";
 
 const kafka = new Kafka({
   clientId: "server 1",
@@ -10,7 +12,11 @@ const kafka = new Kafka({
 
 const consumer = kafka.consumer({ groupId: "server-b-group" });
 
-const bidService = new BidService(new BidRepository(), new UserRepository());
+const bidService = new BidService(
+  new BidRepository(),
+  new UserRepository(),
+  new GigRepository()
+);
 export async function runConsumer() {
   await consumer.connect();
   console.log("Consumer connected");
@@ -22,8 +28,25 @@ export async function runConsumer() {
   await consumer.run({
     eachMessage: async ({ topic, partition, message, heartbeat, pause }) => {
       const parsedMessage = JSON.parse(message.value?.toString() || "{}");
-      const response=await bidService.placeBid(parsedMessage.data, parsedMessage.id);
-      console.log(response);
+      const gigId = parsedMessage.data.gigId;
+      try {
+        await redis.incr(`pendingBids:${gigId}`);
+        const response = await bidService.createBid(
+          parsedMessage.data,
+          parsedMessage.id
+        );
+        console.log(response);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        await redis.decr(`pendingBids:${gigId}`);
+      }
     },
   });
+}
+
+// Function to check if there are pending bids for a specific auction
+export async function areBidsStillProcessing(gigId: string): Promise<boolean> {
+  const count = await redis.get(`pendingBids:${gigId}`);
+  return count !== null && parseInt(count) > 0;
 }

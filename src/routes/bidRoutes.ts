@@ -5,6 +5,7 @@ import { BidService } from "../services/bidService";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
 import { UserRepository } from "../repositories/userRepository";
+import { GigRepository } from "../repositories/gigRepository";
 //import { KafkaService } from "../services/kafkaService";
 
 const router = Router();
@@ -12,7 +13,8 @@ const router = Router();
 // Dependency Injection
 const bidRepository = new BidRepository();
 const userRepository = new UserRepository();
-const bidService = new BidService(bidRepository, userRepository);
+const gigRepository = new GigRepository();
+const bidService = new BidService(bidRepository, userRepository,gigRepository);
 //const kafkaService = new KafkaService(bidService);
 const bidController = new BidController(bidService);
 

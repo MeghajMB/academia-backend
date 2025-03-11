@@ -10,6 +10,7 @@ export class BaseRepository<T extends Document> implements IRepository<T> {
     try {
       return await this.model.create(data);
     } catch (error) {
+      console.log(error)
       throw new DatabaseError(
         "Database error while creating entity",
         StatusCode.INTERNAL_SERVER_ERROR
@@ -21,6 +22,7 @@ export class BaseRepository<T extends Document> implements IRepository<T> {
     try {
       return await this.model.findById(id);
     } catch (error) {
+      console.log(error)
       throw new DatabaseError(
         "Database error while fetching entity by ID",
         StatusCode.INTERNAL_SERVER_ERROR

@@ -18,13 +18,13 @@ export async function runProducer() {
   return Kafkaproducer
 }
 
-export async function produceMessage(message:{ data: { gigId:string, bidAmt:number }, id:string }, correlationId:string) {
+export async function produceMessage(message:{ data: { gigId:string, bidAmt:number }, id:string }) {
   const producer = await runProducer();
   await producer.send({
     topic: "bids",
     messages: [
       {
-        key: correlationId,
+        key: message.data.gigId,
         value: JSON.stringify(message),
       },
     ],

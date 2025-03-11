@@ -5,7 +5,7 @@ import SocketService from "./services/socketService";
 import { runConsumer } from "./kafka/consumer";
 import { runProducer } from "./kafka/producer";
 
-
+let socketService: SocketService;
 const start = async () => {
   if (!process.env.MONGO_URI) {
     throw new Error("MongoDB Key Not Set");
@@ -20,12 +20,33 @@ const start = async () => {
   }
 
   const server = createServer(app);
-  const socketService = new SocketService(server);
+  socketService = new SocketService(server);
   await runConsumer();
   await runProducer();
 
   const port = process.env.PORT || 3001;
   server.listen(port, () => console.log(`Server running on port ${port}`));
 };
+const gracefulShutdown = async () => {
+  console.log("Received shutdown signal, starting graceful shutdown...");
 
+  try {
+    // Shutdown socket service
+    if (socketService) {
+      await socketService.shutdown();
+    }
+
+    // Close MongoDB connection
+    await mongoose.connection.close();
+    console.log("MongoDB connection closed");
+
+    // Exit process
+    process.exit(0);
+  } catch (error) {
+    console.error("Error during graceful shutdown:", error);
+    process.exit(1);
+  }
+};
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
 start();

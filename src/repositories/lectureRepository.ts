@@ -132,6 +132,7 @@ export class LectureRepository
       );
       return updatedLecture;
     } catch (error: unknown) {
+      console.log(error)
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR
@@ -146,6 +147,7 @@ export class LectureRepository
       });
       return lectureCount;
     } catch (error: unknown) {
+      console.log(error)
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR

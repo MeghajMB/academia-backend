@@ -69,13 +69,14 @@ export class CourseService implements ICourseService {
         throw new BadRequestError("Course Creation Failed");
       }
       await session.commitTransaction();
-      session.endSession();
+
       return newCourse;
     } catch (error) {
       // Rollback the transaction
       await session.abortTransaction();
-      session.endSession();
       throw error;
+    } finally {
+      session.endSession();
     }
   }
 
@@ -628,6 +629,7 @@ export class CourseService implements ICourseService {
           sectionId,
           scheduledDeletionDate
         );
+        await this.sectionRepository.delete(sectionId);
       } else {
         await this.lectureRepository.deleteLecturesByFilter({ sectionId });
       }
@@ -741,7 +743,7 @@ export class CourseService implements ICourseService {
       duration: Math.ceil(lectureData.duration / 60),
       order: lectureCount,
     };
-
+    console.log(updatedLectureData);
     const newLecture = await this.lectureRepository.create(
       updatedLectureData as unknown as Partial<ILectureDocument>
     );

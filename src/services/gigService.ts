@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import { IActiveGig, ICreateGigDTO } from "../types/gig.interface.";
 import moment, { duration } from "moment-timezone";
 import { BadRequestError } from "../errors/bad-request-error";
+import { scheduleAuctionClose } from "../config/bullmq";
 
 export class GigService {
   constructor(private gigRepository: GigRepository) {}
@@ -26,11 +27,11 @@ export class GigService {
       // Calculate bidding expiration (24 hours before serviceDate)
       const biddingExpiresAt = moment(serviceDate).subtract(24, "hours");
 
-      if (biddingExpiresAt.isBefore(currentDate)) {
+      /*       if (biddingExpiresAt.isBefore(currentDate)) {
         throw new BadRequestError(
           "Bidding cannot start because there is less than 24 hours before the service date."
         );
-      }
+      } */
       const durationInMinutes = Number(gigData.sessionDuration);
       // Check for conflicting gigs
       const existingGig = await this.gigRepository.findConflictingGig(
@@ -52,10 +53,15 @@ export class GigService {
         sessionDuration: durationInMinutes,
         minBid: Math.ceil(Number(gigData.minBid)),
         serviceDate: serviceDate.toDate(), // Convert to Date object
-        biddingExpiresAt: biddingExpiresAt.toDate(), // 24 hrs before serviceDate
+        biddingExpiresAt: new Date(Date.now() + 15000), //biddingExpiresAt.toDate(), // 24 hrs before serviceDate
       };
 
-      return await this.gigRepository.createGig(updatedGigData);
+      const newGig = await this.gigRepository.createGig(updatedGigData);
+      await scheduleAuctionClose(
+        newGig.id,
+        new Date(Date.now() + 15000)
+      );
+      return newGig;
     } catch (error) {
       throw error;
     }
