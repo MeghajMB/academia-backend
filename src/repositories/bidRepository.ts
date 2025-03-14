@@ -1,23 +1,26 @@
 import { BidModel, IBidDocument } from "../models/../models/bidModel";
-import mongoose from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 
 export class BidRepository {
-  async createOrUpdateBid(bidData: {
-    gigId: string;
-    amount: number;
-    userId: string;
-  }): Promise<IBidDocument> {
+  async createOrUpdateBid(
+    bidData: {
+      gigId: string;
+      amount: number;
+      userId: string;
+    },
+    session: ClientSession
+  ): Promise<IBidDocument> {
     try {
       const existingBid = await BidModel.findOne({
         userId: bidData.userId,
         gigId: bidData.gigId,
-      });
+      }).session(session);
       if (existingBid) {
         existingBid.amount = bidData.amount;
-        return existingBid;
+        return await existingBid.save({ session });
       }
       const bid = new BidModel(bidData);
-      return await bid.save();
+      return await bid.save({ session });
     } catch (error) {
       throw error;
     }

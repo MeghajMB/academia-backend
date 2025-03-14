@@ -54,6 +54,23 @@ export class ReviewService {
   async getReviewsByCourse(courseId: string) {
     try {
       const reviews = await this.reviewRepository.findReviewsByCourse(courseId);
+      const reviewStats = await this.reviewRepository.getCourseReviewStats(
+        courseId
+      );
+      let updatedReviewStats;
+      if (!reviewStats.length) {
+        updatedReviewStats = {
+          averageRating: 0,
+          totalReviews: 0,
+          ratingBreakdown: {
+            "1star": 0,
+            "2star": 0,
+            "3star": 0,
+            "4star": 0,
+            "5star": 0,
+          },
+        };
+      }
       const updatedData = reviews.map((review) => {
         return {
           id: review.id,
@@ -66,7 +83,11 @@ export class ReviewService {
           createdAt: review.createdAt,
         };
       });
-      return updatedData;
+      const updatedReview = {
+        reviews: updatedData,
+        reviewStats: reviewStats.length == 0 ? updatedReviewStats : reviewStats,
+      };
+      return updatedReview;
     } catch (error) {
       throw error;
     }
@@ -85,7 +106,7 @@ export class ReviewService {
       const reviewStats = await this.reviewRepository.getCourseReviewStats(
         courseId
       );
-      if (!reviewStats.length) {
+      if (reviewStats.length) {
         return {
           averageRating: 0,
           totalReviews: 0,

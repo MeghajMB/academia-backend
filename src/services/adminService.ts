@@ -14,12 +14,14 @@ import { BadRequestError } from "../errors/bad-request-error";
 //externl dependencies
 import { redis } from "../config/redisClient";
 import { StatusCode } from "../enums/statusCode.enum";
+import { INotificationService } from "./interfaces/INotificationService";
 
 export class AdminService implements IAdminService {
   constructor(
     private userRepository: IUserRepository,
     private categoryRepository: ICategoryRepository,
-    private courseRepository: ICourseRepository
+    private courseRepository: ICourseRepository,
+    private notificationService: INotificationService
   ) {}
 
   async getUsers(role: string, page: number, limit: number, search: string) {
@@ -147,8 +149,8 @@ export class AdminService implements IAdminService {
   async blockOrUnblockCourse(id: string) {
     try {
       const course = await this.courseRepository.toggleCourseStatus(id);
-      if(!course){
-        throw new AppError("Course not found",StatusCode.NOT_FOUND)
+      if (!course) {
+        throw new AppError("Course not found", StatusCode.NOT_FOUND);
       }
       return course;
     } catch (error) {
@@ -256,7 +258,14 @@ export class AdminService implements IAdminService {
         courseId,
         rejectReason
       );
-
+      if (!course) throw new BadRequestError("No course found");
+      this.notificationService.sendNotification(
+        course?.userId.toString(),
+        "course",
+        'Course Rejected',
+        rejectReason,
+        courseId
+      );
       return { message: "success" };
     } catch (error) {
       throw error;

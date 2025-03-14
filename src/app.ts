@@ -15,6 +15,7 @@ import paymentRoutes from "./routes/paymentRoutes"
 import reviewRoutes from "./routes/reviewRoutes"
 import gigRoutes from "./routes/gigRoutes"
 import bidRoutes from "./routes/bidRoutes"
+import notificationRoutes from "./routes/notifcationRoutes"
 
 import { errorHandler } from "./middleware/error-handler";
 
@@ -64,6 +65,7 @@ app.use('/api/payment',paymentRoutes)
 app.use("/api/review", reviewRoutes);
 app.use("/api/gig", gigRoutes);
 app.use("/api/bid", bidRoutes);
+app.use("/api/notification", notificationRoutes);
 
 app.use(
   errorHandler as (

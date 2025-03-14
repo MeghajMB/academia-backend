@@ -14,7 +14,7 @@ export class GigController {
       const userId = req.verifiedUser!.id;
 
       if (
-        !gigData.serviceDate ||
+        !gigData.sessionDate ||
         !gigData.description ||
         //!gigData.biddingAllowed ||
         !gigData.sessionDuration ||

@@ -112,7 +112,6 @@ export interface ICourseService {
     courseId: string,
     userId: string,
     transactionId: string,
-    session: mongoose.mongo.ClientSession
   ): Promise<IEnrollmentDocument>;
   addSection(
     section: { title: string; description: string },

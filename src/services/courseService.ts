@@ -1,7 +1,7 @@
 // src/services/CourseService.ts
 import { BadRequestError } from "../errors/bad-request-error";
 import { ICourseRepository } from "../repositories/interfaces/ICourseRepository";
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 import {
   ICourseResult,
   ICourseResultWithUserId,
@@ -72,7 +72,6 @@ export class CourseService implements ICourseService {
 
       return newCourse;
     } catch (error) {
-      // Rollback the transaction
       await session.abortTransaction();
       throw error;
     } finally {
@@ -203,21 +202,25 @@ export class CourseService implements ICourseService {
         // Track whether coins should be awarded
         let awarded50Percent = enrollment.progress.awarded50Percent;
         let awarded100Percent = enrollment.progress.awarded100Percent;
-        let coinsToAward = 0;
+        let coinsToAward = 0,goldCoinsToAward=0;
 
         // Award coins only if they haven't been awarded before
         if (progressPercentage >= 50 && !awarded50Percent) {
           coinsToAward += 1;
+          goldCoinsToAward+=50
           awarded50Percent = true;
         }
         if (progressPercentage === 100 && !awarded100Percent) {
           coinsToAward += 2;
+          goldCoinsToAward+=100;
           awarded100Percent = true;
           await this.enrollmentRepository.update(enrollment.id, {
             completedAt: new Date(),
           });
         }
-
+        if(goldCoinsToAward){
+          await this.userRepository.addGoldCoins(id,goldCoinsToAward)
+        }
         // Update enrollment progress and award status in a single call
         await this.enrollmentRepository.updateEnrollmentProgress(
           enrollment,
@@ -245,17 +248,14 @@ export class CourseService implements ICourseService {
   async enrollStudent(
     courseId: string,
     userId: string,
-    transactionId: string,
-    session: mongoose.mongo.ClientSession
+    transactionId: string
   ): Promise<IEnrollmentDocument> {
     try {
-      const listedCourse =
-        await this.enrollmentRepository.createEnrollmentWithSession(
-          courseId,
-          userId,
-          transactionId,
-          session
-        );
+      const listedCourse = await this.enrollmentRepository.create({
+        courseId:courseId as unknown as ObjectId,
+        studentId:userId as unknown as ObjectId,
+        transactionId:transactionId as unknown as ObjectId,
+      });
       return listedCourse;
     } catch (error) {
       throw error;
@@ -717,7 +717,7 @@ export class CourseService implements ICourseService {
     );
     //update total count of section in course
     await this.courseRepository.update(courseId, {
-      totalSections: sectionCount,
+      totalSections: sectionCount+1,
     });
     return section;
   }
@@ -749,7 +749,7 @@ export class CourseService implements ICourseService {
     );
     //update total cuont of lectures in course
     await this.courseRepository.update(courseId, {
-      totalLectures: lectureCount,
+      totalLectures: existingCourse.totalLectures+1,
       totalDuration: updatedLectureData.duration,
     });
     //send an event to sqs

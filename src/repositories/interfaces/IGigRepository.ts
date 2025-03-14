@@ -8,18 +8,11 @@ export interface IGigRepository extends IRepository<IGigDocument> {
 
   findConflictingGig(
     instructorId: string,
-    serviceDate: Date,
+    sessionDate: Date,
     sessionDuration: number
   ): Promise<IGigDocument | null>;
 
-  findGigById(id: string): Promise<IGigDocument | null>;
 
-  updateGig(
-    id: string,
-    updateData: Partial<IGigDocument>
-  ): Promise<IGigDocument | null>;
-
-  deleteGig(id: string): Promise<IGigDocument | null>;
 
   getActiveGigsWithPopulatedData(): Promise<IGigWithInstructorData[]>;
 }

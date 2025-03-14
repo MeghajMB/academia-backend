@@ -6,7 +6,7 @@ import { NotificationModel } from "../models/notificationModel";
 
 class SocketService {
   private _io: Server;
-  private activeSubscriptions: Set<string>;
+  private socketSubscriptionMap: Map<string, Set<string>> = new Map();
 
   constructor(
     server: HttpServer<typeof IncomingMessage, typeof ServerResponse>
@@ -15,12 +15,30 @@ class SocketService {
       cors: {
         origin: process.env.CLIENT_URL,
         methods: ["GET", "POST"],
+        credentials: true,
       },
     });
-    this.activeSubscriptions = new Set();
 
     this.listenForConnections();
     this.listenForRedisMessages();
+  }
+  private async subscribeToChannel(socket: any, channel: string) {
+    if (!this.socketSubscriptionMap.has(channel)) {
+      this.socketSubscriptionMap.set(channel, new Set());
+      await redisPubSub.sub.subscribe(channel);
+    }
+    this.socketSubscriptionMap.get(channel)!.add(socket.id);
+  }
+
+  private async unsubscribeFromChannel(socket: any, channel: string) {
+    if (this.socketSubscriptionMap.has(channel)) {
+      this.socketSubscriptionMap.get(channel)!.delete(socket.id);
+
+      if (this.socketSubscriptionMap.get(channel)!.size === 0) {
+        await redisPubSub.sub.unsubscribe(channel);
+        this.socketSubscriptionMap.delete(channel);
+      }
+    }
   }
 
   private listenForConnections() {
@@ -36,12 +54,9 @@ class SocketService {
           const topBids = await BidModel.find({ gigId })
             .sort({ amount: -1 })
             .limit(10);
-          socket.emit(`updateBids${gigId}`, topBids);
+          socket.emit(`topBids${gigId}`, topBids);
           //subscribe if not subscribed
-          if (!this.activeSubscriptions.has(`bids:${gigId}`)) {
-            await redisPubSub.sub.subscribe(`bids:${gigId}`);
-            this.activeSubscriptions.add(`bids:${gigId}`);
-          }
+          await this.subscribeToChannel(socket, `bids:${gigId}`);
         } catch (error) {
           console.error(`Error in joinBiddingRoom: ${error}`);
           socket.emit("error", { message: "Failed to join bidding room" });
@@ -50,19 +65,22 @@ class SocketService {
 
       socket.on("leaveBiddingRoom", async (gigId) => {
         socket.leave(gigId);
-        if (io.sockets.adapter.rooms.get(gigId)?.size === 0) {
-          await redisPubSub.sub.unsubscribe(`bids:${gigId}`);
-          this.activeSubscriptions.delete(`bids:${gigId}`);
-        }
+        await this.unsubscribeFromChannel(socket, `bids:${gigId}`);
       });
 
       /* Notification Events */
       socket.on("registerUser", async (userId) => {
         try {
           socket.join(userId);
-          const notification = await NotificationModel.find({ userId });
-          socket.emit(`notifications`, notification);
-          redisPubSub.sub.subscribe(`notifications:${userId}`);
+          await this.subscribeToChannel(socket, `notifications:${userId}`);
+          const notifications = await NotificationModel.find({
+            userId,
+            isRead: false,
+          })
+            .sort({ createdAt: 1 })
+            .limit(3);
+            const notificationCount=await NotificationModel.countDocuments({isRead:false})
+          socket.emit(`notifications`, {notifications,count:notificationCount});
         } catch (error) {
           console.log(error);
         }
@@ -70,14 +88,19 @@ class SocketService {
       socket.on("unRegisterUser", async (userId) => {
         try {
           socket.leave(userId);
-          redisPubSub.sub.unsubscribe(`notifications:${userId}`);
+          await this.unsubscribeFromChannel(socket, `notifications:${userId}`);
         } catch (error) {
           console.log(error);
         }
       });
 
-      socket.on("disconnect", () => {
+      socket.on("disconnect", async () => {
         console.log(`Client disconnected: ${socket.id}`);
+        for (const [channel, sockets] of this.socketSubscriptionMap.entries()) {
+          if (sockets.has(socket.id)) {
+            await this.unsubscribeFromChannel(socket, channel);
+          }
+        }
       });
     });
   }
@@ -90,9 +113,14 @@ class SocketService {
 
         if (channel.startsWith("bids:")) {
           const gigId = channel.split(":")[1];
-          io.to(gigId).emit(`updateBids${gigId}`, data);
+          const topBids = await BidModel.find({ gigId })
+            .sort({ amount: -1 })
+            .limit(10)
+            .populate("userId");
+          io.to(gigId).emit(`topBids${gigId}`, topBids);
         } else if (channel.startsWith("notifications:")) {
           const userId = channel.split(":")[1];
+          console.log(data)
           io.to(userId).emit("notifications", data);
         }
       } catch (error) {
@@ -110,18 +138,18 @@ class SocketService {
       console.log("Shutting down SocketService...");
 
       // Unsubscribe from all active Redis channels
-      for (const subscription of this.activeSubscriptions) {
-        await redisPubSub.sub.unsubscribe(subscription);
-        console.log(`Unsubscribed from Redis channel: ${subscription}`);
+      for (const channel of this.socketSubscriptionMap.keys()) {
+        await redisPubSub.sub.unsubscribe(channel);
+        console.log(`Unsubscribed from Redis channel: ${channel}`);
       }
 
-      // Clear the set
-      this.activeSubscriptions.clear();
+      // Clear the map
+      this.socketSubscriptionMap.clear();
 
-      // Close socket connections
+      // Close all socket connections
       this._io.disconnectSockets(true);
 
-      // Close the socket.io server
+      // Close the Socket.IO server
       await new Promise<void>((resolve) => {
         this._io.close(() => {
           console.log("All socket connections closed");

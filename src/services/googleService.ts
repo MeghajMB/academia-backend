@@ -12,17 +12,20 @@ export const googleCallback = passport.authenticate("google", {
   failureRedirect: `${process.env.CLIENT_URL}/login`,
 });
 
-export const googleController = async (req: Request, res: Response): Promise<void> => {
+export const googleController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   if (!req.user) {
     res.status(400).json({ error: "Authentication failed" });
-    return 
+    return;
   }
   const { user, accessToken, refreshToken } = req.user as {
     user: IUser;
     accessToken: string;
     refreshToken: string;
   };
-  const { name, role, id } = user;
+  const { name, role, id, goldCoin, email, profilePicture, verified } = user;
 
   await redis.set(`refreshToken:${user.id}`, refreshToken, "EX", 60 * 60 * 24);
 
@@ -32,10 +35,10 @@ export const googleController = async (req: Request, res: Response): Promise<voi
     secure: true,
     maxAge: 24 * 60 * 60 * 1000,
   });
-  
+
   res.send(`
     <script>
-      window.opener.postMessage({ accessToken: '${accessToken}',name: '${name}',role:'${role}' ,id:'${id}' }, "${process.env.CLIENT_URL}");
+      window.opener.postMessage({ accessToken: '${accessToken}',name: '${name}',role:'${role}' ,id:'${id}',email:'${email}',profilePicture:'${profilePicture}',goldCoin:'${goldCoin}',verified:'${verified}' }, "${process.env.CLIENT_URL}");
       window.close();
     </script>
   `);

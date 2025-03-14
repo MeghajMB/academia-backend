@@ -7,6 +7,8 @@ import { AdminService } from "../services/adminService";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
 import { CourseRepository } from "../repositories/courseRepository";
+import { NotificationService } from "../services/notificationService";
+import { NotificationRepository } from "../repositories/notificationRepository";
 
 const router = Router();
 
@@ -15,11 +17,14 @@ const router = Router();
 const userRepository = new UserRepository();
 const categoryRepository = new CategoryRepository();
 const courseRepository = new CourseRepository();
+const notificationRepository = new NotificationRepository();
 //services
+const notificationService = new NotificationService(notificationRepository);
 const adminService = new AdminService(
   userRepository,
   categoryRepository,
-  courseRepository
+  courseRepository,
+  notificationService
 );
 //controller
 const adminController = new AdminController(adminService);

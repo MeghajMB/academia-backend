@@ -38,6 +38,8 @@ export async function runConsumer() {
         console.log(response);
       } catch (error) {
         console.log(error);
+        pause(); // Pause the consumer on errors
+        setTimeout(() => consumer.resume([{ topic }]), 1000);
       } finally {
         await redis.decr(`pendingBids:${gigId}`);
       }

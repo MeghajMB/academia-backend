@@ -12,7 +12,7 @@ export class BidController {
       if (!gigId || !bidAmt) {
         throw new BadRequestError("Must have all data");
       }
-      const bid = await this.bidService.createBid(
+      const bid = await this.bidService.placeBid(
         { gigId, bidAmt: Number(bidAmt) },
         id
       );

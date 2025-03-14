@@ -8,7 +8,7 @@ export interface ICreateGigDTO {
     biddingAllowed: boolean;
     sessionDuration: string;
     maxParticipants: number;
-    serviceDate: string; // Received as a string
+    sessionDate: string; // Received as a string
   }
 
   export interface IGigWithInstructorData extends Omit<IGigDocument, "instructorId">{
@@ -24,6 +24,6 @@ export interface ICreateGigDTO {
     sessionDuration: number;
     minBid: number;
     biddingExpiresAt: Date;
-    serviceDate: Date;
+    sessionDate: Date;
   }
   

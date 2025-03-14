@@ -4,10 +4,10 @@ import { UserModel } from "../models/userModel";
 import { IUser, IUserResult } from "../types/user.interface";
 import { DatabaseError } from "../errors/database-error";
 import { StatusCode } from "../enums/statusCode.enum";
+import { ClientSession } from "mongoose";
 
 export class UserRepository implements IUserRepository {
-
-  async createUser(user: IUser): Promise<IUserResult> {
+  async createUser(user: Partial<IUser>): Promise<IUserResult> {
     try {
       const createdUser = new UserModel(user);
       const savedUser = await createdUser.save();
@@ -22,16 +22,60 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
+  async addGoldCoins(
+    userId: string,
+    coinsToAdd: number,
+    session?: ClientSession
+  ): Promise<IUserResult | null> {
+    try {
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        userId,
+        { $inc: { goldCoin: coinsToAdd } },
+        { session, new: true }
+      );
 
-  async awardPurpleCoins(userId: string, coins: number): Promise<IUserResult|null> {
+      return updatedUser;
+    } catch (error: unknown) {
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+  async deductGoldCoins(
+    userId: string,
+    coinsToDeduct: number,
+    session?: ClientSession
+  ): Promise<IUserResult | null> {
+    try {
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        userId,
+        { $inc: { goldCoin: -coinsToDeduct } },
+        { session, new: true }
+      );
+
+      return updatedUser;
+    } catch (error: unknown) {
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async awardPurpleCoins(
+    userId: string,
+    coins: number
+  ): Promise<IUserResult | null> {
     try {
       const user = await UserModel.findByIdAndUpdate(
         userId,
         { $inc: { purpleCoin: coins } }, // Increment purpleCoin by the given amount
         { new: true } // Return the updated user document
       );
-  
-  
+
       return user;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -43,7 +87,6 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
-  
 
   async findById(id: string): Promise<IUserResult | null> {
     try {
@@ -108,7 +151,7 @@ export class UserRepository implements IUserRepository {
 
       return users;
     } catch (error: unknown) {
-      console.error(error)
+      console.error(error);
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR
@@ -120,7 +163,7 @@ export class UserRepository implements IUserRepository {
     skip: number,
     limit: number,
     role: string,
-    search:string
+    search: string
   ): Promise<IUserResult[] | null> {
     try {
       let query: any = { role };
@@ -159,5 +202,4 @@ export class UserRepository implements IUserRepository {
       );
     }
   }
-
 }

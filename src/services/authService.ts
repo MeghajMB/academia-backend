@@ -37,6 +37,8 @@ export class AuthService implements IAuthService {
     email: string;
     refreshToken: string;
     verified: string;
+    goldCoin:number,
+    profilePicture:string
   } | null> {
     try {
       const payload = jwt.verify(
@@ -84,6 +86,8 @@ export class AuthService implements IAuthService {
         email: user.email,
         refreshToken,
         verified: user.verified,
+        goldCoin:Number(user.goldCoin),
+        profilePicture:user.profilePicture
       };
     } catch (error) {
       return null;

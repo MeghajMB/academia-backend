@@ -92,40 +92,37 @@ export class PaymentService implements IPaymentService {
 
       // Verify the signature
       const isSignatureValid = this.verifyPaymentSignature(paymentData, secret);
-      paymentDetails.amount=paymentDetails.amount/100;
+      paymentDetails.amount = paymentDetails.amount / 100;
 
       if (!isSignatureValid) {
         throw new BadRequestError("Payment verification failed");
       }
       let enrollent, transaction;
       if (paymentDetails.paymentType == "course") {
-
         transaction = await this.transactionRepository.createTransaction(
           paymentDetails.userId,
           paymentDetails.amount,
           paymentDetails.paymentType,
           paymentDetails.itemId,
-          razorpayPaymentId,
-          session 
+          razorpayPaymentId
         );
 
         enrollent = await this.courseService.enrollStudent(
           paymentDetails.itemId,
           paymentDetails.userId,
-          transaction._id as string,
-          session 
+          transaction._id as string
         );
-
       } else {
         throw new BadRequestError("Payment verification failed");
       }
       await session.commitTransaction();
-      session.endSession();
+
       return { message: "success" };
     } catch (error) {
       await session.abortTransaction();
-      session.endSession();
       throw error;
+    } finally {
+      session.endSession();
     }
   }
 }

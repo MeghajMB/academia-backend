@@ -141,13 +141,7 @@ export class AuthController {
         secure: true,
         maxAge: 24 * 60 * 60 * 1000,
       });
-      res.status(201).json({
-        accessToken: data.accessToken,
-        id: data.id,
-        name: data.name,
-        role: data.role,
-        verified: data.verified,
-      });
+      res.status(201).json(data);
     } catch (error) {
       next(error);
     }

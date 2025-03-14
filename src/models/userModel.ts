@@ -10,6 +10,7 @@ export interface UserDocument extends Document {
   isBlocked: boolean;
   purpleCoin: Number;
   goldCoin: Number;
+  redeemableCoins:number;
   profilePicture: string;
   googleId: string;
   headline?: string;
@@ -38,6 +39,7 @@ const UserSchema: Schema<UserDocument> = new Schema(
     },
     purpleCoin: { type: Number, default: 0, required: true },
     goldCoin: { type: Number, default: 0, required: true },
+    redeemableCoins:{ type: Number, default: 0, required: true },
     password: { type: String },
     phoneNo: { type: Number },
     isBlocked: { type: Boolean, required: true, default: false },

@@ -11,7 +11,7 @@ export interface IGigDocument extends Document {
   currentBidder: mongoose.Schema.Types.ObjectId | null; // User ID of highest bidder
   status: "active" | "expired" | "completed" | "no-bids" | "missed"; // active for active gigs,completed when instructor successfuluy completes it,no-bids when there are no bids,missed when the instructor didnt take the session
   biddingExpiresAt: Date; // Bidding expiry time
-  serviceDate: Date; // Date of the actual service
+  sessionDate: Date; // Date of the actual service
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,7 +31,7 @@ const GigSchema = new Schema<IGigDocument>(
       default: "active",
     },
     biddingExpiresAt: { type: Date, required: true },
-    serviceDate: {
+    sessionDate: {
       type: Date,
       required: true,
       validate: {
