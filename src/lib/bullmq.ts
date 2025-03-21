@@ -1,5 +1,5 @@
 import { Queue, Worker } from "bullmq";
-import { redis } from "./redisClient";
+import { redis } from "../config/redisClient";
 import { GigRepository } from "../repositories/gigRepository";
 import { areBidsStillProcessing } from "../kafka/consumer";
 

@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import { IActiveGig, ICreateGigDTO } from "../types/gig.interface.";
 import moment from "moment-timezone";
 import { BadRequestError } from "../errors/bad-request-error";
-import { scheduleAuctionClose } from "../config/bullmq";
+import { scheduleAuctionClose } from "../lib/bullmq";
 
 export class GigService {
   constructor(private gigRepository: GigRepository) {}

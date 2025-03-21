@@ -14,18 +14,18 @@ const start = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected to MongoDB");
+    const server = createServer(app);
+    socketService = new SocketService(server);
+    //await runConsumer();
+    //await runProducer();
+  
+    const port = process.env.PORT || 3001;
+    server.listen(port, () => console.log(`Server running on port ${port}`));
   } catch (err) {
-    console.error("Database connection error:", err);
+    console.error("Couldn't start the server:", err);
     process.exit(1);
   }
 
-  const server = createServer(app);
-  socketService = new SocketService(server);
-  await runConsumer();
-  await runProducer();
-
-  const port = process.env.PORT || 3001;
-  server.listen(port, () => console.log(`Server running on port ${port}`));
 };
 const gracefulShutdown = async () => {
   console.log("Received shutdown signal, starting graceful shutdown...");
