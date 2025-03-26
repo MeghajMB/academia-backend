@@ -7,10 +7,10 @@ import { StatusCode } from "../enums/statusCode.enum";
 interface CustomJwtPayload {
   id: string;
   email: string;
-  role: string;
+  role:  "admin" | "student" | "instructor";
 }
 
-export const verifyToken =async (
+export const verifyToken = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -40,14 +40,15 @@ export const verifyToken =async (
     // Check if the user exists in Redis
     const userExists = await redis.get(`refreshToken:${verifiedUser.id}`);
     if (!userExists) {
-      throw new AppError("User does not exist or session has expired", StatusCode.FORBIDDEN);
+      throw new AppError(
+        "User does not exist or session has expired",
+        StatusCode.FORBIDDEN
+      );
     }
 
     // Attach the verified user to the request object
-    req.verifiedUser = verifiedUser;
+    req.verifiedUser = verifiedUser
     next();
-      
-    
   } catch (error) {
     next(error);
   }

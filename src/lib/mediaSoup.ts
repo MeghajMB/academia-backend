@@ -14,6 +14,14 @@ class MediasoupManager {
         [transportId: string]: mediasoup.types.WebRtcTransport;
       };
       producers: { [producerId: string]: mediasoup.types.Producer };
+      producerMetadata: {
+        [producerId: string]: {
+          userId: string;
+          userName: string; // Display name
+          kind: "audio" | "video"; // Track type
+          type?: "camera" | "screen" | "mic";
+        };
+      };
       consumers: { [consumerId: string]: mediasoup.types.Consumer };
     };
   };
@@ -26,7 +34,7 @@ class MediasoupManager {
   }
   //code to intialize worker for mediasoup
   private async initializeWorkers() {
-    const numWorkers = Math.min(2, os.cpus().length); //os.cpus().length; // Use all CPU cores if using a seperate service
+    const numWorkers = Math.min(2, os.cpus().length); //os.cpus().length; // Use all CPU cores when changing my code to microservice
     console.log(`Spawning ${numWorkers} mediasoup workers...`);
 
     for (let i = 0; i < numWorkers; i++) {
@@ -81,6 +89,7 @@ class MediasoupManager {
       producerTransports: {},
       producers: {},
       consumers: {},
+      producerMetadata: {},
     };
 
     console.log(`Created new router for room: ${roomId}`);
@@ -89,7 +98,8 @@ class MediasoupManager {
   //code to generate transport for sender and reciever
   async createWebRtcTransport(
     gigId: string,
-    senderOrConsumer: "sender" | "consumer"
+    senderOrConsumer: "sender" | "consumer",
+    userId: string
   ) {
     const room = this.rooms[gigId];
     if (!room) {
@@ -101,13 +111,13 @@ class MediasoupManager {
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,
+      appData: { userId },
     });
     if (senderOrConsumer == "sender") {
       this.rooms[gigId].producerTransports[transport.id] = transport;
     } else {
       this.rooms[gigId].consumerTransports[transport.id] = transport;
     }
-    console.log(`Created WebRTC Transport for room: ${gigId}`);
 
     return {
       id: transport.id,
@@ -140,11 +150,18 @@ class MediasoupManager {
     transportId,
     kind,
     rtpParameters,
+    userDetails,
+    appData,
   }: {
     gigId: string;
     transportId: string;
     kind: mediasoup.types.MediaKind;
     rtpParameters: mediasoup.types.RtpParameters;
+    userDetails: {
+      userId: string;
+      userName: string;
+    };
+    appData: { type: "camera" | "screen" | "mic"; paused?: boolean };
   }) {
     const transport = this.rooms[gigId].producerTransports[transportId]; // Get transport
 
@@ -152,16 +169,23 @@ class MediasoupManager {
       throw new Error("Transport not found");
     }
     // Create a Producer instance
-    const producer = await transport.produce({ kind, rtpParameters });
-
+    const producer = await transport.produce({ kind, rtpParameters, appData });
+    console.log(`ispaused in producer:`+appData.paused);
+    if (appData.paused) {
+      await producer.pause();
+    }
     producer?.on("transportclose", () => {
       console.log("Producer transport closed");
       producer?.close();
     });
     // Store the producer
     this.rooms[gigId].producers[producer.id] = producer;
-
-    console.log(`Producer created: ${producer.id}, Kind: ${kind}`);
+    this.rooms[gigId].producerMetadata[producer.id] = {
+      kind: kind,
+      userId: userDetails.userId,
+      userName: userDetails.userName,
+      type: appData.type as "camera" | "screen" | "mic",
+    };
 
     // Return the producer ID to the client
     return { id: producer.id };
@@ -188,9 +212,6 @@ class MediasoupManager {
     if (!room.router.canConsume({ producerId, rtpCapabilities })) {
       throw new Error("Cannot consume this producer");
     }
-    console.log("THIS IS THE CONSUMER TRANSPORT",this.rooms[gigId].consumerTransports[
-      consumerTransportId
-    ])
     const consumer = await this.rooms[gigId].consumerTransports[
       consumerTransportId
     ].consume({
@@ -205,6 +226,10 @@ class MediasoupManager {
       producerId: consumer.producerId,
       kind: consumer.kind,
       rtpParameters: consumer.rtpParameters,
+      userId: this.rooms[gigId].producerMetadata[producerId].userId,
+      userName: this.rooms[gigId].producerMetadata[producerId].userName,
+      type: this.rooms[gigId].producerMetadata[producerId].type,
+      pause:producer.paused
     };
   }
   /**
@@ -220,12 +245,10 @@ class MediasoupManager {
     transportId: string;
     dtlsParameters: mediasoup.types.DtlsParameters;
   }) {
-    const consumerTransport =
-      this.rooms[gigId].consumerTransports[transportId];
+    const consumerTransport = this.rooms[gigId].consumerTransports[transportId];
     if (!consumerTransport) throw new Error("Transport not found");
 
     await consumerTransport.connect({ dtlsParameters });
-    console.log(`Consumer transport ${transportId} connected`);
     return { success: "success" };
   }
   //function to close the consumer
@@ -256,6 +279,83 @@ class MediasoupManager {
     consumerId: string;
   }) {
     await this.rooms[gigId].consumers[consumerId].resume();
+  }
+  async pauseOrResumeproducer({
+    gigId,
+    producerId,
+    isPaused,
+  }: {
+    gigId: string;
+    producerId: string;
+    isPaused: boolean;
+  }) {
+    const room = this.rooms[gigId];
+    if (!room) {
+      console.error(`Room not found: gigId=${gigId}`);
+      throw new Error("Room not found");
+    }
+
+    const producer = room.producers[producerId];
+    if (!producer) {
+      console.error(
+        `Producer not found: producerId=${producerId}, gigId=${gigId}`
+      );
+      throw new Error("Producer not found");
+    }
+
+    const metadata = room.producerMetadata[producerId];
+    if (!metadata) {
+      console.warn(
+        `Metadata missing for producerId=${producerId}, gigId=${gigId}`
+      );
+    }
+
+    if (isPaused) {
+      await producer.pause();
+      console.log(`Producer paused: ${producerId}`);
+    } else {
+      await producer.resume();
+      console.log(`Producer resumed: ${producerId}`);
+    }
+    return metadata;
+  }
+  async disconnectUser(gigId: string, userId: string): Promise<string[] | []> {
+    const room = this.rooms[gigId];
+    if (!room || !userId) return [];
+    const deletedProducerIds: string[] = [];
+    // Close all producers owned by this user
+    Object.entries(room.producers).forEach(([producerId, producer]) => {
+      if (room.producerMetadata[producerId].userId === userId) {
+        producer.close();
+        delete room.producers[producerId];
+        delete room.producerMetadata[producerId];
+        deletedProducerIds.push(producerId);
+      }
+    });
+
+    // Close transports (if stored)
+    Object.entries(room.producerTransports || {}).forEach(
+      ([transportId, transport]) => {
+        if (transport.appData?.userId === userId) {
+          transport.close();
+          delete room.producerTransports[transportId];
+        }
+      }
+    );
+
+    Object.entries(room.consumerTransports || {}).forEach(
+      ([transportId, transport]) => {
+        if (transport.appData?.userId === userId) {
+          transport.close();
+          delete room.consumerTransports[transportId];
+        }
+      }
+    );
+
+    if (Object.keys(room.producers).length === 0) {
+      delete this.rooms[gigId]; // Clean up empty room
+    }
+    return deletedProducerIds;
   }
   async cleanupRoom(gigId: string, socketId: string) {
     const room = this.rooms[gigId];

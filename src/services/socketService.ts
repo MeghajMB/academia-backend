@@ -6,6 +6,13 @@ import { NotificationModel } from "../models/notificationModel";
 import MediasoupManager from "../lib/mediaSoup";
 //intialize the class
 
+export interface CustomSocket extends Socket {
+  userId?: string;
+  userName?: string;
+  profilePicture?: string;
+  gigId?: string;
+}
+
 class SocketService {
   private _io: Server;
   private _socketSubscriptionMap: Map<string, Set<string>> = new Map();
@@ -52,7 +59,7 @@ class SocketService {
   private listenForConnections() {
     const io = this._io;
 
-    io.on("connection", (socket) => {
+    io.on("connection", (socket: CustomSocket) => {
       console.log(`New client connected: ${socket.id}`);
 
       /* Bidding Events */
@@ -107,22 +114,31 @@ class SocketService {
         }
       });
 
-      /* Dummy socket for webrtc start */
+      /* Webrtc Events start */
       /**
-       * In the joinGig event,validates and sends an event with routercapabiities
+       * In the joinGig event,validates and emits an event "routerCapabilities" with routercapabiities
        */
       socket.on("joinGig", async ({ gigId, accessToken }, callback) => {
         try {
           const mediasoupManager = this._mediasoupManager;
-          /* Do the necesary validations before giving access to the below code in the future */
+          /* Do the necesary validations and store the userid in socket */
+          socket.userId = accessToken;
+          socket.userName = "New Name";
+          socket.gigId = gigId;
+          socket.profilePicture = "user profile picture";
+          console.log(
+            socket.userId + "This is the user id i have saved in sockets"
+          );
+          /*  */
           const router = await mediasoupManager.getOrCreateRoomRouter(gigId);
           socket.join(gigId);
           socket.emit("routerCapabilities", {
             routerRtpCapabilities: router.rtpCapabilities,
           });
-          console.log(`User ${socket.id} joined room: ${gigId}`);
-        } catch (error) {
+          callback({ status: "ok", message: "success" });
+        } catch (error: any) {
           console.error("Error joining room:", error);
+          callback({ status: "error", message: error.message });
           socket.emit("error", "You dont have access to this gig");
         }
       });
@@ -141,8 +157,12 @@ class SocketService {
             const transportParams =
               await mediasoupManager.createWebRtcTransport(
                 gigId,
-                transportType
+                transportType,
+                socket.userId!
               );
+            console.log(
+              "Transport create for" + gigId + "type" + transportType
+            );
             if (transportType == "sender") {
               socket.emit("sendTransportCreated", transportParams);
             } else {
@@ -175,19 +195,38 @@ class SocketService {
           }
         }
       );
-      /* Handle the produce event */
+      /**
+       * 'transport-produce' event is used to create a new producer
+       * It then emits an event newProducer to notify others that a new producer has been registered and is ready to be consumed
+       */
       socket.on(
         "transport-produce",
-        async ({ gigId, transportId, kind, rtpParameters }, callback) => {
+        async (
+          { gigId, transportId, kind, rtpParameters, appData },
+          callback
+        ) => {
           const mediasoupManager = this._mediasoupManager;
           try {
+            /* Take the userdetails here */
+            const userDetails = {
+              userId: socket.userId!,
+              userName: socket.userName!,
+            };
+            /*  */
             const producer = await mediasoupManager.createProducer({
               gigId,
               transportId,
               kind,
               rtpParameters,
+              userDetails,
+              appData,
             });
-            socket.to(gigId).emit("newProducer", { producerId: producer.id });
+            socket.to(gigId).emit("newProducer", {
+              producerId: producer.id,
+              userId: userDetails.userId,
+              userName: userDetails.userName,
+              kind,
+            });
             callback({ status: "ok", id: producer.id });
           } catch (error) {
             callback({ status: "error", message: error });
@@ -230,6 +269,8 @@ class SocketService {
               producerId,
               rtpCapabilities,
             });
+            console.log("This is the consume meida data");
+            //console.log(consumerInfo);
             callback({ status: "ok", consumerData: consumerInfo });
           } catch (error) {
             console.error("Error creating consumer:", error);
@@ -244,23 +285,79 @@ class SocketService {
         await mediasoupManager.resumeConsumer({ gigId, consumerId });
       });
 
-      /* Dummy socket for webrtc end */
+      /* This event fetches all the producers */
+      socket.on("getProducers", ({ gigId }, callback) => {
+        const room = this._mediasoupManager.rooms[gigId];
+        const producerDetails = Object.keys(room.producers).map(
+          (producerId) => ({
+            producerId,
+            userId: room.producerMetadata[producerId].userId,
+            userName: room.producerMetadata[producerId].userName,
+            kind: room.producerMetadata[producerId].kind,
+          })
+        );
+
+        callback({ producerIds: producerDetails });
+      });
+
+      /* This event is for pausing or resuming producers */
+      socket.on(
+        "producerStateChanged",
+        async ({ gigId, producerId, paused }, callback) => {
+          try {
+            const metadata = await this._mediasoupManager.pauseOrResumeproducer(
+              { gigId, producerId, isPaused: paused }
+            );
+
+            socket.to(gigId).emit("producerStateChanged", {
+              producerId,
+              paused,
+              userId: metadata?.userId || "unknown",
+              userName: metadata?.userName || "Unknown User",
+              kind: metadata?.kind,
+            });
+          } catch (error: any) {
+            console.error(
+              `Error in producerStateChanged: producerId=${producerId}, gigId=${gigId}`,
+              error
+            );
+          }
+        }
+      );
+      /* This event is for disconnecting the media */
+      socket.on("leaveGig", async () => {
+        const gigId = socket.gigId;
+        const userId = socket.userId;
+        if (!gigId || !userId) return;
+        const deletedProducers = await this._mediasoupManager.disconnectUser(
+          gigId,
+          userId
+        );
+        for (let i = 0; i < deletedProducers.length; i++) {
+          socket
+            .to(gigId)
+            .emit("producerClosed", { producerId: deletedProducers[i] });
+        }
+      });
+      /* Webrtc Events end */
 
       socket.on("disconnect", async () => {
         const socketSubscriptionMap = this._socketSubscriptionMap;
-        const mediasoupManager = this._mediasoupManager;
         console.log(`Client disconnected: ${socket.id}`);
         for (const [channel, sockets] of socketSubscriptionMap.entries()) {
           if (sockets.has(socket.id)) {
             await this.unsubscribeFromChannel(socket, channel);
           }
         }
-        //delete the mediasoup data
-        const gigIds = Object.keys(mediasoupManager.rooms);
-        for (const gigId of gigIds) {
-          if (socket.rooms.has(gigId)) {
-            mediasoupManager.cleanupRoom(gigId, socket.id);
-          }
+        //This is to handle the disconnect the videocall if the data is there
+        const gigId = socket.gigId;
+        const userId = socket.userId;
+        if (gigId && userId) {
+          const deletedProducerIds =
+            await this._mediasoupManager.disconnectUser(gigId, userId);
+          deletedProducerIds.forEach((producerId) => {
+            socket.to(gigId).emit("producerClosed", { producerId });
+          });
         }
       });
     });
@@ -288,10 +385,6 @@ class SocketService {
         console.error(`Error processing Redis message: ${error}`);
       }
     });
-  }
-
-  get io() {
-    return this._io;
   }
 
   public async shutdown(): Promise<void> {
