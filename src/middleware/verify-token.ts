@@ -1,8 +1,8 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { NextFunction, Request, Response } from "express";
-import { AppError } from "../errors/app-error";
-import { redis } from "../config/redisClient";
-import { StatusCode } from "../enums/statusCode.enum";
+import { AppError } from "../util/errors/app-error";
+import { redis } from "../lib/redis";
+import { StatusCode } from "../enums/status-code.enum";
 
 interface CustomJwtPayload {
   id: string;

@@ -1,4 +1,4 @@
-import { IGigDocument } from "../models/gigModel";
+import { IGigDocument } from "../models/gig.model";
 import { IUserResult } from "./user.interface";
 
 export interface ICreateGigDTO {

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { createServer } from "http";
 import { app } from "./app";
-import SocketService from "./services/socketService";
+import SocketService from "./sockets/socket.service";
 import { runConsumer } from "./kafka/consumer";
 import { runProducer } from "./kafka/producer";
 

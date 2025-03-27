@@ -1,9 +1,9 @@
 import { Kafka } from "kafkajs";
-import { BidService } from "../services/bidService";
-import { BidRepository } from "../repositories/bidRepository";
-import { UserRepository } from "../repositories/userRepository";
-import { GigRepository } from "../repositories/gigRepository";
-import { redis } from "../config/redisClient";
+import { BidService } from "../services/implementations/bid.service";
+import { redis } from "../lib/redis";
+import { BidRepository } from "../repositories/implementations/bid.repository";
+import { UserRepository } from "../repositories/implementations/user.repository";
+import { GigRepository } from "../repositories/implementations/gig.repository";
 
 const kafka = new Kafka({
   clientId: "server 1",
