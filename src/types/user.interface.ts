@@ -10,6 +10,8 @@ export interface IUser {
   profilePicture?: string;
   googleId?: string;
   id?: string;
+  goldCoin:number;
+  verified:string
 }
 
 export interface IUserResult extends Document {

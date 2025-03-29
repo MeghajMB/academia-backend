@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 
-export const verifyUser = (...allowedRoles: string[])  => {
+export const verifyUser = (...allowedRoles: ("admin" | "student" | "instructor")[])  => {
   return (req: Request, res: Response, next: NextFunction) : void  => {
     try {
       const user = req.verifiedUser; // Extract user from the verified token

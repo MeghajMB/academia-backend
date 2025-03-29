@@ -3,29 +3,33 @@ import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 dotenv.config(/* { path: "./src/.env" } */);
 
-import authRoutes from "./routes/authRoutes";
-import adminRoutes from "./routes/adminRoutes";
-import instructorRoutes from "./routes/instructorRoutes";
-import userRoutes from "./routes/userRoutes";
-import categoryRoutes from "./routes/categoryRoutes";
-import fileRoutes from "./routes/fileRoutes"
-import courseRoutes from "./routes/courseRoutes"
-import paymentRoutes from "./routes/paymentRoutes"
-import reviewRoutes from "./routes/reviewRoutes"
+//routes
+import authRoutes from "./routes/auth.routes";
+import adminRoutes from "./routes/admin.routes";
+import instructorRoutes from "./routes/instructor.routes";
+import userRoutes from "./routes/user.routes";
+import categoryRoutes from "./routes/category.routes";
+import fileRoutes from "./routes/file.routes"
+import courseRoutes from "./routes/course.routes"
+import paymentRoutes from "./routes/payment.routes"
+import reviewRoutes from "./routes/review.routes"
+import gigRoutes from "./routes/gig.routes"
+import bidRoutes from "./routes/bid.routes"
+import notificationRoutes from "./routes/notifcation.routes"
 
 import { errorHandler } from "./middleware/error-handler";
 
 import { morganLogger } from "./middleware/logging";
 import passport from "passport";
-import "./config/passport";
+import "./lib/passport";
 
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import morgan from "morgan";
-import { StatusCode } from "./enums/statusCode.enum";
+import { StatusCode } from "./enums/status-code.enum";
 
 //jobs
-import "./jobs/deleteExpiredLecture";
+import "./jobs/delete-expired-lectures";
 
 
 const app = express();
@@ -59,6 +63,9 @@ app.use("/api/course", courseRoutes);
 app.use("/api/files",fileRoutes);
 app.use('/api/payment',paymentRoutes)
 app.use("/api/review", reviewRoutes);
+app.use("/api/gig", gigRoutes);
+app.use("/api/bid", bidRoutes);
+app.use("/api/notification", notificationRoutes);
 
 app.use(
   errorHandler as (

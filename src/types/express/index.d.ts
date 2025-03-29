@@ -4,7 +4,7 @@ declare global {
   namespace Express {
     interface Request {
       verifiedUser?: {
-        role:string;
+        role:"admin" | "student" | "instructor";
         email:string;
         id:string
       }

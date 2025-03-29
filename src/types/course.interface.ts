@@ -1,7 +1,7 @@
 import mongoose, { Document } from "mongoose";
 import { IUserResult } from "./user.interface";
-import { ICategoryResult } from "../repositories/interfaces/ICategoryRepository";
-import { IEnrollmentDocument } from "../models/enrollmentModel";
+import { ICategoryResult } from "../repositories/interfaces/category-repository.interface";
+import { IEnrollmentDocument } from "../models/enrollment.model";
 
 export interface ICourseResult extends Document {
   userId: mongoose.ObjectId;
