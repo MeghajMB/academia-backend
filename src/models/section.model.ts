@@ -1,7 +1,7 @@
 import mongoose, { Schema, Model, Document } from "mongoose";
 
-export interface ISectionDocument extends Document {
-  courseId: mongoose.Schema.Types.ObjectId;
+export interface SectionDocument extends Document {
+  courseId:  mongoose.Types.ObjectId;
   title: string;
   order: number;
   description:string;
@@ -9,7 +9,7 @@ export interface ISectionDocument extends Document {
   updatedAt: Date;
 }
 
-const SectionSchema = new Schema<ISectionDocument>(
+const SectionSchema = new Schema<SectionDocument>(
   {
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -31,7 +31,7 @@ const SectionSchema = new Schema<ISectionDocument>(
   }
 );
 
-export const SectionModel: Model<ISectionDocument> = mongoose.model(
+export const SectionModel: Model<SectionDocument> = mongoose.model(
   "Section",
   SectionSchema
 );

@@ -16,8 +16,8 @@ const start = async () => {
     console.log("Connected to MongoDB");
     const server = createServer(app);
     socketService = new SocketService(server);
-    //await runConsumer();
-    //await runProducer();
+    // await runConsumer();
+    // await runProducer();
   
     const port = process.env.PORT || 3001;
     server.listen(port, () => console.log(`Server running on port ${port}`));

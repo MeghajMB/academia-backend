@@ -1,14 +1,16 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 // Bid Model - Represents a user's bid on a service
-export interface IBidDocument extends Document {
+export interface BidDocument extends Document {
   gigId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   amount: number; // Bid amount
   status: "accept" | "reject";
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const BidSchema = new Schema<IBidDocument>(
+const BidSchema = new Schema<BidDocument>(
   {
     gigId: { type: Schema.Types.ObjectId, ref: "Service", required: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -26,7 +28,7 @@ const BidSchema = new Schema<IBidDocument>(
   }
 );
 
-export const BidModel: Model<IBidDocument> = mongoose.model<IBidDocument>(
+export const BidModel: Model<BidDocument> = mongoose.model<BidDocument>(
   "Bid",
   BidSchema
 );

@@ -170,7 +170,7 @@ class MediasoupManager {
     }
     // Create a Producer instance
     const producer = await transport.produce({ kind, rtpParameters, appData });
-    console.log(`ispaused in producer:`+appData.paused);
+    console.log(`ispaused in producer:` + appData.paused);
     if (appData.paused) {
       await producer.pause();
     }
@@ -219,7 +219,7 @@ class MediasoupManager {
       rtpCapabilities,
       paused: producer?.kind === "video",
     });
-
+    console.log("consumer created")
     this.rooms[gigId].consumers[consumer.id] = consumer;
     return {
       id: consumer.id,
@@ -229,7 +229,7 @@ class MediasoupManager {
       userId: this.rooms[gigId].producerMetadata[producerId].userId,
       userName: this.rooms[gigId].producerMetadata[producerId].userName,
       type: this.rooms[gigId].producerMetadata[producerId].type,
-      pause:producer.paused
+      pause: producer.paused,
     };
   }
   /**
@@ -249,6 +249,7 @@ class MediasoupManager {
     if (!consumerTransport) throw new Error("Transport not found");
 
     await consumerTransport.connect({ dtlsParameters });
+    console.log('consumer connected')
     return { success: "success" };
   }
   //function to close the consumer
@@ -259,6 +260,7 @@ class MediasoupManager {
     roomId: string;
     consumerId: string;
   }) {
+    console.log('consumer closed')
     await this.rooms[roomId].consumers[consumerId].close();
   }
   //function to close the consumer
@@ -269,6 +271,7 @@ class MediasoupManager {
     roomId: string;
     consumerId: string;
   }) {
+    console.log('consumer paused')
     await this.rooms[roomId].consumers[consumerId].pause();
   }
   async resumeConsumer({
@@ -278,6 +281,7 @@ class MediasoupManager {
     gigId: string;
     consumerId: string;
   }) {
+    console.log('consumer resumed')
     await this.rooms[gigId].consumers[consumerId].resume();
   }
   async pauseOrResumeproducer({
@@ -319,6 +323,10 @@ class MediasoupManager {
     }
     return metadata;
   }
+  /**
+   * This function is for disconnectiong the user.
+   * delets the data and closes the producers.
+   */
   async disconnectUser(gigId: string, userId: string): Promise<string[] | []> {
     const room = this.rooms[gigId];
     if (!room || !userId) return [];
@@ -357,6 +365,7 @@ class MediasoupManager {
     }
     return deletedProducerIds;
   }
+  
   async cleanupRoom(gigId: string, socketId: string) {
     const room = this.rooms[gigId];
     if (!room) return;

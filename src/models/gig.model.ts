@@ -1,14 +1,14 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 // Gig Model - Represents a service posted by an instructor
-export interface IGigDocument extends Document {
+export interface GigDocument extends Document {
   instructorId: mongoose.Types.ObjectId; // Instructor who created the service
   title: string;
   description: string;
   sessionDuration: number;
   minBid: number; // Minimum bid amount
   currentBid: number; // Current highest bid amount
-  currentBidder: mongoose.Schema.Types.ObjectId | null; // User ID of highest bidder
+  currentBidder: mongoose.Types.ObjectId | null; // User ID of highest bidder
   status: "active" | "expired" | "completed" | "no-bids" | "missed"; // active for active gigs,completed when instructor successfuluy completes it,no-bids when there are no bids,missed when the instructor didnt take the session
   biddingExpiresAt: Date; // Bidding expiry time
   sessionDate: Date; // Date of the actual service
@@ -16,7 +16,7 @@ export interface IGigDocument extends Document {
   updatedAt: Date;
 }
 
-const GigSchema = new Schema<IGigDocument>(
+const GigSchema = new Schema<GigDocument>(
   {
     instructorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     title: { type: String, required: true },
@@ -53,7 +53,7 @@ const GigSchema = new Schema<IGigDocument>(
   }
 );
 
-export const GigModel: Model<IGigDocument> = mongoose.model<IGigDocument>(
+export const GigModel: Model<GigDocument> = mongoose.model<GigDocument>(
   "Gig",
   GigSchema
 );

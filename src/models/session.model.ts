@@ -1,24 +1,22 @@
 import mongoose, { Document, Schema, Model } from "mongoose";
 
-export interface ISessionParticipant {
-  userId: Schema.Types.ObjectId;
-  joinTimes: Date[];
-  leaveTimes: Date[];
-  totalTimeSpent: number; // In seconds
-}
-
-export interface ISessionDocument extends Document {
-  gigId: mongoose.Types.ObjectId;
+export interface SessionDocument extends Document {
+  gigId:  mongoose.Types.ObjectId;
   instructorId: mongoose.Types.ObjectId;
   sessionDate: Date;
   sessionDuration: number; // Duration in minutes
-  participants: ISessionParticipant[];
+  participants: {
+    userId: Schema.Types.ObjectId;
+    joinTimes: Date[];
+    leaveTimes: Date[];
+    totalTimeSpent: number; // In seconds
+  }[];
   status: "scheduled" | "in-progress" | "completed" | "missed";
   createdAt: Date;
   updatedAt: Date;
 }
 
-const SessionSchema = new Schema<ISessionDocument>(
+const SessionSchema = new Schema<SessionDocument>(
   {
     gigId: { type: Schema.Types.ObjectId, ref: "Gig", required: true },
     instructorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -49,5 +47,5 @@ const SessionSchema = new Schema<ISessionDocument>(
   }
 );
 
-export const SessionModel: Model<ISessionDocument> =
-  mongoose.model<ISessionDocument>("Session", SessionSchema);
+export const SessionModel: Model<SessionDocument> =
+  mongoose.model<SessionDocument>("Session", SessionSchema);

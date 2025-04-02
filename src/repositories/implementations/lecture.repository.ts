@@ -1,14 +1,13 @@
 import mongoose from "mongoose";
 import { BaseRepository } from "../base/base.repository";
-import {   ILectureRepository,
-  ILectureResult,ILectureResultPopulated } from "../interfaces/lecture-repository.interface";
-import { ILectureDocument, LectureModel } from "../../models/lecture.model";
+import { ILectureRepository } from "../interfaces/lecture-repository.interface";
+import { LectureDocument, LectureModel } from "../../models/lecture.model";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-
+import { LectureWithPopulatedData } from "../types/lecture-repository.types";
 
 export class LectureRepository
-  extends BaseRepository<ILectureDocument>
+  extends BaseRepository<LectureDocument>
   implements ILectureRepository
 {
   constructor() {
@@ -17,15 +16,12 @@ export class LectureRepository
 
   async findByIdWithPopulatedData(
     lectureId: string
-  ): Promise<ILectureResultPopulated | null> {
+  ): Promise<LectureWithPopulatedData | null> {
     try {
       const lecture = await LectureModel.findById(lectureId).populate(
         "courseId"
       );
-      if (!lecture) {
-        return null;
-      }
-      return lecture as unknown as ILectureResultPopulated;
+      return lecture as unknown as LectureWithPopulatedData | null;
     } catch (error: unknown) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -39,7 +35,7 @@ export class LectureRepository
     lectureId: mongoose.ObjectId,
     draggedOrder: number,
     targetOrder: number
-  ): Promise<ILectureResult | null> {
+  ): Promise<LectureDocument | null> {
     try {
       if (draggedOrder > targetOrder) {
         await LectureModel.updateMany(
@@ -78,7 +74,7 @@ export class LectureRepository
     targetSectionId: mongoose.ObjectId,
     draggedLectureOrder: number,
     targetOrder: number
-  ): Promise<ILectureResult | null> {
+  ): Promise<LectureDocument | null> {
     try {
       await LectureModel.updateMany(
         { sectionId: draggedSectionId, order: { $gte: draggedLectureOrder } },
@@ -103,11 +99,13 @@ export class LectureRepository
     }
   }
 
-  async getLecturesWithCourseId(courseId: string): Promise<ILectureResult[]> {
+  async getLecturesWithCourseId(courseId: string): Promise<LectureDocument[]> {
     try {
-      const lectures = await LectureModel.find({ courseId: courseId }).sort({
-        order: 1,
-      });
+      const lectures = await LectureModel.find({ courseId: courseId })
+        .sort({
+          order: 1,
+        })
+        .lean();
       return lectures;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -120,7 +118,7 @@ export class LectureRepository
   async updateLectureWithProcessedKey(
     lectureId: string,
     key: string
-  ): Promise<ILectureResult | null> {
+  ): Promise<LectureDocument | null> {
     try {
       const updatedLecture = await LectureModel.findByIdAndUpdate(
         lectureId,
@@ -129,7 +127,7 @@ export class LectureRepository
       );
       return updatedLecture;
     } catch (error: unknown) {
-      console.log(error)
+      console.log(error);
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR
@@ -144,7 +142,7 @@ export class LectureRepository
       });
       return lectureCount;
     } catch (error: unknown) {
-      console.log(error)
+      console.log(error);
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR
@@ -167,7 +165,7 @@ export class LectureRepository
   }
 
   async deleteLecturesByFilter(
-    filters: Partial<Record<keyof ILectureDocument, any>>
+    filters: Partial<Record<keyof LectureDocument, any>>
   ): Promise<number> {
     try {
       const result = await LectureModel.deleteMany(filters);
@@ -200,7 +198,7 @@ export class LectureRepository
   async editLecture(
     lectureId: string,
     lectureData: { title: string; videoUrl: string; duration: number }
-  ): Promise<ILectureResult | null> {
+  ): Promise<LectureDocument | null> {
     try {
       const lecture = await LectureModel.findByIdAndUpdate(
         lectureId,

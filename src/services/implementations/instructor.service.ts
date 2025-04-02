@@ -1,5 +1,3 @@
-// src/services/AuthService.ts
-
 //services
 import { CourseService } from "./course.service";
 

@@ -12,10 +12,11 @@ export class PaymentController {
   async createOrder(req: Request, res: Response, next: NextFunction) {
     try {
       const { itemId, type } = req.body;
+      const userId=req.verifiedUser!.id
       if (!itemId || !type) {
         throw new BadRequestError("Invalid data");
       }
-      const order = await this.paymentService.createRazorPayOrder(itemId, type);
+      const order = await this.paymentService.createRazorPayOrder(itemId, type,userId);
 
       res.send({
         order_id: order.id,

@@ -1,8 +1,4 @@
-import { Document } from "mongoose";
+import { ReviewDocument } from "../../models/review.model";
 import { IRepository } from "../base/base-repository.interface";
-import { IReviewDocument } from "../../models/review.model";
 
-
-export interface IReviewRepository extends IRepository<IReviewDocument> {
-
-}
+export interface IReviewRepository extends IRepository<ReviewDocument> {}

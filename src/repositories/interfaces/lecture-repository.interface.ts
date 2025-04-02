@@ -1,26 +1,12 @@
-import mongoose, { Document } from "mongoose";
-import { ICourseResult } from "../../types/course.interface";
+import mongoose, { Types } from "mongoose";
 import { IRepository } from "../base/base-repository.interface";
-import { ILectureDocument } from "../../models/lecture.model";
+import { LectureDocument } from "../../models/lecture.model";
+import { LectureWithPopulatedData } from "../types/lecture-repository.types";
 
-export interface ILectureResult extends Document {
-  sectionId: mongoose.ObjectId;
-  courseId: mongoose.ObjectId | ICourseResult;
-  title: string;
-  videoUrl: string;
-  duration: number;
-  order: number;
-  status: string;
-  scheduledDeletionDate: Date;
-}
-export interface ILectureResultPopulated extends ILectureResult {
-  courseId: ICourseResult; // Override courseId to be the populated Course document
-}
-
-export interface ILectureRepository extends IRepository<ILectureDocument> {
-  getLecturesWithCourseId(courseId: string): Promise<ILectureResult[]>;
+export interface ILectureRepository extends IRepository<LectureDocument> {
+  getLecturesWithCourseId(courseId: string): Promise<LectureDocument[]>;
   deleteLecturesByFilter(
-    filters: Partial<Record<keyof ILectureDocument, any>>
+    filters: Partial<Record<keyof LectureDocument, any>>
   ): Promise<number>;
   scheduleDeletionDateForLectures(
     sectionId: string,
@@ -29,28 +15,28 @@ export interface ILectureRepository extends IRepository<ILectureDocument> {
   editLecture(
     lectureId: string,
     lectureData: { title: string; videoUrl: string; duration: number }
-  ): Promise<ILectureResult | null>;
+  ): Promise<LectureDocument | null>;
   updateOrderOfLectureInSameSection(
-    sectionId: mongoose.ObjectId,
-    lectureId: mongoose.ObjectId,
+    sectionId: Types.ObjectId,
+    lectureId: Types.ObjectId,
     draggedOrder: number,
     targetOrder: number
-  ): Promise<ILectureResult | null>;
+  ): Promise<LectureDocument | null>;
   updateOrderOfLectureInDifferentSection(
-    lectureId: mongoose.ObjectId,
-    draggedSectionId: mongoose.ObjectId,
-    targetSectionId: mongoose.ObjectId,
+    lectureId: Types.ObjectId,
+    draggedSectionId: Types.ObjectId,
+    targetSectionId: Types.ObjectId,
     draggedLectureOrder: number,
     targetOrder: number
-  ): Promise<ILectureResult | null>;
+  ): Promise<LectureDocument | null>;
   updateLectureWithProcessedKey(
     lectureId: string,
     key: string
-  ): Promise<ILectureResult | null>;
+  ): Promise<LectureDocument | null>;
   countDocumentWithSectionId(sectionId: string): Promise<number>;
   getTotalLecturesOfCourse(courseId: string): Promise<number>;
   findByIdWithPopulatedData(
     lectureId: string
-  ): Promise<ILectureResultPopulated | null>;
+  ): Promise<LectureWithPopulatedData | null>;
   // Additional methods like getUser, updateUser, etc.
 }

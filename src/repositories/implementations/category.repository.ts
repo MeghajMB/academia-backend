@@ -1,89 +1,73 @@
-
 import { StatusCode } from "../../enums/status-code.enum";
 import { DatabaseError } from "../../util/errors/database-error";
-import { CategoryModel } from "../../models/categoy.model";
-import {   ICategory,
-  ICategoryRepository,ICategoryResult } from "../interfaces/category-repository.interface";
+import { CategoryDocument, CategoryModel } from "../../models/categoy.model";
+import { ICategoryRepository } from "../interfaces/category-repository.interface";
+import { BaseRepository } from "../base/base.repository";
 
-export class CategoryRepository implements ICategoryRepository {
-  async createCategory(category: ICategory): Promise<ICategoryResult | null> {
+export class CategoryRepository
+  extends BaseRepository<CategoryDocument>
+  implements ICategoryRepository
+{
+  async createCategory(category: {
+    name: string;
+    description: string;
+  }): Promise<CategoryDocument | null> {
     try {
       const createdCategory = new CategoryModel(category);
       const newCategory = await createdCategory.save();
       return newCategory;
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
   async fetchCategoryWithPagination(
     skip: number,
     limit: number
-  ): Promise<ICategoryResult[] | null> {
+  ): Promise<CategoryDocument[] | null> {
     try {
       const category = await CategoryModel.find()
         .skip(skip)
         .limit(limit)
-        .sort({ name: 1 });
+        .sort({ name: 1 })
+        .lean();
       if (!category) return null;
 
       return category;
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
-  async getAllCategories(): Promise<ICategoryResult[] | null> {
-    try {
-      const categories = await CategoryModel.find();
-      return categories;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async findByName(name: string): Promise<ICategoryResult | null> {
+  async findByName(name: string): Promise<CategoryDocument | null> {
     try {
       const category = await CategoryModel.findOne({
         name: { $regex: `^${name}$`, $options: "i" },
-      });
+      }).lean();
       if (!category) return null;
 
       return category;
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
-  async findById(id: string): Promise<ICategoryResult | null> {
-    try {
-      const category = await CategoryModel.findById(id);
-      if (!category) return null;
-
-      return category;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
-    }
-  }
   async updateCategory(
     categoryId: string,
     updatedData: { name: string; description: string }
-  ): Promise<ICategoryResult|null> {
+  ): Promise<CategoryDocument | null> {
     try {
       const updatedCategory = await CategoryModel.findByIdAndUpdate(
         categoryId,
@@ -94,33 +78,13 @@ export class CategoryRepository implements ICategoryRepository {
       if (!updatedCategory) {
         return null;
       }
-
       return updatedCategory;
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async save(category: ICategoryResult): Promise<ICategoryResult | null> {
-    try {
-      return await category.save();
-    } catch (error: unknown) {
-      throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async countDocuments(): Promise<number> {
-    try {
-      const count = await CategoryModel.countDocuments();
-      return count;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError("An unexpected database error occurred", StatusCode.INTERNAL_SERVER_ERROR);
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }

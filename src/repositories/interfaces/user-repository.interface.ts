@@ -1,35 +1,33 @@
-import { ClientSession, Document } from "mongoose";
-import { IUser, IUserResult } from "../../types/user.interface";
+import { ClientSession } from "mongoose";
+import { UserDocument } from "../../models/user.model";
+import { IRepository } from "../base/base-repository.interface";
 
 // Interface for the user document
 
-export interface IUserRepository {
-  createUser(user: IUser): Promise<IUserResult>;
-  findById(id: string): Promise<IUserResult | null>;
-  findByEmail(email: string): Promise<IUserResult | null>;
+export interface IUserRepository extends IRepository<UserDocument> {
+  findByEmail(email: string): Promise<UserDocument | null>;
   fetchUsersWithPagination(
     skip: number,
     limit: number,
     role: string,
     search: string
-  ): Promise<IUserResult[] | null>;
+  ): Promise<UserDocument[] | null>;
   fetchUsersWithFilters(
     filters: { [key: string]: any },
     skip: number,
     limit: number
-  ): Promise<IUserResult[] | null>;
+  ): Promise<UserDocument[] | null>;
   countDocuments(key: string, value: any): Promise<number>;
-  save(user: IUserResult): Promise<IUserResult>;
-  awardPurpleCoins(userId: string, coins: number): Promise<IUserResult | null>;
+  awardPurpleCoins(userId: string, coins: number): Promise<UserDocument | null>;
   addGoldCoins(
     userId: string,
     coinsToAdd: number,
     session?: ClientSession
-  ): Promise<IUserResult | null>;
+  ): Promise<UserDocument | null>;
   deductGoldCoins(
     userId: string,
     coinsToDeduct: number,
     session?: ClientSession
-  ): Promise<IUserResult | null>;
+  ): Promise<UserDocument | null>;
   // Additional methods like getUser, updateUser, etc.
 }

@@ -1,6 +1,5 @@
-import { INotificationDocument } from "../../models/notification.model";
+import { NotificationDocument } from "../../models/notification.model";
+import { IRepository } from "../base/base-repository.interface";
 
-export interface INotificationRepository {
-  createNotification(userId: string, message: string): Promise<INotificationDocument>;
-  findByUserId(userId: string): Promise<INotificationDocument[]>;
-}
+export interface INotificationRepository
+  extends IRepository<NotificationDocument> {}

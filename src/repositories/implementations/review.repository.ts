@@ -1,33 +1,26 @@
 import mongoose from "mongoose";
-import { IReviewDocument, ReviewModel } from "../../models/review.model";
+import { ReviewDocument, ReviewModel } from "../../models/review.model";
 import { BaseRepository } from "../base/base.repository";
 import { IReviewRepository } from "../interfaces/review-repository.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-import { ReviewWithPopulatedStudentId } from "../../types/review.interface";
-
+import { ReviewWithPopulatedStudentId } from "../types/review-repository.types";
 
 export class ReviewRepository
-  extends BaseRepository<IReviewDocument>
+  extends BaseRepository<ReviewDocument>
   implements IReviewRepository
 {
   constructor() {
     super(ReviewModel);
   }
-  async createReview(reviewData: Partial<IReviewDocument>) {
-    try {
-      return ReviewModel.create(reviewData);
-    } catch (error) {
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
 
-  async findReviewsByCourse(courseId: string) {
+  async findReviewsByCourse(
+    courseId: string
+  ): Promise<ReviewWithPopulatedStudentId[]> {
     try {
-      const reviews = ReviewModel.find({ courseId }).populate("studentId");
+      const reviews = ReviewModel.find({ courseId })
+        .populate("studentId")
+        .lean();
       return reviews as unknown as ReviewWithPopulatedStudentId[];
     } catch (error) {
       throw new DatabaseError(
@@ -39,7 +32,7 @@ export class ReviewRepository
 
   async findReviewsByStudent(studentId: string) {
     try {
-      return ReviewModel.find({ studentId }).populate("courseId");
+      return ReviewModel.find({ studentId }).populate("courseId").lean();
     } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -50,7 +43,7 @@ export class ReviewRepository
 
   async findByCourseAndStudent(courseId: string, studentId: string) {
     try {
-      return ReviewModel.findOne({ courseId, studentId });
+      return ReviewModel.findOne({ courseId, studentId }).lean();
     } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -61,18 +54,7 @@ export class ReviewRepository
 
   async findReviewById(reviewId: string) {
     try {
-      return ReviewModel.findById(reviewId);
-    } catch (error) {
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-
-  async deleteReview(reviewId: string) {
-    try {
-      return ReviewModel.findByIdAndDelete(reviewId);
+      return ReviewModel.findById(reviewId).lean();
     } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",

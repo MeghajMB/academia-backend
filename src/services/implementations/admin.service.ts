@@ -15,7 +15,12 @@ import { BadRequestError } from "../../util/errors/bad-request-error";
 import { redis } from "../../lib/redis";
 import { StatusCode } from "../../enums/status-code.enum";
 import { INotificationService } from "../interfaces/notification-service.interface";
-import { GetUsersParams } from "../types/admin-service.types";
+import {
+  GetCoursesParams,
+  GetInstructorVerificationRequestsParams,
+  GetUsersParams,
+  RejectVerificationRequestParams,
+} from "../types/admin-service.types";
 
 export class AdminService implements IAdminService {
   constructor(
@@ -26,27 +31,31 @@ export class AdminService implements IAdminService {
   ) {}
 
   async getUsers({ role, page, limit, search }: GetUsersParams) {
-    const skip = (page - 1) * limit;
-    const totalDocuments = await this.userRepository.countDocuments(
-      "role",
-      role
-    );
-    const users = await this.userRepository.fetchUsersWithPagination(
-      skip,
-      limit,
-      role,
-      search
-    );
-    const pagination = {
-      totalDocuments,
-      totalPages: Math.ceil(totalDocuments / limit),
-      currentPage: page,
-      limit,
-    };
+    try {
+      const skip = (page - 1) * limit;
+      const totalDocuments = await this.userRepository.countDocuments(
+        "role",
+        role
+      );
+      const users = await this.userRepository.fetchUsersWithPagination(
+        skip,
+        limit,
+        role,
+        search
+      );
+      const pagination = {
+        totalDocuments,
+        totalPages: Math.ceil(totalDocuments / limit),
+        currentPage: page,
+        limit,
+      };
 
-    return { users, pagination };
+      return { users, pagination };
+    } catch (error) {
+      throw error;
+    }
   }
-  async getCourses(page: number, limit: number, search: string) {
+  async getCourses({ page, limit, search }: GetCoursesParams) {
     const skip = (page - 1) * limit;
     const totalDocuments = await this.courseRepository.countDocuments(
       "status",
@@ -71,7 +80,10 @@ export class AdminService implements IAdminService {
     return { courses, pagination };
   }
 
-  async getInstructorVerificationRequests(page: number, limit: number) {
+  async getInstructorVerificationRequests({
+    page,
+    limit,
+  }: GetInstructorVerificationRequestsParams) {
     const skip = (page - 1) * limit;
     const totalDocuments = await this.userRepository.countDocuments(
       "verified",
@@ -93,17 +105,22 @@ export class AdminService implements IAdminService {
     return { requests, pagination };
   }
 
-  async rejectVerificationRequest(rejectReason: string, userId: string) {
+  async rejectVerificationRequest({
+    rejectReason,
+    userId,
+  }: RejectVerificationRequestParams) {
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new BadRequestError("User Not Found");
     }
 
-    user.verified = "rejected";
-    user.rejectedReason = rejectReason;
-    await this.userRepository.save(user);
+    await this.userRepository.update(
+      userId,
+      { verified: "rejected", rejectedReason: rejectReason },
+      undefined
+    );
 
-    return user;
+    return { message: "Verification request rejected" };
   }
 
   async approveVerificationRequest(userId: string) {
@@ -111,18 +128,18 @@ export class AdminService implements IAdminService {
     if (!user) {
       throw new BadRequestError("User Not Found");
     }
+    this.userRepository.update(
+      userId,
+      { verified: "verified", role: "instructor" },
+      { rejectedReason: 1 }
+    );
 
-    user.verified = "verified";
-    delete user.rejectedReason;
-    user.role = "instructor";
-    await this.userRepository.save(user);
-
-    return user;
+    return { message: "Verification request approved" };
   }
 
   async getPaginatedCategories(page: number, limit: number) {
     const skip = (page - 1) * limit;
-    const totalDocuments = await this.categoryRepository.countDocuments();
+    const totalDocuments = await this.categoryRepository.countAll();
     const categories =
       await this.categoryRepository.fetchCategoryWithPagination(skip, limit);
     const pagination = {
@@ -135,17 +152,20 @@ export class AdminService implements IAdminService {
     return { categories, pagination };
   }
 
-  async blockUser(id: string) {
-    const user = await this.userRepository.findById(id);
+  async blockUser(userId: string) {
+    const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new NotFoundError();
     }
-    user.isBlocked = !user.isBlocked;
-    await this.userRepository.save(user);
+    await this.userRepository.update(
+      userId,
+      { isBlocked: !user.isBlocked },
+      undefined
+    );
     if (user.isBlocked) {
       await redis.del(`refreshToken:${user.id}`);
     }
-    return user;
+    return { message: user.isBlocked ? "User blocked" : "User unblocked" };
   }
   async blockOrUnblockCourse(id: string) {
     try {
@@ -153,21 +173,29 @@ export class AdminService implements IAdminService {
       if (!course) {
         throw new AppError("Course not found", StatusCode.NOT_FOUND);
       }
-      return course;
+      return {
+        message: course.isBlocked ? "Course blocked" : "Course unblocked",
+      };
     } catch (error) {
       throw error;
     }
   }
 
-  async blockCategory(id: string) {
+  async blockCategory(categoryId: string) {
     try {
-      const category = await this.categoryRepository.findById(id);
+      const category = await this.categoryRepository.findById(categoryId);
       if (!category) {
         throw new NotFoundError("Category Not Found");
       }
       category.isBlocked = !category.isBlocked;
-      await this.categoryRepository.save(category);
-      return category;
+      await this.categoryRepository.update(
+        categoryId,
+        { isBlocked: !category.isBlocked },
+        undefined
+      );
+      return {
+        message: category.isBlocked ? "Category blocked" : "Category unblocked",
+      };
     } catch (error) {
       throw error;
     }
@@ -260,7 +288,7 @@ export class AdminService implements IAdminService {
         rejectReason
       );
       if (!course) throw new BadRequestError("No course found");
-      this.notificationService.sendNotification(
+      await this.notificationService.sendNotification(
         course?.userId.toString(),
         "course",
         "Course Rejected",

@@ -1,21 +1,23 @@
 import { FilterQuery } from "mongoose";
-import { ICourseResult, ICourseResultWithUserId } from "../../types/course.interface";
 import { StatusCode } from "../../enums/status-code.enum";
-import { CourseModel, ICourseDocument } from "../../models/course.model";
+import { CourseModel, CourseDocument } from "../../models/course.model";
 import { BaseRepository } from "../base/base.repository";
-import { ICourse, ICourseRepository } from "../interfaces/course-repository.interface";
+import { ICourseRepository } from "../interfaces/course-repository.interface";
 import { DatabaseError } from "../../util/errors/database-error";
-import { BadRequestError } from "../../util/errors/bad-request-error";
+import { CourseWithPopulatedFields } from "../types/course-repository.types";
 
 export class CourseRepository
-  extends BaseRepository<ICourseDocument>
+  extends BaseRepository<CourseDocument>
   implements ICourseRepository
 {
   constructor() {
     super(CourseModel);
   }
-  
-  async createCourse(course: ICourse, session: object): Promise<ICourseResult> {
+
+  async createCourseWithSession(
+    course: Partial<CourseDocument>,
+    session: object
+  ): Promise<CourseDocument> {
     try {
       const createdCourse = new CourseModel(course);
       await createdCourse.save(session);
@@ -30,12 +32,13 @@ export class CourseRepository
 
   async findByIdWithPopulatedData(
     courseId: string
-  ): Promise<ICourseResultWithUserId | null> {
+  ): Promise<CourseWithPopulatedFields | null> {
     try {
       const existingCourse = await CourseModel.findById(courseId)
         .populate("category")
-        .populate("userId");
-      return existingCourse as ICourseResultWithUserId | null;
+        .populate("userId")
+        .lean();
+      return existingCourse as CourseWithPopulatedFields | null;
     } catch (error: unknown) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -44,12 +47,13 @@ export class CourseRepository
     }
   }
 
-  async findNewCourses(): Promise<ICourseResult[]> {
+  async findNewCourses(): Promise<CourseDocument[]> {
     try {
       const newCourses = await CourseModel.find({ status: "listed" })
         .populate("category")
         .sort({ createdAt: -1 })
-        .limit(4);
+        .limit(4)
+        .lean();
 
       return newCourses;
     } catch (error: unknown) {
@@ -60,9 +64,9 @@ export class CourseRepository
     }
   }
 
-  async findCourseByName(title: string): Promise<ICourseResult | null> {
+  async findCourseByName(title: string): Promise<CourseDocument | null> {
     try {
-      const existingCourse = await CourseModel.findOne({ title: title });
+      const existingCourse = await CourseModel.findOne({ title: title }).lean();
       return existingCourse;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -78,12 +82,12 @@ export class CourseRepository
   async fetchCoursesWithInstrucorIdAndStatus(
     instructorId: string,
     status: string
-  ): Promise<ICourseResult[] | null> {
+  ): Promise<CourseDocument[] | null> {
     try {
       const courses = await CourseModel.find({
         userId: instructorId,
         status: status,
-      }).populate("category");
+      }).lean();
       return courses;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -94,10 +98,10 @@ export class CourseRepository
   }
 
   async findCoursesWithFilter(
-    filter: FilterQuery<ICourseDocument>
-  ): Promise<ICourseResult[] | null> {
+    filter: FilterQuery<CourseDocument>
+  ): Promise<CourseDocument[] | null> {
     try {
-      const courses = await CourseModel.find(filter).populate("category");
+      const courses = await CourseModel.find(filter).lean();
       return courses;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -111,7 +115,7 @@ export class CourseRepository
     instructorId: string,
     courseId: string,
     status: string
-  ): Promise<ICourseResult | null> {
+  ): Promise<CourseDocument | null> {
     try {
       const course = await CourseModel.findOneAndUpdate(
         { _id: courseId, userId: instructorId },
@@ -133,7 +137,7 @@ export class CourseRepository
 
   async countDocuments(key: string, value: string): Promise<number> {
     try {
-      const count = await CourseModel.countDocuments({ key: value });
+      const count = await CourseModel.countDocuments({ [key]: value });
 
       return count;
     } catch (error: unknown) {
@@ -147,7 +151,7 @@ export class CourseRepository
     }
   }
 
-  async toggleCourseStatus(courseId: string): Promise<ICourseResult | null> {
+  async toggleCourseStatus(courseId: string): Promise<CourseDocument | null> {
     try {
       const updatedCourse = await CourseModel.findByIdAndUpdate(
         courseId,
@@ -171,12 +175,12 @@ export class CourseRepository
     filters: { [key: string]: any },
     skip: number,
     limit: number
-  ): Promise<ICourseResult[]> {
+  ): Promise<CourseDocument[]> {
     try {
       const courses = await CourseModel.find(filters)
         .skip(skip)
         .limit(limit)
-        .populate("category");
+        .lean();
 
       return courses;
     } catch (error: unknown) {
@@ -193,16 +197,14 @@ export class CourseRepository
   async rejectCourseReviewRequest(
     courseId: string,
     rejectReason: string
-  ): Promise<ICourseResult | null> {
+  ): Promise<CourseDocument | null> {
     try {
-      const course = await CourseModel.findById(courseId);
-      if (!course) {
-        throw new BadRequestError("Course Not Found");
-      }
-      course.status = "rejected";
-      course.rejectedReason = rejectReason;
-      await course.save();
-      return course;
+      const updatedCourse = await CourseModel.findByIdAndUpdate(
+        courseId,
+        { $set: { status: "rejected", rejectedReason: rejectReason } },
+        { new: true }
+      );
+      return updatedCourse;
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error.message);
@@ -216,16 +218,14 @@ export class CourseRepository
 
   async approveCourseReviewRequest(
     courseId: string
-  ): Promise<ICourseResult | null> {
+  ): Promise<CourseDocument | null> {
     try {
-      const course = await CourseModel.findById(courseId);
-      if (!course) {
-        throw new BadRequestError("Course Not Found");
-      }
-      course.status = "accepted";
-      delete (course as any).rejected;
-      await course.save();
-      return course;
+      const updatedCourse = await CourseModel.findByIdAndUpdate(
+        courseId,
+        { $set: { status: "accepted" }, $unset: { rejectedReason: "" } },
+        { new: true }
+      );
+      return updatedCourse;
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error.message);

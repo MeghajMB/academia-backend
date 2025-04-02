@@ -121,7 +121,7 @@ class SocketService {
       socket.on("joinGig", async ({ gigId, accessToken }, callback) => {
         try {
           const mediasoupManager = this._mediasoupManager;
-          /* Do the necesary validations and store the userid in socket */
+          /* Do the necesary validations and store the userid,name and profile picture in socket */
           socket.userId = accessToken;
           socket.userName = "New Name";
           socket.gigId = gigId;

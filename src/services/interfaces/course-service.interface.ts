@@ -1,69 +1,20 @@
-import mongoose from "mongoose";
-import { ILectureResult } from "../../repositories/interfaces/lecture-repository.interface";
-import { ICourseResult } from "../../types/course.interface";
-import { ISectionResult } from "../../repositories/interfaces/section-repository.interface";
 import { CloudfrontSignedCookiesOutput } from "@aws-sdk/cloudfront-signer";
-import { IEnrollmentDocument } from "../../models/enrollment.model";
-
-export interface ICreateCourse {
-  category: string;
-  imageThumbnail: string;
-  description: string;
-  price: number;
-  subtitle: string;
-  title: string;
-  promotionalVideo: string;
-}
-
-export interface ICurriculumResult {
-  lectures: ILectureResult[];
-  courseId: mongoose.ObjectId;
-  title: string;
-  order: number;
-}
-
-export interface IUpdatedSection {
-  id: string;
-  courseId: string;
-  title: string;
-  order: number;
-  lectures: IUpdatedLecture[];
-}
-export interface IUpdatedLecture {
-  id: string;
-  sectionId: string;
-  courseId: string;
-  title: string;
-  videoUrl: string;
-  duration: number;
-  order: number;
-  status: string;
-}
-
-export interface IGetCourseDetails {
-  courseId: string;
-  instructorId: string;
-  instructorName: string;
-  totalDuration: number;
-  totalLectures: number;
-  imageThumbnail: string;
-  promotionalVideo: string;
-  category: string;
-  title: string;
-  price: number;
-  subtitle: string;
-  description: string;
-  enrollmentStatus: "enrolled" | "not enrolled";
-  canReview: boolean;
-  hasReviewed: boolean;
-}
+import {
+  CreateCourse,
+  GetCourseDetailsResponse,
+  UpdatedSection,
+} from "../types/ccourse-service.types";
+import { CourseDocument } from "../../models/course.model";
+import { LectureDocument } from "../../models/lecture.model";
+import { SectionDocument } from "../../models/section.model";
+import { EnrollmentDocument } from "../../models/enrollment.model";
 
 export interface ICourseService {
   createCourse(
-    courseData: ICreateCourse,
+    courseData: CreateCourse,
     userId: string
-  ): Promise<ICourseResult>;
-  getNewCourses(): Promise<ICourseResult[]>;
+  ): Promise<CourseDocument>;
+  getNewCourses(): Promise<CourseDocument[]>;
   markLectureAsCompleted(
     id: string,
     courseId: string,
@@ -73,23 +24,23 @@ export interface ICourseService {
     lectureId: string,
     lectureData: { title: string; videoUrl: string; duration: number },
     id: string
-  ): Promise<ILectureResult>;
+  ): Promise<LectureDocument>;
   editSection(
-    sectionId : string,
+    sectionId: string,
     sectionData: { title: string; description: string },
     instructorId: string
-  ): Promise<ISectionResult>;
+  ): Promise<SectionDocument>;
   getCurriculum(
     courseId: string,
     userId: string,
     status: string,
     role: string
-  ): Promise<IUpdatedSection[]>;
+  ): Promise<UpdatedSection[]>;
   getEnrolledCoursesOfUser(studentId: string): Promise<any>;
   getCourseDetails(
     courseId: string,
     userId: string
-  ): Promise<IGetCourseDetails>;
+  ): Promise<GetCourseDetailsResponse>;
   getCourseCreationDetails(
     courseId: string,
     userId: string
@@ -104,30 +55,30 @@ export interface ICourseService {
     description: string;
   }>;
   editCourseCreationDetails(
-    courseId:string,
+    courseId: string,
     userId: string,
-    courseData: ICreateCourse,
-  ): Promise<ICourseResult>;
+    courseData: CreateCourse
+  ): Promise<CourseDocument>;
   enrollStudent(
     courseId: string,
     userId: string,
-    transactionId: string,
-  ): Promise<IEnrollmentDocument>;
+    transactionId: string
+  ): Promise<EnrollmentDocument>;
   addSection(
     section: { title: string; description: string },
     courseId: string,
     userId: string
-  ): Promise<ISectionResult>;
+  ): Promise<SectionDocument>;
   addLecture(
     userId: string,
     courseId: string,
     sectionID: string,
     lectureData: { title: string; videoUrl: string; duration: number }
-  ): Promise<ILectureResult>;
+  ): Promise<LectureDocument>;
   getCoursesOfInstructor(
     instructorId: string,
     status: string
-  ): Promise<ICourseResult[]>;
+  ): Promise<CourseDocument[]>;
   submitCourseForReview(
     instructorId: string,
     courseId: string
@@ -135,11 +86,11 @@ export interface ICourseService {
   deleteLecture(
     instructorId: string,
     lectureId: string
-  ): Promise<{ message: string,status:"archived"|"deleted" }>;
+  ): Promise<{ message: string; status: "archived" | "deleted" }>;
   deleteSection(
     instructorId: string,
     sectionId: string
-  ): Promise<{ message: string,status:"archived"|"deleted" }>;
+  ): Promise<{ message: string; status: "archived" | "deleted" }>;
   listCourse(
     instructorId: string,
     courseId: string
@@ -148,7 +99,7 @@ export interface ICourseService {
     draggedLectureId: string,
     targetLectureId: string,
     id: string
-  ): Promise<unknown>;
+  ): Promise<{ message: "success" }>;
   addLectureAfterProcessing(
     userId: string,
     courseId: string,

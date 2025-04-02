@@ -1,12 +1,38 @@
 // src/interfaces/controllers/AuthController.ts
 import { NextFunction, Request, Response } from "express";
 import { AdminService } from "../../services/implementations/admin.service";
-//errors
-import { AppError } from "../../util/errors/app-error";
-import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
+import { IAdminController } from "../interfaces/admin-controller.interface";
+import {
+  ApproveCourseReviewRequestSchema,
+  ApproveVerificationRequestSchema,
+  BlockCategoryRequestSchema,
+  BlockCourseRequestSchema,
+  BlockUserRequestSchema,
+  CreateCategoryRequestSchema,
+  EditCategoryRequestSchema,
+  GetCategoriesRequestSchema,
+  GetCourseReviewRequestsRequestSchema,
+  GetCoursesRequestSchema,
+  GetInstructorVerificationRequestsRequestSchema,
+  GetUsersRequestSchema,
+  RejectCourseReviewRequestSchema,
+  RejectVerificationRequestSchema,
+} from "../dtos/admin/request.dto";
+import {
+  BlockCategoryResponseSchema,
+  BlockResponseSchema,
+  CategoryResponseSchema,
+  CourseReviewRequestResponseSchema,
+  GetCategoriesResponseSchema,
+  GetCourseReviewRequestsResponseSchema,
+  GetCoursesResponseSchema,
+  GetInstructorVerificationRequestsResponseSchema,
+  GetUsersResponseSchema,
+  VerificationRequestResponseSchema,
+} from "../dtos/admin/response.dto";
 
-export class AdminController {
+export class AdminController implements IAdminController {
   private pagLimit = 10;
   constructor(private adminService: AdminService) {}
 
@@ -15,21 +41,22 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { role, page = 1, search = "" } = req.query;
-    console.log(role);
     try {
-      const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
+      const { role, page, search } = GetUsersRequestSchema.parse(req.query);
 
-      if (!role || typeof search !== "string") {
-        throw new BadRequestError("Mention The Role");
-      }
-      const data = await this.adminService.getUsers({
-        role: role.toString(),
-        page: pageNumber,
+      const result = await this.adminService.getUsers({
+        role: role,
+        page: page,
         limit: this.pagLimit,
         search: search,
       });
-      res.status(200).send(data);
+      const response = GetUsersResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Users retrieved successfully",
+        data: result,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -39,19 +66,20 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { page = 1, search = "" } = req.query;
     try {
-      const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
-
-      if (typeof search !== "string") {
-        throw new BadRequestError("Mention The Role");
-      }
-      const data = await this.adminService.getCourses(
-        pageNumber,
-        this.pagLimit,
-        search
-      );
-      res.status(200).send(data);
+      const { page, search } = GetCoursesRequestSchema.parse(req.query);
+      const result = await this.adminService.getCourses({
+        page,
+        limit: this.pagLimit,
+        search,
+      });
+      const response = GetCoursesResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Instructor verification requests retrieved successfully",
+        data: result,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -61,15 +89,21 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { page = 1 } = req.query;
+    const { page } = GetInstructorVerificationRequestsRequestSchema.parse(
+      req.query
+    );
     try {
-      const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
-
-      const data = await this.adminService.getInstructorVerificationRequests(
-        pageNumber,
-        this.pagLimit
-      );
-      res.status(200).send(data);
+      const result = await this.adminService.getInstructorVerificationRequests({
+        page,
+        limit: this.pagLimit,
+      });
+      const response = GetInstructorVerificationRequestsResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Instructor verification requests retrieved successfully",
+        data: result,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -79,17 +113,22 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { rejectReason, userId } = req.body;
-
     try {
-      if (!rejectReason || !userId) {
-        throw new BadRequestError("Must Specify the reason");
-      }
-      const data = await this.adminService.rejectVerificationRequest(
-        rejectReason,
-        userId
+      const { rejectReason, userId } = RejectVerificationRequestSchema.parse(
+        req.body
       );
-      res.status(200).send(data);
+
+      const result = await this.adminService.rejectVerificationRequest({
+        rejectReason,
+        userId,
+      });
+      const response = VerificationRequestResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Verification request processed",
+        data: null,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -99,14 +138,16 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { userId } = req.body;
-
     try {
-      if (!userId) {
-        throw new BadRequestError("Must Specify userId");
-      }
-      const data = await this.adminService.approveVerificationRequest(userId);
-      res.status(200).send(data);
+      const { userId } = ApproveVerificationRequestSchema.parse(req.body);
+      const result = await this.adminService.approveVerificationRequest(userId);
+      const response = VerificationRequestResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Verification request processed",
+        data: null,
+      });
+      res.status(200).send(response);
     } catch (error) {
       next(error);
     }
@@ -118,12 +159,15 @@ export class AdminController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const id = req.params.userId;
-      if (!id) {
-        throw new BadRequestError("Mention the id");
-      }
-      const data = await this.adminService.blockUser(id);
-      res.status(200).send({ message: "success" });
+      const { userId } = BlockUserRequestSchema.parse(req.params);
+      const data = await this.adminService.blockUser(userId);
+      const response = BlockResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "success",
+        data: null,
+      });
+      res.status(200).send(response);
     } catch (error) {
       next(error);
     }
@@ -135,12 +179,17 @@ export class AdminController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const id = req.params.courseId;
-      if (!id) {
-        throw new BadRequestError("Mention the id");
-      }
-      const data = await this.adminService.blockOrUnblockCourse(id);
-      res.status(200).send({ message: "success" });
+      const { courseId } = BlockCourseRequestSchema.parse({
+        courseId: req.params.courseId,
+      });
+      const data = await this.adminService.blockOrUnblockCourse(courseId);
+      const response = BlockResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "success",
+        data: null,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -151,14 +200,19 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { page = 1 } = req.query;
     try {
-      const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
+      const { page } = GetCategoriesRequestSchema.parse(req.query);
       const data = await this.adminService.getPaginatedCategories(
-        pageNumber,
+        page,
         this.pagLimit
       );
-      res.status(StatusCode.OK).send(data);
+      const response = GetCategoriesResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Categories retrieved successfully",
+        data,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -169,12 +223,15 @@ export class AdminController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const category = req.body;
-      if (!category) {
-        throw new BadRequestError("Give the category");
-      }
-      const data = await this.adminService.createCategory(category);
-      res.status(StatusCode.OK).send(data);
+      const category = CreateCategoryRequestSchema.parse(req.body);
+      const result = await this.adminService.createCategory(category);
+      const response = CategoryResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Category created successfully",
+        data: result,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -186,13 +243,17 @@ export class AdminController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { category, categoryId } = req.body;
-      console.log(req.body);
-      if (!category || !categoryId) {
-        throw new BadRequestError("Give the category");
-      }
-      const data = await this.adminService.editCategory(category, categoryId);
-      res.status(StatusCode.OK).send(data);
+      const { categoryId, category } = EditCategoryRequestSchema.parse(
+        req.body
+      );
+      const result = await this.adminService.editCategory(category, categoryId);
+      const response = CategoryResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Category updated successfully",
+        result,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -203,12 +264,15 @@ export class AdminController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const categoryId = req.params.categoryId;
-      if (!categoryId) {
-        throw new BadRequestError("Mention the category id");
-      }
-      const data = await this.adminService.blockCategory(categoryId);
-      res.status(StatusCode.OK).send(data);
+      const { categoryId } = BlockCategoryRequestSchema.parse(req.params);
+      const result = await this.adminService.blockCategory(categoryId);
+      const response = BlockCategoryResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Category blocked successfully",
+        data: null,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -218,15 +282,20 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { page = 1 } = req.query;
     try {
-      const pageNumber = Math.max(parseInt(page as string, 10) || 1, 1);
+      const { page } = GetCourseReviewRequestsRequestSchema.parse(req.query);
 
-      const data = await this.adminService.getCourseReviewRequests(
-        pageNumber,
+      const result = await this.adminService.getCourseReviewRequests(
+        page,
         this.pagLimit
       );
-      res.status(200).send(data);
+      const response = GetCourseReviewRequestsResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course review requests retrieved successfully",
+        data: result,
+      });
+      res.status(200).send(response);
     } catch (error) {
       next(error);
     }
@@ -236,17 +305,21 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { rejectReason, courseId } = req.body;
-
     try {
-      if (!rejectReason || !courseId) {
-        throw new BadRequestError("Must Specify the reason");
-      }
-      const data = await this.adminService.rejectCourseReviewRequest(
+      const { rejectReason, courseId } = RejectCourseReviewRequestSchema.parse(
+        req.body
+      );
+      const result = await this.adminService.rejectCourseReviewRequest(
         rejectReason,
         courseId
       );
-      res.status(StatusCode.OK).send(data);
+      const response = CourseReviewRequestResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course review request processed",
+        data: null,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -256,14 +329,18 @@ export class AdminController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { courseId } = req.body;
-
     try {
-      if (!courseId) {
-        throw new BadRequestError("Must Specify userId");
-      }
-      const data = await this.adminService.approveCourseReviewRequest(courseId);
-      res.status(StatusCode.OK).send(data);
+      const { courseId } = ApproveCourseReviewRequestSchema.parse(req.body);
+      const result = await this.adminService.approveCourseReviewRequest(
+        courseId
+      );
+      const response = CourseReviewRequestResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course review request processed",
+        data: null,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }

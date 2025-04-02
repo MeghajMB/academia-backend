@@ -1,38 +1,30 @@
-// src/services/CourseService.ts
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { ICourseRepository } from "../../repositories/interfaces/course-repository.interface";
-import mongoose, { ObjectId } from "mongoose";
-import {
-  ICourseResult,
-  ICourseResultWithUserId,
-} from "../../types/course.interface";
+import mongoose, { Types } from "mongoose";
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
 import { sqsClient } from "../../lib/awsClient";
 import { FileService } from "./file.service";
 import { AppError } from "../../util/errors/app-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { CloudfrontSignedCookiesOutput } from "@aws-sdk/cloudfront-signer";
-import {
-  ICourseService,
-  ICreateCourse,
-  IGetCourseDetails,
-  IUpdatedSection,
-} from "../interfaces/course-service.interface";
-import {
-  ILectureRepository,
-  ILectureResult,
-} from "../../repositories/interfaces/lecture-repository.interface";
-import {
-  ISectionRepository,
-  ISectionResult,
-} from "../../repositories/interfaces/section-repository.interface";
+import { ICourseService } from "../interfaces/course-service.interface";
+import { ILectureRepository } from "../../repositories/interfaces/lecture-repository.interface";
+import { ISectionRepository } from "../../repositories/interfaces/section-repository.interface";
 import { IEnrollmentRepository } from "../../repositories/interfaces/enrollment-repository.interface";
-import { IEnrollmentDocument } from "../../models/enrollment.model";
 import { IUserRepository } from "../../repositories/interfaces/user-repository.interface";
-import { ICourseDocument } from "../../models/course.model";
-import { ILectureDocument } from "../../models/lecture.model";
 import moment from "moment";
-import { ISectionDocument } from "../../models/section.model";
+import { CourseDocument } from "../../models/course.model";
+import { LectureDocument } from "../../models/lecture.model";
+import { SectionDocument } from "../../models/section.model";
+import { EnrollmentDocument } from "../../models/enrollment.model";
+import {
+  CreateCourse,
+  GetCourseCreationDetailsResponse,
+  GetCourseDetailsResponse,
+  GetEnrolledCoursesOfUserResponse,
+  UpdatedSection,
+} from "../types/ccourse-service.types";
+import { Enrollment } from "../../repositories/types/enrollment-repository.types";
 
 export class CourseService implements ICourseService {
   constructor(
@@ -45,11 +37,9 @@ export class CourseService implements ICourseService {
   ) {}
 
   async createCourse(
-    courseData: ICreateCourse,
+    courseData: CreateCourse,
     userId: string
-  ): Promise<ICourseResult> {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+  ): Promise<CourseDocument> {
     try {
       const existingCourse = await this.courseRepository.findCourseByName(
         courseData.title
@@ -57,25 +47,19 @@ export class CourseService implements ICourseService {
       if (existingCourse) {
         throw new BadRequestError("Course Already Exists");
       }
-      const updatedCourseData = { ...courseData, userId };
-      const newCourse = await this.courseRepository.createCourse(
-        updatedCourseData,
-        {
-          session,
-        }
-      );
+      const updatedCourseData = {
+        ...courseData,
+        userId: new Types.ObjectId(userId),
+        category: new Types.ObjectId(courseData.category),
+      };
+      const newCourse = await this.courseRepository.create(updatedCourseData);
 
       if (!newCourse) {
         throw new BadRequestError("Course Creation Failed");
       }
-      await session.commitTransaction();
-
       return newCourse;
     } catch (error) {
-      await session.abortTransaction();
       throw error;
-    } finally {
-      session.endSession();
     }
   }
 
@@ -83,59 +67,66 @@ export class CourseService implements ICourseService {
     draggedLectureId: string,
     targetLectureId: string,
     id: string
-  ): Promise<unknown> {
-    if (draggedLectureId == targetLectureId) {
+  ): Promise<{ message: "success" }> {
+    try {
+      if (draggedLectureId == targetLectureId) {
+        return { message: "success" };
+      }
+      const draggedLecture =
+        await this.lectureRepository.findByIdWithPopulatedData(
+          draggedLectureId
+        );
+      const targetLecture =
+        await this.lectureRepository.findByIdWithPopulatedData(targetLectureId);
+      if (
+        !draggedLecture ||
+        !targetLecture ||
+        draggedLecture.courseId.userId.toString() !== id ||
+        targetLecture.courseId.userId.toString() !== id
+      ) {
+        throw new BadRequestError("No lecture");
+      }
+
+      if (
+        draggedLecture.sectionId.toString() ==
+        targetLecture.sectionId.toString()
+      ) {
+        await this.lectureRepository.updateOrderOfLectureInSameSection(
+          draggedLecture.sectionId,
+          draggedLecture._id as Types.ObjectId,
+          draggedLecture.order,
+          targetLecture.order
+        );
+      } else {
+        await this.lectureRepository.updateOrderOfLectureInDifferentSection(
+          draggedLecture._id as Types.ObjectId,
+          draggedLecture.sectionId,
+          targetLecture.sectionId,
+          draggedLecture.order,
+          targetLecture.order
+        );
+      }
+
       return { message: "success" };
+    } catch (error) {
+      throw error;
     }
-    const draggedLecture =
-      await this.lectureRepository.findByIdWithPopulatedData(draggedLectureId);
-    const targetLecture =
-      await this.lectureRepository.findByIdWithPopulatedData(targetLectureId);
-    if (
-      !draggedLecture ||
-      !targetLecture ||
-      draggedLecture.courseId.userId.toString() !== id ||
-      targetLecture.courseId.userId.toString() !== id
-    ) {
-      throw new BadRequestError("No lecture");
-    }
-
-    if (
-      draggedLecture.sectionId.toString() == targetLecture.sectionId.toString()
-    ) {
-      await this.lectureRepository.updateOrderOfLectureInSameSection(
-        draggedLecture.sectionId,
-        draggedLecture._id as mongoose.ObjectId,
-        draggedLecture.order,
-        targetLecture.order
-      );
-    } else {
-      await this.lectureRepository.updateOrderOfLectureInDifferentSection(
-        draggedLecture._id as mongoose.ObjectId,
-        draggedLecture.sectionId,
-        targetLecture.sectionId,
-        draggedLecture.order,
-        targetLecture.order
-      );
-    }
-
-    return { message: "success" };
   }
 
   async editLecture(
     lectureId: string,
     lectureData: { title: string; videoUrl: string; duration: number },
     id: string
-  ): Promise<ILectureResult> {
+  ): Promise<LectureDocument> {
     try {
-      const updatedLectures = await this.lectureRepository.editLecture(
+      const updatedLecture = await this.lectureRepository.editLecture(
         lectureId,
         lectureData
       );
-      if (!updatedLectures) {
+      if (!updatedLecture) {
         throw new BadRequestError("Bad request");
       }
-      return updatedLectures;
+      return updatedLecture;
     } catch (error) {
       throw error;
     }
@@ -145,7 +136,7 @@ export class CourseService implements ICourseService {
     sectionId: string,
     sectionData: { title: string; description: string },
     instructorId: string
-  ): Promise<ISectionResult> {
+  ): Promise<SectionDocument> {
     try {
       const existingSection =
         await this.sectionRepository.findByIdWithPopulatedData(sectionId);
@@ -155,14 +146,15 @@ export class CourseService implements ICourseService {
       ) {
         throw new BadRequestError("Something happened");
       }
-      const updatedLectures = await this.sectionRepository.update(
+      const updatedSection = await this.sectionRepository.update(
         sectionId,
-        sectionData
+        sectionData,
+        undefined
       );
-      if (!updatedLectures) {
+      if (!updatedSection) {
         throw new BadRequestError("Bad request");
       }
-      return updatedLectures;
+      return updatedSection;
     } catch (error) {
       throw error;
     }
@@ -172,7 +164,7 @@ export class CourseService implements ICourseService {
     id: string,
     courseId: string,
     lectureId: string
-  ): Promise<{ message: string } | null> {
+  ): Promise<{ message: "Enrollment Updated" }> {
     try {
       const enrollment = await this.enrollmentRepository.findOneByFilter({
         studentId: id,
@@ -183,7 +175,11 @@ export class CourseService implements ICourseService {
         throw new AppError("Enrollment not found", StatusCode.NOT_FOUND);
       }
 
-      if (!enrollment.progress.completedLectures.includes(lectureId)) {
+      if (
+        !enrollment.progress.completedLectures.includes(
+          new Types.ObjectId(lectureId)
+        )
+      ) {
         const totalLectures =
           await this.lectureRepository.getTotalLecturesOfCourse(courseId);
         const completedLecturesCount =
@@ -202,28 +198,33 @@ export class CourseService implements ICourseService {
         // Track whether coins should be awarded
         let awarded50Percent = enrollment.progress.awarded50Percent;
         let awarded100Percent = enrollment.progress.awarded100Percent;
-        let coinsToAward = 0,goldCoinsToAward=0;
+        let coinsToAward = 0,
+          goldCoinsToAward = 0;
 
         // Award coins only if they haven't been awarded before
         if (progressPercentage >= 50 && !awarded50Percent) {
           coinsToAward += 1;
-          goldCoinsToAward+=50
+          goldCoinsToAward += 50;
           awarded50Percent = true;
         }
         if (progressPercentage === 100 && !awarded100Percent) {
           coinsToAward += 2;
-          goldCoinsToAward+=100;
+          goldCoinsToAward += 100;
           awarded100Percent = true;
-          await this.enrollmentRepository.update(enrollment.id, {
-            completedAt: new Date(),
-          });
+          await this.enrollmentRepository.update(
+            enrollment._id.toString(),
+            {
+              completedAt: new Date(),
+            },
+            undefined
+          );
         }
-        if(goldCoinsToAward){
-          await this.userRepository.addGoldCoins(id,goldCoinsToAward)
+        if (goldCoinsToAward) {
+          await this.userRepository.addGoldCoins(id, goldCoinsToAward);
         }
         // Update enrollment progress and award status in a single call
         await this.enrollmentRepository.updateEnrollmentProgress(
-          enrollment,
+          enrollment._id.toString(),
           lectureId,
           progressPercentage,
           awarded50Percent,
@@ -249,12 +250,12 @@ export class CourseService implements ICourseService {
     courseId: string,
     userId: string,
     transactionId: string
-  ): Promise<IEnrollmentDocument> {
+  ): Promise<EnrollmentDocument> {
     try {
       const listedCourse = await this.enrollmentRepository.create({
-        courseId:courseId as unknown as ObjectId,
-        studentId:userId as unknown as ObjectId,
-        transactionId:transactionId as unknown as ObjectId,
+        courseId: new Types.ObjectId(courseId),
+        studentId: new Types.ObjectId(userId),
+        transactionId: new Types.ObjectId(transactionId),
       });
       return listedCourse;
     } catch (error) {
@@ -265,7 +266,7 @@ export class CourseService implements ICourseService {
   async getCourseDetails(
     courseId: string,
     userId: string
-  ): Promise<IGetCourseDetails> {
+  ): Promise<GetCourseDetailsResponse> {
     try {
       const course = await this.courseRepository.findByIdWithPopulatedData(
         courseId
@@ -296,7 +297,7 @@ export class CourseService implements ICourseService {
       );
 
       const courseDetails = {
-        courseId: course._id as string,
+        courseId: course._id.toString(),
         instructorId: course.userId.id,
         instructorName: course.userId.name,
         totalDuration: course.totalDuration,
@@ -322,8 +323,8 @@ export class CourseService implements ICourseService {
   async editCourseCreationDetails(
     courseId: string,
     userId: string,
-    courseData: ICreateCourse
-  ): Promise<ICourseResult> {
+    courseData: CreateCourse
+  ): Promise<CourseDocument> {
     try {
       const course = await this.courseRepository.findById(courseId);
 
@@ -360,7 +361,8 @@ export class CourseService implements ICourseService {
       }
       const updatedCourse = await this.courseRepository.update(
         courseId,
-        updatedData as unknown as Partial<ICourseDocument>
+        updatedData,
+        undefined
       );
 
       return updatedCourse;
@@ -372,16 +374,7 @@ export class CourseService implements ICourseService {
   async getCourseCreationDetails(
     courseId: string,
     userId: string
-  ): Promise<{
-    courseId: string;
-    imageThumbnail: string;
-    promotionalVideo: string;
-    category: string;
-    title: string;
-    price: number;
-    subtitle: string;
-    description: string;
-  }> {
+  ): Promise<GetCourseCreationDetailsResponse> {
     const course = await this.courseRepository.findByIdWithPopulatedData(
       courseId
     );
@@ -406,7 +399,7 @@ export class CourseService implements ICourseService {
     );
 
     const courseDetails = {
-      courseId: course._id as string,
+      courseId: course._id.toString(),
       imageThumbnail: image,
       promotionalVideo: video,
       category: course.category.id as string,
@@ -425,7 +418,7 @@ export class CourseService implements ICourseService {
     return courseDetails;
   }
 
-  async getNewCourses(): Promise<ICourseResult[]> {
+  async getNewCourses(): Promise<CourseDocument[]> {
     try {
       const courses = await this.courseRepository.findNewCourses();
       if (!courses) {
@@ -445,7 +438,9 @@ export class CourseService implements ICourseService {
     }
   }
 
-  async getEnrolledCoursesOfUser(studentId: string): Promise<any> {
+  async getEnrolledCoursesOfUser(
+    studentId: string
+  ): Promise<GetEnrolledCoursesOfUserResponse[]> {
     try {
       const enrolledCourses = await this.enrollmentRepository.findByStudentId(
         studentId
@@ -456,7 +451,7 @@ export class CourseService implements ICourseService {
             enrolledCourse.courseId.imageThumbnail
           );
           return {
-            id: enrolledCourse.courseId.id,
+            id: enrolledCourse.courseId._id,
             imageThumbnail: imageUrl,
             title: enrolledCourse.courseId.title,
             completedAt: enrolledCourse.completedAt,
@@ -477,7 +472,7 @@ export class CourseService implements ICourseService {
     userId: string,
     status: string,
     role: string
-  ): Promise<IUpdatedSection[]> {
+  ): Promise<UpdatedSection[]> {
     try {
       const existingCourse = await this.courseRepository.findById(courseId);
 
@@ -489,7 +484,7 @@ export class CourseService implements ICourseService {
           );
         }
       }
-      let enrolledCourse: IEnrollmentDocument | null;
+      let enrolledCourse: Enrollment | null;
       if (status == "student" && existingCourse?.userId.toString() !== userId) {
         enrolledCourse = await this.enrollmentRepository.findOneByFilter({
           courseId: courseId,
@@ -536,7 +531,7 @@ export class CourseService implements ICourseService {
               status == "instructor"
                 ? "instructor"
                 : enrolledCourse?.progress.completedLectures.includes(
-                    (lecture._id as mongoose.ObjectId).toString()
+                    lecture._id as Types.ObjectId
                   )
                 ? "completed"
                 : "not completed",
@@ -552,7 +547,7 @@ export class CourseService implements ICourseService {
   async getCoursesOfInstructor(
     instructorId: string,
     status: string
-  ): Promise<ICourseResult[]> {
+  ): Promise<CourseDocument[]> {
     if (
       status !== "pending" &&
       status !== "accepted" &&
@@ -592,10 +587,14 @@ export class CourseService implements ICourseService {
       }
       if (lecture.courseId.status === "listed") {
         const scheduledDeletionDate = moment().add(30, "days").toDate();
-        await this.lectureRepository.update(lectureId, {
-          status: "archived",
-          scheduledDeletionDate,
-        });
+        await this.lectureRepository.update(
+          lectureId,
+          {
+            status: "archived",
+            scheduledDeletionDate,
+          },
+          undefined
+        );
       } else {
         await this.lectureRepository.delete(lectureId);
       }
@@ -699,7 +698,7 @@ export class CourseService implements ICourseService {
     sectionData: { title: string; description: string; order: string },
     courseId: string,
     userId: string
-  ): Promise<ISectionResult> {
+  ): Promise<SectionDocument> {
     const course = await this.courseRepository.findById(courseId); // assuming you have a repository for courses
     if (!course || course.userId.toString() !== userId) {
       throw new BadRequestError("Course not found");
@@ -709,16 +708,18 @@ export class CourseService implements ICourseService {
     );
     const updatedSectionData = {
       ...sectionData,
-      courseId,
+      courseId: new Types.ObjectId(courseId),
       order: sectionCount,
     };
-    const section = await this.sectionRepository.create(
-      updatedSectionData as unknown as Partial<ISectionDocument>
-    );
+    const section = await this.sectionRepository.create(updatedSectionData);
     //update total count of section in course
-    await this.courseRepository.update(courseId, {
-      totalSections: sectionCount+1,
-    });
+    await this.courseRepository.update(
+      courseId,
+      {
+        totalSections: sectionCount + 1,
+      },
+      undefined
+    );
     return section;
   }
 
@@ -727,7 +728,7 @@ export class CourseService implements ICourseService {
     courseId: string,
     sectionId: string,
     lectureData: { title: string; videoUrl: string; duration: number }
-  ): Promise<ILectureResult> {
+  ): Promise<LectureDocument> {
     const existingCourse = await this.courseRepository.findById(courseId);
 
     if (existingCourse?.userId.toString() !== userId) {
@@ -738,20 +739,22 @@ export class CourseService implements ICourseService {
 
     const updatedLectureData = {
       ...lectureData,
-      sectionId,
-      courseId,
+      sectionId: new Types.ObjectId(sectionId),
+      courseId: new Types.ObjectId(courseId),
       duration: Math.ceil(lectureData.duration / 60),
       order: lectureCount,
     };
-    console.log(updatedLectureData);
-    const newLecture = await this.lectureRepository.create(
-      updatedLectureData as unknown as Partial<ILectureDocument>
-    );
+
+    const newLecture = await this.lectureRepository.create(updatedLectureData);
     //update total cuont of lectures in course
-    await this.courseRepository.update(courseId, {
-      totalLectures: existingCourse.totalLectures+1,
-      totalDuration: updatedLectureData.duration,
-    });
+    await this.courseRepository.update(
+      courseId,
+      {
+        totalLectures: existingCourse.totalLectures + 1,
+        totalDuration: updatedLectureData.duration,
+      },
+      undefined
+    );
     //send an event to sqs
     const params = {
       MessageBody: JSON.stringify({

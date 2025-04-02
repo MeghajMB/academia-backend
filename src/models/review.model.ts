@@ -1,15 +1,15 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-export interface IReviewDocument extends Document {
-  courseId: mongoose.Schema.Types.ObjectId|string; // The course being reviewed
-  studentId: mongoose.Schema.Types.ObjectId|string; // The student who wrote the review
+export interface ReviewDocument extends Document {
+  courseId: mongoose.Types.ObjectId|string; // The course being reviewed
+  studentId:  mongoose.Types.ObjectId|string; // The student who wrote the review
   rating: number; // Rating (1-5)
   comment: string; // Review text
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ReviewSchema: Schema<IReviewDocument> = new mongoose.Schema(
+const ReviewSchema: Schema<ReviewDocument> = new mongoose.Schema(
   {
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -44,5 +44,5 @@ const ReviewSchema: Schema<IReviewDocument> = new mongoose.Schema(
   }
 );
 
-export const ReviewModel: Model<IReviewDocument> =
-  mongoose.model<IReviewDocument>("Review", ReviewSchema);
+export const ReviewModel: Model<ReviewDocument> =
+  mongoose.model<ReviewDocument>("Review", ReviewSchema);

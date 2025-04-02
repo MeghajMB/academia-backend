@@ -1,7 +1,8 @@
-import mongoose, { Document } from "mongoose";
-import { ITransaction } from "../../models/transaction.model";
+import mongoose from "mongoose";
+import { TransactionDocument } from "../../models/transaction.model";
+import { IRepository } from "../base/base-repository.interface";
 
-export interface ITransactionRepository {
+export interface ITransactionRepository extends IRepository<TransactionDocument> {
   createTransaction(
     userId: string,
     amount: number,
@@ -9,7 +10,7 @@ export interface ITransactionRepository {
     purchaseId: string,
     paymentId:string,
     session:mongoose.mongo.ClientSession
-  ): Promise<ITransaction>;
+  ): Promise<TransactionDocument>;
   getUserTransactions(userId: string): Promise<any>;
   // Additional methods like getUser, updateUser, etc.
 }

@@ -6,12 +6,14 @@ import crypto from "crypto";
 import { ICourseService } from "../interfaces/course-service.interface";
 import mongoose from "mongoose";
 import { TransactionRepository } from "../../repositories/implementations/transaction.repository";
+import { IEnrollmentRepository } from "../../repositories/interfaces/enrollment-repository.interface";
 
 export class PaymentService implements IPaymentService {
   constructor(
     private transactionRepository: TransactionRepository,
     private courseRepository: ICourseRepository,
-    private courseService: ICourseService
+    private courseService: ICourseService,
+    private enrollmentRepository: IEnrollmentRepository
   ) {}
 
   verifyPaymentSignature(paymentData: any, secret: string): boolean {
@@ -23,14 +25,21 @@ export class PaymentService implements IPaymentService {
     return generatedSignature === paymentData.signature;
   }
 
-  async createRazorPayOrder(itemId: string, type: string) {
+  async createRazorPayOrder(itemId: string, type: string, userId: string) {
     try {
       let amount: number;
       switch (type) {
         case "course":
           const course = await this.courseRepository.findById(itemId);
+          const enrollment = await this.enrollmentRepository.findOneByFilter({
+            studentId: userId,
+            courseId: itemId,
+          });
           if (course?.status !== "listed") {
             throw new BadRequestError("The course is not listed");
+          }
+          if (enrollment) {
+            throw new BadRequestError("You already own this course");
           }
           amount = course.price;
           break;

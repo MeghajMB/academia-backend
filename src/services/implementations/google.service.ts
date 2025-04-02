@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Response, Request } from "express";
-import { IUser } from "../../types/user.interface";
 import { redis } from "../../lib/redis";
+import { UserDocument } from "../../models/user.model";
 
 export const authenticateGoogle = passport.authenticate("google", {
   scope: ["profile", "email"],
@@ -21,7 +21,7 @@ export const googleController = async (
     return;
   }
   const { user, accessToken, refreshToken } = req.user as {
-    user: IUser;
+    user: UserDocument;
     accessToken: string;
     refreshToken: string;
   };

@@ -1,4 +1,3 @@
-// src/infrastructure/server/Server.ts
 import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 dotenv.config(/* { path: "./src/.env" } */);
@@ -18,11 +17,9 @@ import bidRoutes from "./routes/bid.routes"
 import notificationRoutes from "./routes/notifcation.routes"
 
 import { errorHandler } from "./middleware/error-handler";
-
 import { morganLogger } from "./middleware/logging";
 import passport from "passport";
 import "./lib/passport";
-
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import morgan from "morgan";

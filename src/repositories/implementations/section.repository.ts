@@ -1,15 +1,13 @@
 import { StatusCode } from "../../enums/status-code.enum";
 import { DatabaseError } from "../../util/errors/database-error";
-import { ISectionDocument, SectionModel } from "../../models/section.model";
+import { SectionDocument, SectionModel } from "../../models/section.model";
 import { BaseRepository } from "../base/base.repository";
-import {
-  ISectionRepository,
-  ISectionResult,
-  ISectionResultWithCourse,
-} from "../interfaces/section-repository.interface";
+import { SectionResultWithCourse } from "../types/section-repository.types";
+import { ISectionRepository } from "../interfaces/section-repository.interface";
+
 
 export class SectionRepository
-  extends BaseRepository<ISectionDocument>
+  extends BaseRepository<SectionDocument>
   implements ISectionRepository
 {
   constructor() {
@@ -17,12 +15,12 @@ export class SectionRepository
   }
   async findByIdWithPopulatedData(
     sectionId: string
-  ): Promise<ISectionResultWithCourse | null> {
+  ): Promise<SectionResultWithCourse | null> {
     try {
       const section = await SectionModel.findById(sectionId).populate(
         "courseId"
       );
-      return section as unknown as ISectionResultWithCourse | null;
+      return section as unknown as SectionResultWithCourse | null;
     } catch (error: unknown) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -31,7 +29,7 @@ export class SectionRepository
     }
   }
 
-  async getSectionsWithCourseId(courseId: string): Promise<ISectionResult[]> {
+  async getSectionsWithCourseId(courseId: string): Promise<SectionDocument[]> {
     try {
       const sections = await SectionModel.find({ courseId: courseId }).sort({
         order: 1,

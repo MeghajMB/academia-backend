@@ -1,5 +1,3 @@
-
-import { IBidDocument } from "../../models/bid.model";
 import { AppError } from "../../util/errors/app-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { redisPubSub } from "../../lib/redisPubSub";
@@ -11,23 +9,27 @@ import { produceMessage } from "../../kafka/producer";
 import { GigRepository } from "../../repositories/implementations/gig.repository";
 import { UserRepository } from "../../repositories/implementations/user.repository";
 import { BidRepository } from "../../repositories/implementations/bid.repository";
+import { BidDocument } from "../../models/bid.model";
+import { IBidService } from "../interfaces/bid-service.interface";
 
-
-export class BidService {
+export class BidService implements IBidService {
   constructor(
     private bidRepository: BidRepository,
     private userRepository: UserRepository,
     private gigRepository: GigRepository
   ) {}
 
-  async placeBid(bidData: { gigId: string; bidAmt: number }, id: string) {
+  async placeBid(
+    bidData: { gigId: string; bidAmt: number },
+    userId: string
+  ): Promise<{ message: "success" }> {
     try {
       const highestBidKey = `topBid:${bidData.gigId}`;
       const cachedHighestBid = await redis.get(highestBidKey);
       if (cachedHighestBid) {
         const topBid = JSON.parse(cachedHighestBid);
         if (bidData.bidAmt! <= topBid.amount) {
-          return { error: "Bid must be higher than current bid" };
+          throw new BadRequestError("Bid must be higher than current bid");
         }
       }
       const gig = await this.gigRepository.findById(bidData.gigId);
@@ -38,19 +40,19 @@ export class BidService {
       if (new Date(gig.biddingExpiresAt).getTime() < Date.now()) {
         throw new BadRequestError("Bidding time has ended");
       }
-      await produceMessage({ data: bidData, id });
+      await produceMessage({ data: bidData, id: userId });
+      return { message: "success" };
     } catch (error) {
       throw error;
     }
   }
 
-  async createBid(bidData: { gigId: string; bidAmt: number }, id: string) {
-    console.log("In bid creation");
+  async createBid(bidData: { gigId: string; bidAmt: number }, userId: string) {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
       const highestBidKey = `topBid:${bidData.gigId}`;
-      const user = await this.userRepository.findById(id);
+      const user = await this.userRepository.findById(userId);
       if (!user) throw Error("User not found");
 
       // **Check if user has enough gold coins**
@@ -75,14 +77,14 @@ export class BidService {
         {
           gigId: bidData.gigId,
           amount: bidData.bidAmt,
-          userId: id,
+          userId: userId,
         },
         session
       );
 
       if (existingGig.currentBidder) {
         await this.userRepository.addGoldCoins(
-          id,
+          userId,
           existingGig?.currentBid,
           session
         );
@@ -95,13 +97,12 @@ export class BidService {
       const updatedGig =
         await this.gigRepository.updateCurrentBidderWithSession(
           bidData.gigId,
-          id,
+          userId,
           bidData.bidAmt,
           session
         );
 
       await session.commitTransaction();
-      session.endSession();
 
       // **Update Redis cache**
       await redis.setex(
@@ -118,27 +119,34 @@ export class BidService {
       console.log("Bidding Complete");
       return newBid;
     } catch (error) {
+      await session.abortTransaction();
       throw error;
+    } finally {
+      session.endSession();
     }
   }
 
-  async getBidById(id: string): Promise<IBidDocument | null> {
-    const bid = await this.bidRepository.findBidById(id);
+  async getBidById(id: string): Promise<BidDocument | null> {
+    const bid = await this.bidRepository.findById(id);
     if (!bid) {
       throw new AppError("Bid not found", StatusCode.NOT_FOUND);
     }
     return bid;
   }
 
-  async getBidsForGig(gigId: string): Promise<IBidDocument[]> {
+  async getBidsForGig(gigId: string): Promise<BidDocument[]> {
     return await this.bidRepository.findBidsByGigId(gigId);
   }
 
   async updateBid(
     id: string,
-    updateData: Partial<IBidDocument>
-  ): Promise<IBidDocument | null> {
-    const updatedBid = await this.bidRepository.updateBid(id, updateData);
+    updateData: Partial<BidDocument>
+  ): Promise<BidDocument | null> {
+    const updatedBid = await this.bidRepository.update(
+      id,
+      updateData,
+      undefined
+    );
     if (!updatedBid) {
       throw new AppError("Bid not found", StatusCode.NOT_FOUND);
     }
@@ -146,7 +154,7 @@ export class BidService {
   }
 
   async deleteBid(id: string): Promise<void> {
-    const bid = await this.bidRepository.deleteBid(id);
+    const bid = await this.bidRepository.delete(id);
     if (!bid) {
       throw new AppError("Bid not found", StatusCode.NOT_FOUND);
     }

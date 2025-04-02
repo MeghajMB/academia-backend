@@ -1,23 +1,13 @@
-import mongoose, { Document } from "mongoose";
 import { IRepository } from "../base/base-repository.interface";
-import { ISectionDocument } from "../../models/section.model";
-import { ICourseResult } from "../../types/course.interface";
+import { SectionDocument } from "../../models/section.model";
 
-export interface ISectionResult extends Document {
-  courseId:mongoose.ObjectId;
-  title: string;
-  order: number;
-  description:string
-}
+import { SectionResultWithCourse } from "../types/section-repository.types";
 
-export interface ISectionResultWithCourse extends Omit<ISectionResult, "courseId"> {
-  courseId: ICourseResult; // 🔹 Replacing ObjectId with full course details
-}
+export interface ISectionRepository extends IRepository<SectionDocument> {
+  getSectionsWithCourseId(courseId: string): Promise<SectionDocument[]>;
+  countDocumentsByCourseId(courseId: string): Promise<number>;
+  findByIdWithPopulatedData(
+    sectionId: string
+  ): Promise<SectionResultWithCourse | null>;
 
-
-export interface ISectionRepository extends IRepository<ISectionDocument>  {
-  getSectionsWithCourseId(courseId: string): Promise<ISectionResult[]>;
-  countDocumentsByCourseId(courseId:string): Promise<number>;
-  findByIdWithPopulatedData(sectionId: string): Promise<ISectionResultWithCourse | null>
-  // Additional methods like getUser, updateUser, etc.
 }

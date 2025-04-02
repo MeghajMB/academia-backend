@@ -3,14 +3,16 @@ import { IRepository } from "./base-repository.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 
-export abstract class BaseRepository<T extends Document> implements IRepository<T> {
+export abstract class BaseRepository<T extends Document>
+  implements IRepository<T>
+{
   constructor(protected model: Model<T>) {}
 
   async create(data: Partial<T>): Promise<T> {
     try {
       return await this.model.create(data);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new DatabaseError(
         "Database error while creating entity",
         StatusCode.INTERNAL_SERVER_ERROR
@@ -22,7 +24,7 @@ export abstract class BaseRepository<T extends Document> implements IRepository<
     try {
       return await this.model.findById(id);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new DatabaseError(
         "Database error while fetching entity by ID",
         StatusCode.INTERNAL_SERVER_ERROR
@@ -41,11 +43,19 @@ export abstract class BaseRepository<T extends Document> implements IRepository<
     }
   }
 
-  async update(id: string, data: Partial<T>): Promise<T> {
+  async update(
+    id: string,
+    updateData: Partial<T> | undefined,
+    deleteData: { [K in keyof T]?: boolean | 1 } | undefined
+  ): Promise<T> {
     try {
-      const updatedEntity = await this.model.findByIdAndUpdate(id, data, {
-        new: true,
-      });
+      const updatedEntity = await this.model.findByIdAndUpdate(
+        id,
+        { $set: updateData, $unset: deleteData },
+        {
+          new: true,
+        }
+      );
       if (!updatedEntity) {
         throw new DatabaseError("Entity not found", StatusCode.NOT_FOUND);
       }
@@ -65,6 +75,17 @@ export abstract class BaseRepository<T extends Document> implements IRepository<
         throw new DatabaseError("Entity not found", StatusCode.NOT_FOUND);
       }
       return deletedEntity;
+    } catch (error) {
+      throw new DatabaseError(
+        "Database error while deleting entity",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+  async countAll(): Promise<number> {
+    try {
+      const entityCount = await this.model.countDocuments();
+      return entityCount;
     } catch (error) {
       throw new DatabaseError(
         "Database error while deleting entity",

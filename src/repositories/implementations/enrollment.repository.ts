@@ -1,25 +1,32 @@
 import mongoose from "mongoose";
-import { EnrollmentModel, IEnrollmentDocument } from "../../models/enrollment.model";
+import {
+  EnrollmentModel,
+  EnrollmentDocument,
+} from "../../models/enrollment.model";
 import { BaseRepository } from "../base/base.repository";
 import { IEnrollmentRepository } from "../interfaces/enrollment-repository.interface";
-import { IEnrollmentWithCourse } from "../../types/course.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-
+import {
+  Enrollment,
+  EnrollmentWithCourse,
+} from "../types/enrollment-repository.types";
 
 export class EnrollmentRepository
-  extends BaseRepository<IEnrollmentDocument>
+  extends BaseRepository<EnrollmentDocument>
   implements IEnrollmentRepository
 {
   constructor() {
     super(EnrollmentModel);
   }
-  async findByStudentId(studentId: string): Promise<IEnrollmentWithCourse[]> {
+  async findByStudentId(studentId: string): Promise<EnrollmentWithCourse[]> {
     try {
-      const enrolledcourse = (await EnrollmentModel.find({
+      const enrolledcourse = await EnrollmentModel.find({
         studentId,
-      }).populate("courseId")) as unknown as IEnrollmentWithCourse[];
-      return enrolledcourse;
+      })
+        .populate("courseId")
+        .lean();
+      return enrolledcourse as unknown as EnrollmentWithCourse[];
     } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -33,14 +40,14 @@ export class EnrollmentRepository
     userId: string,
     transactionId: string,
     session: mongoose.mongo.ClientSession
-  ): Promise<IEnrollmentDocument> {
+  ):Promise<EnrollmentDocument> {
     try {
       const enrollment = new EnrollmentModel({
         courseId,
         studentId: userId,
         transactionId,
       });
-      enrollment.save({ session });
+      await enrollment.save({ session });
       return enrollment;
     } catch (error) {
       throw new DatabaseError(
@@ -51,11 +58,11 @@ export class EnrollmentRepository
   }
 
   async findOneByFilter(
-    filter: Partial<Record<keyof IEnrollmentDocument, any>>
-  ): Promise<IEnrollmentDocument | null> {
+    filter: Partial<Record<keyof EnrollmentDocument, any>>
+  ): Promise<Enrollment | null> {
     try {
-      const enrolledcourse = await EnrollmentModel.findOne(filter);
-      return enrolledcourse;
+      const enrolledcourse = await EnrollmentModel.findOne(filter).lean();
+      return enrolledcourse as Enrollment | null;
     } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -65,15 +72,15 @@ export class EnrollmentRepository
   }
 
   async updateEnrollmentProgress(
-    enrollment: IEnrollmentDocument,
+    enrollmentId: string,
     lectureId: string,
     progressPercentage: number,
     awarded50Percent: boolean,
     awarded100Percent: boolean
-  ): Promise<IEnrollmentDocument | null> {
+  ): Promise<EnrollmentDocument | null> {
     try {
       const updatedEnrollment = await EnrollmentModel.findOneAndUpdate(
-        { _id: enrollment._id },
+        { _id: enrollmentId },
         {
           $push: { "progress.completedLectures": lectureId },
           "progress.percentage": progressPercentage,

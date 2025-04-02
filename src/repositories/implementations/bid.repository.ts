@@ -1,7 +1,17 @@
-import mongoose, { ClientSession } from "mongoose";
-import { BidModel, IBidDocument } from "../../models/bid.model";
+import { ClientSession } from "mongoose";
+import { BidModel, BidDocument } from "../../models/bid.model";
+import { DatabaseError } from "../../util/errors/database-error";
+import { StatusCode } from "../../enums/status-code.enum";
+import { BaseRepository } from "../base/base.repository";
+import { IBidRepository } from "../interfaces/bid-repository.interface";
 
-export class BidRepository {
+export class BidRepository
+  extends BaseRepository<BidDocument>
+  implements IBidRepository
+{
+  constructor() {
+    super(BidModel);
+  }
   async createOrUpdateBid(
     bidData: {
       gigId: string;
@@ -9,7 +19,7 @@ export class BidRepository {
       userId: string;
     },
     session: ClientSession
-  ): Promise<IBidDocument> {
+  ): Promise<BidDocument> {
     try {
       const existingBid = await BidModel.findOne({
         userId: bidData.userId,
@@ -22,7 +32,10 @@ export class BidRepository {
       const bid = new BidModel(bidData);
       return await bid.save({ session });
     } catch (error) {
-      throw error;
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
     }
   }
   async getHighestBid(
@@ -44,26 +57,15 @@ export class BidRepository {
         ? { gigId, amount: result[0].highestBid, userId: result[0].userId }
         : null;
     } catch (error) {
-      throw new Error(`Error fetching highest bid for gig ${gigId}: ${error}`);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
-  async findBidById(id: string): Promise<IBidDocument | null> {
-    return await BidModel.findById(id);
-  }
-
-  async findBidsByGigId(gigId: string): Promise<IBidDocument[]> {
-    return await BidModel.find({ gigId }).sort({ amount: -1 });
-  }
-
-  async updateBid(
-    id: string,
-    updateData: Partial<IBidDocument>
-  ): Promise<IBidDocument | null> {
-    return await BidModel.findByIdAndUpdate(id, updateData, { new: true });
-  }
-
-  async deleteBid(id: string): Promise<IBidDocument | null> {
-    return await BidModel.findByIdAndDelete(id);
+  async findBidsByGigId(gigId: string): Promise<BidDocument[]> {
+    const bids = await BidModel.find({ gigId }).sort({ amount: -1 }).lean();
+    return bids;
   }
 }

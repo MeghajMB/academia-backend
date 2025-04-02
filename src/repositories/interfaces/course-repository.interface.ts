@@ -1,43 +1,42 @@
 import mongoose from "mongoose";
-import { ICourseResult, ICourseResultWithUserId } from "../../types/course.interface";
 import { FilterQuery } from "mongoose";
-import { ICourseDocument } from "../../models/course.model";
+import { CourseDocument } from "../../models/course.model";
 import { IRepository } from "../base/base-repository.interface";
+import { CourseWithPopulatedFields } from "../types/course-repository.types";
 
-export interface ICourse {
-  userId:string
-  category: string;
-  imageThumbnail: string;
-  description: string;
-  price: number;
-  subtitle: string;
-  title: string;
-  promotionalVideo: string;
-}
-
-export interface ICourseRepository  extends IRepository<ICourseDocument> {
-  createCourse(course: ICourse, session: {session:mongoose.mongo.ClientSession}): Promise<ICourseResult>;
-  findNewCourses(): Promise<ICourseResult[]>
+export interface ICourseRepository extends IRepository<CourseDocument> {
+  createCourseWithSession(
+    course: Partial<CourseDocument>,
+    session: { session: mongoose.mongo.ClientSession }
+  ): Promise<CourseDocument>;
+  findNewCourses(): Promise<CourseDocument[]>;
   fetchCoursesWithInstrucorIdAndStatus(
     instructorId: string,
     status: string
-  ): Promise<ICourseResult[] | null>;
-  findCourseByName(title: string): Promise<ICourseResult | null>;
-  findCoursesWithFilter(filter: FilterQuery<ICourseDocument>):  Promise<ICourseResult[] | null>;
-  toggleCourseStatus(courseId: string): Promise<ICourseResult | null>;
-  findByIdWithPopulatedData(courseId: string): Promise<ICourseResultWithUserId | null>
+  ): Promise<CourseDocument[] | null>;
+  findCourseByName(title: string): Promise<CourseDocument | null>;
+  findCoursesWithFilter(
+    filter: FilterQuery<CourseDocument>
+  ): Promise<CourseDocument[] | null>;
+  toggleCourseStatus(courseId: string): Promise<CourseDocument | null>;
+  findByIdWithPopulatedData(
+    courseId: string
+  ): Promise<CourseWithPopulatedFields | null>;
   countDocuments(key: string, value: string): Promise<number>;
   fetchPaginatedCoursesWithFilters(
     filters: { [key: string]: any },
     skip: number,
     limit: number
-  ): Promise<ICourseResult[]>;
-  rejectCourseReviewRequest(courseId: string,rejectReason:string): Promise<ICourseResult | null>;
-  approveCourseReviewRequest(courseId: string): Promise<ICourseResult | null>;
+  ): Promise<CourseDocument[]>;
+  rejectCourseReviewRequest(
+    courseId: string,
+    rejectReason: string
+  ): Promise<CourseDocument | null>;
+  approveCourseReviewRequest(courseId: string): Promise<CourseDocument | null>;
   changeCourseStatusWithInstructorIdAndCourseId(
     instructorId: string,
     courseId: string,
-    status:'pending'|'listed'
-  ): Promise<ICourseResult | null>
+    status: "pending" | "listed"
+  ): Promise<CourseDocument | null>;
   // Additional methods like getUser, updateUser, etc.
 }

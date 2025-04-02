@@ -42,7 +42,8 @@ const courseService = new CourseService(
 const paymentService = new PaymentService(
   transactionRepository,
   courseRepository,
-  courseService
+  courseService,
+  enrollmentRepository
 );
 const paymentController = new PaymentController(paymentService);
 // Dependency injection End

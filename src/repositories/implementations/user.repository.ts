@@ -1,31 +1,19 @@
-import { IUser, IUserResult } from "../../types/user.interface";
 import { ClientSession } from "mongoose";
 import { IUserRepository } from "../interfaces/user-repository.interface";
-import { UserModel } from "../../models/user.model";
+import { UserDocument, UserModel } from "../../models/user.model";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
+import { BaseRepository } from "../base/base.repository";
 
-export class UserRepository implements IUserRepository {
-  async createUser(user: Partial<IUser>): Promise<IUserResult> {
-    try {
-      const createdUser = new UserModel(user);
-      const savedUser = await createdUser.save();
-      return savedUser;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
+export class UserRepository
+  extends BaseRepository<UserDocument>
+  implements IUserRepository
+{
   async addGoldCoins(
     userId: string,
     coinsToAdd: number,
     session?: ClientSession
-  ): Promise<IUserResult | null> {
+  ): Promise<UserDocument | null> {
     try {
       const updatedUser = await UserModel.findByIdAndUpdate(
         userId,
@@ -46,7 +34,7 @@ export class UserRepository implements IUserRepository {
     userId: string,
     coinsToDeduct: number,
     session?: ClientSession
-  ): Promise<IUserResult | null> {
+  ): Promise<UserDocument | null> {
     try {
       const updatedUser = await UserModel.findByIdAndUpdate(
         userId,
@@ -67,7 +55,7 @@ export class UserRepository implements IUserRepository {
   async awardPurpleCoins(
     userId: string,
     coins: number
-  ): Promise<IUserResult | null> {
+  ): Promise<UserDocument | null> {
     try {
       const user = await UserModel.findByIdAndUpdate(
         userId,
@@ -87,38 +75,7 @@ export class UserRepository implements IUserRepository {
     }
   }
 
-  async findById(id: string): Promise<IUserResult | null> {
-    try {
-      const user = await UserModel.findById(id);
-      if (!user) return null;
-
-      return user;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-
-  async save(user: IUserResult): Promise<IUserResult> {
-    try {
-      return await user.save();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-
-  async findByEmail(email: string): Promise<IUserResult | null> {
+  async findByEmail(email: string): Promise<UserDocument | null> {
     try {
       const user = await UserModel.findOne({ email });
       if (!user) return null;
@@ -139,7 +96,7 @@ export class UserRepository implements IUserRepository {
     filters: { [key: string]: any },
     skip: number,
     limit: number
-  ): Promise<IUserResult[] | null> {
+  ): Promise<UserDocument[] | null> {
     try {
       const users = await UserModel.find(filters)
         .skip(skip)
@@ -163,7 +120,7 @@ export class UserRepository implements IUserRepository {
     limit: number,
     role: string,
     search: string
-  ): Promise<IUserResult[] | null> {
+  ): Promise<UserDocument[] | null> {
     try {
       let query: any = { role };
       if (search) {

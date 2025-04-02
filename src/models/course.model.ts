@@ -1,13 +1,13 @@
 // src/infrastructure/database/UserModel.ts
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
-export interface ICourseDocument extends Document {
-  userId: mongoose.Schema.Types.ObjectId;
+export interface CourseDocument extends Document {
+  userId: Types.ObjectId;
   title: string;
   price: number;
   subtitle: string;
   description: string;
-  category: mongoose.Schema.Types.ObjectId;
+  category:Types.ObjectId;
   totalDuration: number;
   totalLectures: number;
   totalSections: number;
@@ -31,7 +31,7 @@ export interface ICourseDocument extends Document {
   updatedAt: Date;
 }
 
-const CourseSchema: Schema<ICourseDocument> = new Schema(
+const CourseSchema: Schema<CourseDocument> = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -106,5 +106,5 @@ const CourseSchema: Schema<ICourseDocument> = new Schema(
   }
 );
 
-export const CourseModel: Model<ICourseDocument> =
-  mongoose.model<ICourseDocument>("Course", CourseSchema);
+export const CourseModel: Model<CourseDocument> =
+  mongoose.model<CourseDocument>("Course", CourseSchema);

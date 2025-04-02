@@ -1,5 +1,8 @@
 import { ITransactionRepository } from "../interfaces/transaction-repository.interface";
-import { ITransaction, TransactionModel } from "../../models/transaction.model";
+import {
+  TransactionDocument,
+  TransactionModel,
+} from "../../models/transaction.model";
 
 export class TransactionRepository implements ITransactionRepository {
   async createTransaction(
@@ -7,8 +10,8 @@ export class TransactionRepository implements ITransactionRepository {
     amount: number,
     purchaseType: "course" | "service" | "coins",
     purchaseId: string,
-    paymentId: string,
-  ): Promise<ITransaction> {
+    paymentId: string
+  ): Promise<TransactionDocument> {
     const transaction = new TransactionModel({
       userId,
       amount,
@@ -21,18 +24,6 @@ export class TransactionRepository implements ITransactionRepository {
     await transaction.save();
     return transaction;
   }
-
-  // async updateTransaction(
-  //   orderId: string,
-  //   status: "success" | "failed",
-  //   paymentId?: string
-  // ) {
-  //   return await Transaction.findOneAndUpdate(
-  //     { orderId },
-  //     { status, paymentId },
-  //     { new: true }
-  //   );
-  // }
 
   async getUserTransactions(userId: string) {
     return await TransactionModel.find({ userId }).sort({ createdAt: -1 });

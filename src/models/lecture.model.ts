@@ -1,8 +1,8 @@
 import mongoose, { Schema, Model, Document } from "mongoose";
 
-export interface ILectureDocument extends Document {
-  sectionId: mongoose.Schema.Types.ObjectId;
-  courseId: mongoose.Schema.Types.ObjectId;
+export interface LectureDocument extends Document {
+  sectionId: mongoose.Types.ObjectId;
+  courseId: mongoose.Types.ObjectId;
   title: string;
   videoUrl: string;
   duration: number;
@@ -13,7 +13,7 @@ export interface ILectureDocument extends Document {
   updatedAt: Date;
 }
 
-const LectureSchema = new Schema<ILectureDocument>(
+const LectureSchema = new Schema<LectureDocument>(
   {
     sectionId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -47,7 +47,7 @@ const LectureSchema = new Schema<ILectureDocument>(
   }
 );
 
-export const LectureModel: Model<ILectureDocument> = mongoose.model(
+export const LectureModel: Model<LectureDocument> = mongoose.model(
   "Lecture",
   LectureSchema
 );

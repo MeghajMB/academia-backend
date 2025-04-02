@@ -1,29 +1,18 @@
 import mongoose, { ClientSession } from "mongoose";
 import { BaseRepository } from "../base/base.repository";
-import { GigModel, IGigDocument } from "../../models/gig.model";
+import { GigModel, GigDocument } from "../../models/gig.model";
 import { IGigRepository } from "../interfaces/gig-repository.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-import { IGigWithInstructorData } from "../../types/gig.interface.";
+import { GigWithInstructorData } from "../types/gig-repository.types";
 
 
 export class GigRepository
-  extends BaseRepository<IGigDocument>
+  extends BaseRepository<GigDocument>
   implements IGigRepository
 {
   constructor() {
     super(GigModel);
-  }
-  async createGig(gigData: Partial<IGigDocument>): Promise<IGigDocument> {
-    try {
-      const gig = new GigModel(gigData);
-      return await gig.save();
-    } catch (error: unknown) {
-      throw new DatabaseError(
-        "An unexpected database error occurred",
-        StatusCode.INTERNAL_SERVER_ERROR
-      );
-    }
   }
 
   async updateCurrentBidderWithSession(
@@ -31,7 +20,7 @@ export class GigRepository
     bidderId: string,
     currentBid: number,
     session: ClientSession
-  ): Promise<IGigDocument | null> {
+  ): Promise<GigDocument | null> {
     try {
       const updatedGig = await GigModel.findByIdAndUpdate(
         gigId,
@@ -54,7 +43,7 @@ export class GigRepository
     instructorId: string,
     sessionDate: Date,
     sessionDuration: number
-  ): Promise<IGigDocument | null> {
+  ): Promise<GigDocument | null> {
     try {
       const gigEndTime = new Date(
         sessionDate.getTime() + sessionDuration * 60000
@@ -83,7 +72,7 @@ export class GigRepository
             },
           },
         ],
-      });
+      }).lean();
       return gig;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -93,13 +82,13 @@ export class GigRepository
     }
   }
 
-  async getActiveGigsWithPopulatedData(): Promise<IGigWithInstructorData[]> {
+  async getActiveGigsWithPopulatedData(): Promise<GigWithInstructorData[]> {
     try {
       const activeGigs = await GigModel.find({
         status: "active",
         biddingExpiresAt: { $gt: new Date() },
       }).populate("instructorId");
-      return activeGigs as unknown as IGigWithInstructorData[];
+      return activeGigs as unknown as GigWithInstructorData[];
     } catch (error: unknown) {
       throw new DatabaseError(
         "An error occurred while checking for conflicting gigs",
@@ -107,7 +96,7 @@ export class GigRepository
       );
     }
   }
-  async getActiveGigsOfInstructor(userId: string): Promise<IGigDocument[]> {
+  async getActiveGigsOfInstructor(userId: string): Promise<GigDocument[]> {
     try {
       return await GigModel.find({ instructorId: userId, status: "active" });
     } catch (error: unknown) {

@@ -1,18 +1,20 @@
-import mongoose from "mongoose";
-import { IGigDocument } from "../../models/gig.model";
+import mongoose, { ClientSession } from "mongoose";
+import { GigDocument } from "../../models/gig.model";
 import { IRepository } from "../base/base-repository.interface";
-import { IGigWithInstructorData } from "../../types/gig.interface.";
+import { GigWithInstructorData } from "../types/gig-repository.types";
 
-export interface IGigRepository extends IRepository<IGigDocument> {
-  createGig(gigData: Partial<IGigDocument>): Promise<IGigDocument>;
-
+export interface IGigRepository extends IRepository<GigDocument> {
   findConflictingGig(
     instructorId: string,
     sessionDate: Date,
     sessionDuration: number
-  ): Promise<IGigDocument | null>;
-
-
-
-  getActiveGigsWithPopulatedData(): Promise<IGigWithInstructorData[]>;
+  ): Promise<GigDocument | null>;
+  updateCurrentBidderWithSession(
+    gigId: string,
+    bidderId: string,
+    currentBid: number,
+    session: ClientSession
+  ): Promise<GigDocument | null>;
+  getActiveGigsWithPopulatedData(): Promise<GigWithInstructorData[]>;
+  getActiveGigsOfInstructor(userId: string): Promise<GigDocument[]>;
 }

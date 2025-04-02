@@ -1,21 +1,24 @@
-
-import { IGigDocument } from "../../models/gig.model";
+import { GigDocument } from "../../models/gig.model";
 import { AppError } from "../../util/errors/app-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import mongoose from "mongoose";
-import { IActiveGig, ICreateGigDTO } from "../../types/gig.interface.";
 import moment from "moment-timezone";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { scheduleAuctionClose } from "../../queues/auction.queue";
 import { GigRepository } from "../../repositories/implementations/gig.repository";
+import {
+  CreateGigParams,
+  GetActiveGigsResponse,
+} from "../types/gig-service.types";
+import { IGigService } from "../interfaces/gig-service.interface";
 
-export class GigService {
+export class GigService implements IGigService {
   constructor(private gigRepository: GigRepository) {}
 
   async createGig(
-    gigData: ICreateGigDTO,
+    gigData: CreateGigParams,
     instructorId: string
-  ): Promise<IGigDocument> {
+  ): Promise<GigDocument> {
     try {
       const cleanedDate = gigData.sessionDate.split("[")[0]; // Remove timezone region
       const sessionDate = moment.utc(cleanedDate).tz("Asia/Kolkata"); // Convert to Moment object
@@ -58,7 +61,7 @@ export class GigService {
         //biddingExpiresAt: new Date(Date.now() + 120000),
       };
 
-      const newGig = await this.gigRepository.createGig(updatedGigData);
+      const newGig = await this.gigRepository.create(updatedGigData);
       await scheduleAuctionClose(newGig.id, biddingExpiresAt.toDate());
       //await scheduleAuctionClose(newGig.id, new Date(Date.now() + 15000));
       return newGig;
@@ -67,23 +70,35 @@ export class GigService {
     }
   }
 
-  async getGigById(id: string): Promise<IGigDocument | null> {
-    const gig = await this.gigRepository.findById(id);
-    if (!gig) {
-      throw new AppError("Gig not found", StatusCode.NOT_FOUND);
+  async getGigById(id: string): Promise<GigDocument | null> {
+    try {
+      const gig = await this.gigRepository.findById(id);
+      if (!gig) {
+        throw new AppError("Gig not found", StatusCode.NOT_FOUND);
+      }
+      return gig;
+    } catch (error) {
+      throw error;
     }
-    return gig;
   }
 
   async updateGig(
     id: string,
-    updateData: Partial<IGigDocument>
-  ): Promise<IGigDocument | null> {
-    const updatedGig = await this.gigRepository.update(id, updateData);
-    if (!updatedGig) {
-      throw new AppError("Gig not found", StatusCode.NOT_FOUND);
+    updateData: Partial<GigDocument>
+  ): Promise<GigDocument | null> {
+    try {
+      const updatedGig = await this.gigRepository.update(
+        id,
+        updateData,
+        undefined
+      );
+      if (!updatedGig) {
+        throw new AppError("Gig not found", StatusCode.NOT_FOUND);
+      }
+      return updatedGig;
+    } catch (error) {
+      throw error;
     }
-    return updatedGig;
   }
 
   async deleteGig(id: string): Promise<void> {
@@ -97,7 +112,7 @@ export class GigService {
     }
   }
 
-  async getActiveGigs(): Promise<IActiveGig[]> {
+  async getActiveGigs(): Promise<GetActiveGigsResponse[]> {
     try {
       const gigs = await this.gigRepository.getActiveGigsWithPopulatedData();
       const updatedGigs = gigs.map((gig) => {
@@ -119,7 +134,7 @@ export class GigService {
     }
   }
 
-  async getActiveGigsOfInstructor(userId: string): Promise<IGigDocument[]> {
+  async getActiveGigsOfInstructor(userId: string): Promise<GigDocument[]> {
     try {
       const activeGigs = await this.gigRepository.getActiveGigsOfInstructor(
         userId

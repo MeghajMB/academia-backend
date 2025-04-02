@@ -4,9 +4,10 @@ import { BadRequestError } from "../../util/errors/bad-request-error";
 import { ReviewRepository } from "../../repositories/implementations/review.repository";
 import { ICourseRepository } from "../../repositories/interfaces/course-repository.interface";
 import { IEnrollmentRepository } from "../../repositories/interfaces/enrollment-repository.interface";
+import { IReviewService } from "../interfaces/review-service.interface";
+import { ReviewsWithStats } from "../types/review-service.types";
 
-
-export class ReviewService {
+export class ReviewService implements IReviewService {
   constructor(
     private reviewRepository: ReviewRepository,
     private enrollmentRepository: IEnrollmentRepository,
@@ -24,10 +25,14 @@ export class ReviewService {
     );
 
     if (existingReview) {
-      const newReview = await this.reviewRepository.update(existingReview.id, {
-        rating: reviewData.rating,
-        comment: reviewData.comment,
-      });
+      const newReview = await this.reviewRepository.update(
+        existingReview.id,
+        {
+          rating: reviewData.rating,
+          comment: reviewData.comment,
+        },
+        undefined
+      );
       return newReview;
     }
 
@@ -43,16 +48,19 @@ export class ReviewService {
     }
 
     // Mark reviewStatus as true to prevent multiple reviews
-    enrollment.reviewStatus = true;
-    await enrollment.save();
+    await this.enrollmentRepository.update(
+      enrollment._id.toString(),
+      { reviewStatus: true },
+      undefined
+    );
 
     // Create review
-    return this.reviewRepository.createReview({
+    return this.reviewRepository.create({
       ...reviewData,
       studentId,
     });
   }
-  async getReviewsByCourse(courseId: string) {
+  async getReviewsByCourse(courseId: string): Promise<ReviewsWithStats> {
     try {
       const reviews = await this.reviewRepository.findReviewsByCourse(courseId);
       const reviewStats = await this.reviewRepository.getCourseReviewStats(
@@ -71,6 +79,8 @@ export class ReviewService {
             "5star": 0,
           },
         };
+      } else {
+        updatedReviewStats = reviewStats;
       }
       const updatedData = reviews.map((review) => {
         return {
@@ -159,7 +169,7 @@ export class ReviewService {
         );
       }
 
-      await this.reviewRepository.deleteReview(reviewId);
+      await this.reviewRepository.delete(reviewId);
     } catch (error) {
       throw error;
     }

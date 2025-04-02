@@ -1,16 +1,16 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-export interface INotificationDocument extends Document {
-  userId: mongoose.Schema.Types.ObjectId; // Receiver of the notification
+export interface NotificationDocument extends Document {
+  userId: mongoose.Types.ObjectId; // Receiver of the notification
   type: "course" | "payment" | "message" | "system"; // Type of notification
   title: string; // Short title for the notification
   message: string; // Detailed message
-  entityId?: mongoose.Schema.Types.ObjectId; // Optional: Links to a course, transaction, etc.
+  entityId?: mongoose.Types.ObjectId; // Optional: Links to a course, transaction, etc.
   isRead: boolean; // Whether the user has seen it
   createdAt: Date;
 }
 
-const NotificationSchema: Schema<INotificationDocument> = new mongoose.Schema(
+const NotificationSchema: Schema<NotificationDocument> = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -41,5 +41,5 @@ const NotificationSchema: Schema<INotificationDocument> = new mongoose.Schema(
   }
 );
 
-export const NotificationModel: Model<INotificationDocument> =
-  mongoose.model<INotificationDocument>("Notification", NotificationSchema);
+export const NotificationModel: Model<NotificationDocument> =
+  mongoose.model<NotificationDocument>("Notification", NotificationSchema);
