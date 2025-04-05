@@ -1,13 +1,11 @@
 // src/interfaces/controllers/AuthController.ts
 import { NextFunction, Request, Response } from "express";
 import { InstructorService } from "../../services/implementations/instructor.service";
-//errors
-import { AppError } from "../../util/errors/app-error";
-import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
+import { IInstructorController } from "../interfaces/instructor-controller.interface";
 //external dependencies
 
-export class InstructorController {
+export class InstructorController implements IInstructorController {
   constructor(private instructorService: InstructorService) {}
 
   async getProfile(

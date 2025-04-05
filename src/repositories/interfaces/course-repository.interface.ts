@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { FilterQuery } from "mongoose";
 import { CourseDocument } from "../../models/course.model";
 import { IRepository } from "../base/base-repository.interface";
-import { CourseWithPopulatedFields } from "../types/course-repository.types";
+import { CourseWithPopulatedCategory, CourseWithPopulatedFields } from "../types/course-repository.types";
 
 export interface ICourseRepository extends IRepository<CourseDocument> {
   createCourseWithSession(
@@ -27,7 +27,7 @@ export interface ICourseRepository extends IRepository<CourseDocument> {
     filters: { [key: string]: any },
     skip: number,
     limit: number
-  ): Promise<CourseDocument[]>;
+  ): Promise<CourseWithPopulatedCategory[]>;
   rejectCourseReviewRequest(
     courseId: string,
     rejectReason: string

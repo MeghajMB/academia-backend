@@ -202,7 +202,7 @@ export class AdminController implements IAdminController {
   ): Promise<void> {
     try {
       const { page } = GetCategoriesRequestSchema.parse(req.query);
-      const data = await this.adminService.getPaginatedCategories(
+      const result = await this.adminService.getPaginatedCategories(
         page,
         this.pagLimit
       );
@@ -210,7 +210,7 @@ export class AdminController implements IAdminController {
         status: "success",
         code: StatusCode.OK,
         message: "Categories retrieved successfully",
-        data,
+        data:result,
       });
       res.status(StatusCode.OK).send(response);
     } catch (error) {
@@ -272,7 +272,7 @@ export class AdminController implements IAdminController {
         message: "Category blocked successfully",
         data: null,
       });
-      res.status(StatusCode.OK).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -295,7 +295,7 @@ export class AdminController implements IAdminController {
         message: "Course review requests retrieved successfully",
         data: result,
       });
-      res.status(200).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -319,7 +319,7 @@ export class AdminController implements IAdminController {
         message: "Course review request processed",
         data: null,
       });
-      res.status(StatusCode.OK).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -340,7 +340,7 @@ export class AdminController implements IAdminController {
         message: "Course review request processed",
         data: null,
       });
-      res.status(StatusCode.OK).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }

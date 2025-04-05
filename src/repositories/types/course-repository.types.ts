@@ -45,6 +45,10 @@ export interface CourseWithPopulatedFields extends Omit<Course,"category"|"userI
   category:CategoryDocument,
 }
 
+export interface CourseWithPopulatedCategory extends Omit<Course,"category"> {
+  category:CategoryDocument,
+}
+
 export interface ICourseResultWithUserId extends Document {
   userId: IUserResult;
   title: string;

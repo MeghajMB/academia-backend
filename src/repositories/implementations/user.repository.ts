@@ -9,6 +9,9 @@ export class UserRepository
   extends BaseRepository<UserDocument>
   implements IUserRepository
 {
+  constructor() {
+    super(UserModel);
+  }
   async addGoldCoins(
     userId: string,
     coinsToAdd: number,
@@ -126,13 +129,13 @@ export class UserRepository
       if (search) {
         query.name = { $regex: search, $options: "i" }; // Case-insensitive search
       }
-      const user = await UserModel.find(query)
+      const users = await UserModel.find(query)
         .skip(skip)
         .limit(limit)
-        .sort({ name: 1 });
-      if (!user) return null;
+        .sort({ name: 1 })
+        .lean();
 
-      return user;
+      return users;
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error.message);

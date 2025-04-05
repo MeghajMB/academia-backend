@@ -5,7 +5,10 @@ import { ReviewRepository } from "../../repositories/implementations/review.repo
 import { ICourseRepository } from "../../repositories/interfaces/course-repository.interface";
 import { IEnrollmentRepository } from "../../repositories/interfaces/enrollment-repository.interface";
 import { IReviewService } from "../interfaces/review-service.interface";
-import { ReviewsWithStats } from "../types/review-service.types";
+import {
+  RatingBreakDown,
+  ReviewsWithStats,
+} from "../types/review-service.types";
 
 export class ReviewService implements IReviewService {
   constructor(
@@ -80,7 +83,18 @@ export class ReviewService implements IReviewService {
           },
         };
       } else {
-        updatedReviewStats = reviewStats;
+        const ratingBreakdown = reviewStats[0].ratings.reduce(
+          (acc, { count, rating }) => {
+            acc[`${rating}star`] = count;
+            return acc;
+          },
+          {} as RatingBreakDown
+        );
+        updatedReviewStats = {
+          averageRating: reviewStats[0].averageRating,
+          totalReviews: reviewStats[0].totalReviews,
+          ratingBreakdown: ratingBreakdown,
+        };
       }
       const updatedData = reviews.map((review) => {
         return {
@@ -96,7 +110,7 @@ export class ReviewService implements IReviewService {
       });
       const updatedReview = {
         reviews: updatedData,
-        reviewStats: reviewStats.length == 0 ? updatedReviewStats : reviewStats,
+        reviewStats: updatedReviewStats,
       };
       return updatedReview;
     } catch (error) {
@@ -107,51 +121,6 @@ export class ReviewService implements IReviewService {
   async getReviewsByStudent(studentId: string) {
     try {
       return this.reviewRepository.findReviewsByStudent(studentId);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async getReviewStatiticsOfCourse(courseId: string) {
-    try {
-      const reviewStats = await this.reviewRepository.getCourseReviewStats(
-        courseId
-      );
-      if (reviewStats.length) {
-        return {
-          averageRating: 0,
-          totalReviews: 0,
-          ratingBreakdown: {
-            "1star": 0,
-            "2star": 0,
-            "3star": 0,
-            "4star": 0,
-            "5star": 0,
-          },
-        };
-      }
-
-      const { totalReviews, averageRating, ratings } = reviewStats[0];
-
-      // Initialize rating breakdown
-      const ratingBreakdown: Record<string, number> = {
-        "1star": 0,
-        "2star": 0,
-        "3star": 0,
-        "4star": 0,
-        "5star": 0,
-      };
-
-      // Map actual ratings from aggregation reviewStats
-      for (const { rating, count } of ratings) {
-        ratingBreakdown[`${rating}star`] = (count / totalReviews) * 100;
-      }
-
-      return {
-        averageRating,
-        totalReviews,
-        ratingBreakdown,
-      };
     } catch (error) {
       throw error;
     }

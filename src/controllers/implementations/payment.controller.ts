@@ -1,12 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 // services
 import { PaymentService } from "../../services/implementations/payment.service";
-//errors
-import { AppError } from "../../util/errors/app-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
+import { IPaymentController } from "../interfaces/payment-controller.interface";
 
-export class PaymentController {
+export class PaymentController implements IPaymentController {
   constructor(private paymentService: PaymentService) {}
 
   async createOrder(req: Request, res: Response, next: NextFunction) {

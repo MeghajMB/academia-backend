@@ -4,7 +4,11 @@ import { CourseModel, CourseDocument } from "../../models/course.model";
 import { BaseRepository } from "../base/base.repository";
 import { ICourseRepository } from "../interfaces/course-repository.interface";
 import { DatabaseError } from "../../util/errors/database-error";
-import { CourseWithPopulatedFields } from "../types/course-repository.types";
+import {
+  CourseWithPopulatedCategory,
+  CourseWithPopulatedFields,
+} from "../types/course-repository.types";
+import { CategoryDocument } from "../../models/categoy.model";
 
 export class CourseRepository
   extends BaseRepository<CourseDocument>
@@ -175,14 +179,15 @@ export class CourseRepository
     filters: { [key: string]: any },
     skip: number,
     limit: number
-  ): Promise<CourseDocument[]> {
+  ): Promise<CourseWithPopulatedCategory[]> {
     try {
       const courses = await CourseModel.find(filters)
+        .populate<{ category: CategoryDocument }>("category")
         .skip(skip)
         .limit(limit)
         .lean();
 
-      return courses;
+      return courses as unknown as CourseWithPopulatedCategory[];
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error.message);

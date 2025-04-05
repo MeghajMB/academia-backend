@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { BaseRepository } from "../base/base.repository";
 import { ILectureRepository } from "../interfaces/lecture-repository.interface";
 import { LectureDocument, LectureModel } from "../../models/lecture.model";
@@ -31,8 +31,8 @@ export class LectureRepository
   }
 
   async updateOrderOfLectureInSameSection(
-    sectionId: mongoose.ObjectId,
-    lectureId: mongoose.ObjectId,
+    sectionId: Types.ObjectId,
+    lectureId: Types.ObjectId,
     draggedOrder: number,
     targetOrder: number
   ): Promise<LectureDocument | null> {
@@ -69,9 +69,9 @@ export class LectureRepository
   }
 
   async updateOrderOfLectureInDifferentSection(
-    lectureId: mongoose.ObjectId,
-    draggedSectionId: mongoose.ObjectId,
-    targetSectionId: mongoose.ObjectId,
+    lectureId: Types.ObjectId,
+    draggedSectionId: Types.ObjectId,
+    targetSectionId: Types.ObjectId,
     draggedLectureOrder: number,
     targetOrder: number
   ): Promise<LectureDocument | null> {

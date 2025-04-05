@@ -1,26 +1,40 @@
 import { Request, Response, NextFunction } from "express";
 import { ReviewService } from "../../services/implementations/review.service";
 import { StatusCode } from "../../enums/status-code.enum";
-import { BadRequestError } from "../../util/errors/bad-request-error";
-import { NotFoundError } from "../../util/errors/not-found-error";
+import {
+  AddReviewRequestSchema,
+  DeleteReviewRequestSchema,
+  GetReviewsByStudentRequestSchema,
+  GetReviewsOfCourseRequestSchema,
+} from "../dtos/review/request.dto";
+import {
+  AddReviewResponseSchema,
+  DeleteReviewResponseSchema,
+  GetReviewsByStudentResponseSchema,
+  GetReviewsOfCourseResponseSchema,
+} from "../dtos/review/response.dto";
+import { IReviewController } from "../interfaces/review-controller.interface";
 
-export class ReviewController {
+export class ReviewController implements IReviewController {
   constructor(private reviewService: ReviewService) {}
 
   async addReview(req: Request, res: Response, next: NextFunction) {
     try {
       const user = req.verifiedUser!;
-      const { courseId, rating, comment } = req.body;
-
-      if (!courseId || !rating || !comment) {
-        throw new BadRequestError("All fields are required");
-      }
-
+      const { courseId, rating, comment } = AddReviewRequestSchema.parse(
+        req.body
+      );
       const review = await this.reviewService.addReview(
         { courseId, rating, comment },
         user.id
       );
-      res.status(StatusCode.CREATED).json({ message: "Review added", review });
+      const response = AddReviewResponseSchema.parse({
+        status: "success",
+        code: StatusCode.CREATED,
+        message: "Review added",
+        data: review,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -28,9 +42,15 @@ export class ReviewController {
 
   async getReviewsOfCourse(req: Request, res: Response, next: NextFunction) {
     try {
-      const { courseId } = req.params;
+      const { courseId } = GetReviewsOfCourseRequestSchema.parse(req.params);
       const reviews = await this.reviewService.getReviewsByCourse(courseId);
-      res.status(StatusCode.OK).json(reviews);
+      const response = GetReviewsOfCourseResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Reviews retrieved successfully",
+        data: reviews,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -38,23 +58,15 @@ export class ReviewController {
 
   async getReviewsByStudent(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = req.params;
+      const { studentId } = GetReviewsByStudentRequestSchema.parse(req.params);
       const reviews = await this.reviewService.getReviewsByStudent(studentId);
-      if (!reviews.length) throw new NotFoundError("No reviews found");
-      res.status(StatusCode.OK).json(reviews);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getReviewStatiticsOfCourse(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { courseId } = req.params;
-      if(!courseId){
-        throw new BadRequestError("Provide the courseId")
-      }
-      const reviews = await this.reviewService.getReviewStatiticsOfCourse(courseId);
-      res.status(StatusCode.OK).send(reviews);
+      const response = GetReviewsByStudentResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Student reviews retrieved successfully",
+        data: reviews,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -62,12 +74,16 @@ export class ReviewController {
 
   async deleteReview(req: Request, res: Response, next: NextFunction) {
     try {
-      const { reviewId } = req.params;
+      const { reviewId } = DeleteReviewRequestSchema.parse(req.params);
       const user = req.verifiedUser!;
       await this.reviewService.deleteReview(reviewId, user.id);
-      res
-        .status(StatusCode.OK)
-        .json({ message: "Review deleted successfully" });
+      const response = DeleteReviewResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Review deleted successfully",
+        data: null,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }

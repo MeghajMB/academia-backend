@@ -1,22 +1,31 @@
 import { NextFunction, Request, Response } from "express";
 import { BidService } from "../../services/implementations/bid.service";
 import { StatusCode } from "../../enums/status-code.enum";
-import { BadRequestError } from "../../util/errors/bad-request-error";
+import {
+  GetBidByIdResponseSchema,
+  GetBidsForGigResponseSchema,
+  PlaceBidResponseSchema,
+} from "../dtos/bid/response.dto";
+import {
+  GetBidByIdRequestSchema,
+  GetBidsForGigRequestSchema,
+  PlaceBidRequestSchema,
+} from "../dtos/bid/request.dto";
 export class BidController {
   constructor(private bidService: BidService) {}
 
   async placeBid(req: Request, res: Response, next: NextFunction) {
     try {
-      const { gigId, bidAmt } = req.body;
+      const { gigId, bidAmt } = PlaceBidRequestSchema.parse(req.body);
       const id = req.verifiedUser!.id;
-      if (!gigId || !bidAmt) {
-        throw new BadRequestError("Must have all data");
-      }
-      const bid = await this.bidService.placeBid(
-        { gigId, bidAmt: Number(bidAmt) },
-        id
-      );
-      res.status(200).send({ message: "success" });
+      const bid = await this.bidService.placeBid({ gigId, bidAmt }, id);
+      const response = PlaceBidResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "success",
+        data: null,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -24,8 +33,15 @@ export class BidController {
 
   async getBidById(req: Request, res: Response, next: NextFunction) {
     try {
-      const bid = await this.bidService.getBidById(req.params.id);
-      res.status(StatusCode.OK).json(bid);
+      const { bidId } = GetBidByIdRequestSchema.parse(req.params);
+      const result = await this.bidService.getBidById(bidId);
+      const response = GetBidByIdResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Bid retrieved successfully",
+        data: result,
+      });
+      res.status(StatusCode.OK).json(response);
     } catch (error) {
       next(error);
     }
@@ -33,29 +49,15 @@ export class BidController {
 
   async getBidsForGig(req: Request, res: Response, next: NextFunction) {
     try {
-      const bids = await this.bidService.getBidsForGig(req.params.gigId);
-      res.status(StatusCode.OK).json(bids);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async updateBid(req: Request, res: Response, next: NextFunction) {
-    try {
-      const updatedBid = await this.bidService.updateBid(
-        req.params.id,
-        req.body
-      );
-      res.status(StatusCode.OK).json(updatedBid);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async deleteBid(req: Request, res: Response, next: NextFunction) {
-    try {
-      await this.bidService.deleteBid(req.params.id);
-      res.status(StatusCode.NO_CONTENT).send();
+      const { gigId } = GetBidsForGigRequestSchema.parse(req.params);
+      const bids = await this.bidService.getBidsForGig(gigId);
+      const response = GetBidsForGigResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Bids retrieved successfully",
+        data: bids,
+      });
+      res.status(StatusCode.OK).json(response);
     } catch (error) {
       next(error);
     }

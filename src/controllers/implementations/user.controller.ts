@@ -5,8 +5,9 @@ import { UserService } from "../../services/implementations/user.service";
 import { AppError } from "../../util/errors/app-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
+import { IUserController } from "../interfaces/user-controller.interface";
 
-export class UserController {
+export class UserController implements IUserController {
 
   constructor(private userService: UserService) {}
 

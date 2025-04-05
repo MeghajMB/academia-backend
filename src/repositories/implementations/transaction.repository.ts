@@ -3,8 +3,15 @@ import {
   TransactionDocument,
   TransactionModel,
 } from "../../models/transaction.model";
+import { BaseRepository } from "../base/base.repository";
 
-export class TransactionRepository implements ITransactionRepository {
+export class TransactionRepository
+  extends BaseRepository<TransactionDocument>
+  implements ITransactionRepository
+{
+  constructor() {
+    super(TransactionModel);
+  }
   async createTransaction(
     userId: string,
     amount: number,

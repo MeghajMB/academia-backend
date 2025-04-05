@@ -6,7 +6,7 @@ export interface ICategoryRepository extends IRepository<CategoryDocument> {
   createCategory(category: {
     name: string;
     description: string;
-  }): Promise<CategoryDocument | null>;
+  }): Promise<CategoryDocument>;
   fetchCategoryWithPagination(
     skip: number,
     limit: number

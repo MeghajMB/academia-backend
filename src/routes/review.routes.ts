@@ -37,12 +37,6 @@ router.get(
   reviewController.getReviewsByStudent.bind(reviewController)
 );
 
-//get the statictics of a course
-router.get(
-  "/course/statitics/:courseId",
-  reviewController.getReviewStatiticsOfCourse.bind(reviewController)
-);
-
 /* POST Routes */
 
 //add a review

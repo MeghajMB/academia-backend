@@ -2,21 +2,19 @@
 import { IUserRepository } from "../../repositories/interfaces/user-repository.interface";
 import { ICategoryRepository } from "../../repositories/interfaces/category-repository.interface";
 import { ICourseRepository } from "../../repositories/interfaces/course-repository.interface";
-
 //services
 import { IAdminService } from "../interfaces/admin-service.interface";
-
 //errors
 import { AppError } from "../../util/errors/app-error";
 import { NotFoundError } from "../../util/errors/not-found-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-
 //externl dependencies
 import { redis } from "../../lib/redis";
 import { StatusCode } from "../../enums/status-code.enum";
 import { INotificationService } from "../interfaces/notification-service.interface";
 import {
   GetCoursesParams,
+  GetCoursesResponse,
   GetInstructorVerificationRequestsParams,
   GetUsersParams,
   RejectVerificationRequestParams,
@@ -55,7 +53,7 @@ export class AdminService implements IAdminService {
       throw error;
     }
   }
-  async getCourses({ page, limit, search }: GetCoursesParams) {
+  async getCourses({ page, limit, search }: GetCoursesParams):Promise<GetCoursesResponse> {
     const skip = (page - 1) * limit;
     const totalDocuments = await this.courseRepository.countDocuments(
       "status",
@@ -263,7 +261,7 @@ export class AdminService implements IAdminService {
         "pending"
       );
       const filters = { status: "pending" };
-      const reviewRequests =
+      const requests =
         await this.courseRepository.fetchPaginatedCoursesWithFilters(
           filters,
           skip,
@@ -276,7 +274,7 @@ export class AdminService implements IAdminService {
         limit,
       };
 
-      return { reviewRequests, pagination };
+      return { requests, pagination };
     } catch (error) {
       throw error;
     }

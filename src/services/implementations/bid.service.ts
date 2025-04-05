@@ -126,12 +126,16 @@ export class BidService implements IBidService {
     }
   }
 
-  async getBidById(id: string): Promise<BidDocument | null> {
-    const bid = await this.bidRepository.findById(id);
-    if (!bid) {
-      throw new AppError("Bid not found", StatusCode.NOT_FOUND);
+  async getBidById(id: string): Promise<BidDocument> {
+    try {
+      const bid = await this.bidRepository.findById(id);
+      if (!bid) {
+        throw new AppError("Bid not found", StatusCode.NOT_FOUND);
+      }
+      return bid;
+    } catch (error) {
+      throw error;
     }
-    return bid;
   }
 
   async getBidsForGig(gigId: string): Promise<BidDocument[]> {

@@ -33,17 +33,5 @@ router.get(
   verifyToken,
   bidController.getBidsForGig.bind(bidController)
 );
-router.put(
-  "/:id",
-  verifyToken,
-  verifyUser("student"),
-  bidController.updateBid.bind(bidController)
-);
-router.delete(
-  "/:id",
-  verifyToken,
-  verifyUser("student"),
-  bidController.deleteBid.bind(bidController)
-);
 
 export default router;

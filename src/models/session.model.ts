@@ -6,7 +6,7 @@ export interface SessionDocument extends Document {
   sessionDate: Date;
   sessionDuration: number; // Duration in minutes
   participants: {
-    userId: Schema.Types.ObjectId;
+    userId: mongoose.Types.ObjectId;
     joinTimes: Date[];
     leaveTimes: Date[];
     totalTimeSpent: number; // In seconds

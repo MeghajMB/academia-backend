@@ -11,16 +11,25 @@ const SuccessResponseSchema = z.object({
 export const GetUsersResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
     users: z.array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        email: z.string(),
-        role: z.string(),
-      })
+      z
+        .object({
+          _id: z.coerce.string(),
+          name: z.string(),
+          email: z.string(),
+          profilePicture: z.string(),
+          isBlocked: z.boolean(),
+        })
+        .transform(({ _id, ...rest }) => ({
+          id: _id,
+          ...rest,
+        }))
     ),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
+    pagination: z.object({
+      totalDocuments: z.number(),
+      totalPages: z.number(),
+      currentPage: z.number(),
+      limit: z.number(),
+    }),
   }),
 });
 export type GetUsersResponseDTO = z.infer<typeof GetUsersResponseSchema>;
@@ -29,15 +38,25 @@ export type GetUsersResponseDTO = z.infer<typeof GetUsersResponseSchema>;
 export const GetCoursesResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
     courses: z.array(
-      z.object({
-        id: z.string(),
-        title: z.string(),
-        instructorId: z.string(),
-      })
+      z
+        .object({
+          _id: z.coerce.string(),
+          title: z.string(),
+          price: z.string(),
+          isBlocked: z.boolean(),
+          category: z.object({ name: z.string(), description: z.string() }),
+        })
+        .transform(({ _id, ...rest }) => ({
+          id: _id,
+          ...rest,
+        }))
     ),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
+    pagination: z.object({
+      totalDocuments: z.number(),
+      totalPages: z.number(),
+      currentPage: z.number(),
+      limit: z.number(),
+    }),
   }),
 });
 export type GetCoursesResponseDTO = z.infer<typeof GetCoursesResponseSchema>;
@@ -47,15 +66,25 @@ export const GetInstructorVerificationRequestsResponseSchema =
   SuccessResponseSchema.extend({
     data: z.object({
       requests: z.array(
-        z.object({
-          userId: z.string(),
-          headline: z.string(),
-          biography: z.string(),
-        })
+        z
+          .object({
+            _id: z.coerce.string(),
+            name: z.string(),
+            email: z.string(),
+            profilePicture: z.string(),
+            isBlocked: z.boolean(),
+          })
+          .transform(({ _id, ...rest }) => ({
+            id: _id,
+            ...rest,
+          }))
       ),
-      total: z.number(),
-      page: z.number(),
-      limit: z.number(),
+      pagination: z.object({
+        totalDocuments: z.number(),
+        totalPages: z.number(),
+        currentPage: z.number(),
+        limit: z.number(),
+      }),
     }),
   });
 export type GetInstructorVerificationRequestsResponseDTO = z.infer<
@@ -82,28 +111,43 @@ export type BlockResponseDTO = z.infer<typeof BlockResponseSchema>;
 export const GetCategoriesResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
     categories: z.array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        isBlocked: z.boolean(),
-      })
+      z
+        .object({
+          _id: z.coerce.string(),
+          name: z.string(),
+          description: z.string(),
+          isBlocked: z.boolean(),
+        })
+        .transform(({ _id, ...rest }) => ({
+          id: _id,
+          ...rest,
+        }))
     ),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
+    pagination: z.object({
+      totalDocuments: z.number(),
+      totalPages: z.number(),
+      currentPage: z.number(),
+      limit: z.number(),
+    }),
   }),
 });
 export type GetCategoriesResponseDTO = z.infer<
   typeof GetCategoriesResponseSchema
 >;
 
-// Create/Edit Category Response (Assuming category data returned)
+// Create/Edit
 export const CategoryResponseSchema = SuccessResponseSchema.extend({
-  data: z.object({
-    id: z.string(),
-    name: z.string(),
-    isBlocked: z.boolean(),
-  }),
+  data: z
+    .object({
+      _id: z.string(),
+      name: z.string(),
+      description: z.string(),
+      isBlocked: z.boolean(),
+    })
+    .transform(({ _id, ...rest }) => ({
+      id: _id,
+      ...rest,
+    })),
 });
 export type CategoryResponseDTO = z.infer<typeof CategoryResponseSchema>;
 
@@ -121,15 +165,26 @@ export const GetCourseReviewRequestsResponseSchema =
   SuccessResponseSchema.extend({
     data: z.object({
       requests: z.array(
-        z.object({
-          courseId: z.string(),
-          title: z.string(),
-          instructorId: z.string(),
-        })
+        z
+          .object({
+            _id: z.coerce.string(),
+            courseId: z.string(),
+            price: z.number(),
+            title: z.string(),
+            isBlocked: z.boolean(),
+            category: z.object({ name: z.string(), description: z.string() }),
+          })
+          .transform(({ _id, ...rest }) => ({
+            id: _id,
+            ...rest,
+          }))
       ),
-      total: z.number(),
-      page: z.number(),
-      limit: z.number(),
+      pagination: z.object({
+        totalDocuments: z.number(),
+        totalPages: z.number(),
+        currentPage: z.number(),
+        limit: z.number(),
+      }),
     }),
   });
 export type GetCourseReviewRequestsResponseDTO = z.infer<

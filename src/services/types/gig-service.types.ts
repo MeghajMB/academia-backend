@@ -3,11 +3,10 @@ export interface CreateGigParams {
   description: string;
   minBid: number;
   biddingAllowed: boolean;
-  sessionDuration: string;
+  sessionDuration: number;
   maxParticipants: number;
   sessionDate: string;
 }
-
 export interface GetActiveGigsResponse {
     id: string;
     instructorId: string;

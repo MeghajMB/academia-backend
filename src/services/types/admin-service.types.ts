@@ -1,3 +1,6 @@
+import { CourseDocument } from "../../models/course.model";
+import { CourseWithPopulatedCategory } from "../../repositories/types/course-repository.types";
+
 interface Pagination {
   totalDocuments: number;
   totalPages: number;
@@ -16,6 +19,10 @@ export interface GetCoursesParams {
   page: number;
   limit: number;
   search: string;
+}
+export interface GetCoursesResponse {
+  courses:CourseWithPopulatedCategory[];
+  pagination:Pagination
 }
 export interface GetInstructorVerificationRequestsParams {
   page: number;

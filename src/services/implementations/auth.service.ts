@@ -74,11 +74,11 @@ export class AuthService implements IAuthService {
 
       return {
         accessToken,
+        refreshToken,
         id: user.id,
         role: user.role,
         name: user.name,
         email: user.email,
-        refreshToken,
         verified: user.verified,
         goldCoin: Number(user.goldCoin),
         profilePicture: user.profilePicture,

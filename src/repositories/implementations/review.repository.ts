@@ -67,7 +67,7 @@ export class ReviewRepository
     {
       totalReviews: number;
       averageRating: number;
-      ratings: { rating: number; count: number }[];
+      ratings: { rating: 1|2|3|4|5; count: number }[];
     }[]
   > {
     try {

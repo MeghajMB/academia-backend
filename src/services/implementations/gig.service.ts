@@ -36,12 +36,11 @@ export class GigService implements IGigService {
           "Bidding cannot start because there is less than 24 hours before the service date."
         );
       }
-      const durationInMinutes = Number(gigData.sessionDuration);
       // Check for conflicting gigs
       const existingGig = await this.gigRepository.findConflictingGig(
         instructorId,
         sessionDate.toDate(),
-        durationInMinutes
+        gigData.sessionDuration
       );
       if (existingGig) {
         throw new AppError(
@@ -54,7 +53,7 @@ export class GigService implements IGigService {
         instructorId: new mongoose.Types.ObjectId(instructorId),
         title: gigData.title,
         description: gigData.description,
-        sessionDuration: durationInMinutes,
+        sessionDuration: gigData.sessionDuration,
         minBid: Math.ceil(Number(gigData.minBid)),
         sessionDate: sessionDate.toDate(), // Convert to Date object
         biddingExpiresAt: biddingExpiresAt.toDate(), // 24 hrs before sessionDate
@@ -84,7 +83,7 @@ export class GigService implements IGigService {
 
   async updateGig(
     id: string,
-    updateData: Partial<GigDocument>
+    updateData: any
   ): Promise<GigDocument | null> {
     try {
       const updatedGig = await this.gigRepository.update(

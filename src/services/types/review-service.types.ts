@@ -18,15 +18,15 @@ export interface ReviewResponse {
 export interface ReviewStats {
   averageRating: number;
   totalReviews: number;
-  ratingBreakdown: {
-    "1star": number;
-    "2star": number;
-    "3star": number;
-    "4star": number;
-    "5star": number;
-  };
+  ratingBreakdown: RatingBreakDown;
 }
-
+export interface RatingBreakDown{
+  "1star": number;
+  "2star": number;
+  "3star": number;
+  "4star": number;
+  "5star": number;
+}
 export interface ReviewsWithStats {
   reviews: ReviewResponse[];
   reviewStats: ReviewStats;

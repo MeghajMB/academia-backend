@@ -8,10 +8,13 @@ export class CategoryRepository
   extends BaseRepository<CategoryDocument>
   implements ICategoryRepository
 {
+  constructor(){
+    super(CategoryModel)
+  }
   async createCategory(category: {
     name: string;
     description: string;
-  }): Promise<CategoryDocument | null> {
+  }): Promise<CategoryDocument > {
     try {
       const createdCategory = new CategoryModel(category);
       const newCategory = await createdCategory.save();

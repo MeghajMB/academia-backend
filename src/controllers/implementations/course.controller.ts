@@ -7,8 +7,51 @@ import { StatusCode } from "../../enums/status-code.enum";
 
 import sanitizeHtml from "sanitize-html";
 import { ICourseService } from "../../services/interfaces/course-service.interface";
+import {
+  AddLectureRequestSchema,
+  AddProcessedLectureRequestSchema,
+  AddSectionRequestSchema,
+  ChangeOrderOfLectureRequestSchema,
+  CreateCourseRequestSchema,
+  DeleteLectureRequestSchema,
+  DeleteSectionRequestSchema,
+  EditCourseCreationDetailsRequestSchema,
+  EditLectureRequestSchema,
+  EditSectionRequestSchema,
+  GenerateLectureUrlRequestSchema,
+  GetCourseCreationDetailsRequestSchema,
+  GetCourseDetailsRequestSchema,
+  GetCoursesOfInstructorRequestSchema,
+  GetCurriculumRequestSchema,
+  ListCourseRequestSchema,
+  MarkLectureAsCompletedRequestSchema,
+  SubmitCourseForReviewRequestSchema,
+} from "../dtos/course/request.dto";
+import {
+  AddLectureResponseSchema,
+  AddProcessedLectureResponseSchema,
+  AddSectionResponseSchema,
+  ChangeOrderOfLectureResponseSchema,
+  CreateCourseResponseSchema,
+  DeleteLectureResponseSchema,
+  DeleteSectionResponseSchema,
+  EditCourseCreationDetailsResponseSchema,
+  EditLectureResponseSchema,
+  EditSectionResponseSchema,
+  GenerateLectureUrlResponseSchema,
+  GetCourseCreationDetailsResponseSchema,
+  GetCourseDetailsResponseSchema,
+  GetCoursesOfInstructorResponseSchema,
+  GetCurriculumResponseSchema,
+  GetEnrolledCoursesOfUserResponseSchema,
+  GetNewCoursesResponseSchema,
+  ListCourseResponseSchema,
+  MarkLectureAsCompletedResponseSchema,
+  SubmitCourseForReviewResponseSchema,
+} from "../dtos/course/response.dto";
+import { ICourseController } from "../interfaces/course-controller.interface";
 
-export class CourseController {
+export class CourseController implements ICourseController {
   constructor(private courseService: ICourseService) {}
 
   async createCourse(
@@ -18,27 +61,7 @@ export class CourseController {
   ): Promise<void> {
     try {
       const user = req.verifiedUser!;
-      const courseData = req.body as {
-        category: string;
-        imageThumbnail: string;
-        description: string;
-        price: number;
-        subtitle: string;
-        title: string;
-        promotionalVideo: string;
-      };
-
-      if (
-        !courseData.category ||
-        !courseData.imageThumbnail ||
-        !courseData.description ||
-        !courseData.price ||
-        !courseData.subtitle ||
-        !courseData.title ||
-        !courseData.promotionalVideo
-      ) {
-        throw new BadRequestError("Must include all fields");
-      }
+      const courseData = CreateCourseRequestSchema.parse(req.body);
       const sanitizedDescription = sanitizeHtml(courseData.description, {
         allowedTags: [
           "b",
@@ -58,8 +81,14 @@ export class CourseController {
         },
       });
       courseData.description = sanitizedDescription;
-      const data = await this.courseService.createCourse(courseData, user.id);
-      res.status(StatusCode.OK).send({ message: "success", id: data._id });
+      const result = await this.courseService.createCourse(courseData, user.id);
+      const response = CreateCourseResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "success",
+        data: { id: result._id },
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -71,23 +100,20 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { section, courseId } = req.body as {
-        section: { title: string; description: string };
-        courseId: string;
-      };
-      const userId = req.verifiedUser?.id;
-      if (!section || !courseId || !section.title || !section.description) {
-        throw new BadRequestError(
-          "Missing required fields: title, description, or courseId"
-        );
-      }
-
+      const { section, courseId } = AddSectionRequestSchema.parse(req.body);
+      const userId = req.verifiedUser!.id;
       const newSection = await this.courseService.addSection(
         section,
         courseId,
-        userId!
+        userId
       );
-      res.status(StatusCode.OK).send(newSection);
+      const response = AddSectionResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Section added successfully",
+        data: newSection,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -100,11 +126,16 @@ export class CourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-
       const enrolledCourses = await this.courseService.getEnrolledCoursesOfUser(
         id
       );
-      res.status(StatusCode.OK).send(enrolledCourses);
+      const response = GetEnrolledCoursesOfUserResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Section added successfully",
+        data: enrolledCourses,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -116,13 +147,11 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { courseId } = req.params;
-      const { status } = req.query;
-
+      const { courseId, status } = GetCurriculumRequestSchema.parse({
+        courseId: req.params.courseId,
+        status: req.query.status,
+      });
       const { id, role } = req.verifiedUser!;
-      if (!courseId || !status || typeof status !== "string") {
-        throw new BadRequestError("Provide the id");
-      }
       if (status == "admin" && role !== "admin") {
         throw new AppError(
           "You dont have access to this course",
@@ -135,7 +164,13 @@ export class CourseController {
         status,
         role
       );
-      res.status(StatusCode.OK).send(curriculum);
+      const response = GetCurriculumResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Curriculum retrieved successfully",
+        data: curriculum,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -147,16 +182,19 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { courseId } = req.params;
+      const { courseId } = GetCourseDetailsRequestSchema.parse(req.params);
       const userId = req.verifiedUser?.id!;
-      if (!courseId) {
-        throw new BadRequestError("Provide the id");
-      }
-      const curriculum = await this.courseService.getCourseDetails(
+      const courseDetails = await this.courseService.getCourseDetails(
         courseId,
         userId
       );
-      res.status(StatusCode.OK).send(curriculum);
+      const response = GetCourseDetailsResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course details retrieved successfully",
+        data: courseDetails,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -168,16 +206,24 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { courseId } = req.params;
+      const { courseId } = GetCourseCreationDetailsRequestSchema.parse(
+        req.params
+      );
       const userId = req.verifiedUser?.id!;
       if (!courseId) {
         throw new BadRequestError("Provide the id");
       }
-      const curriculum = await this.courseService.getCourseCreationDetails(
+      const courseDetails = await this.courseService.getCourseCreationDetails(
         courseId,
         userId
       );
-      res.status(StatusCode.OK).send(curriculum);
+      const response = GetCourseCreationDetailsResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course creation details retrieved successfully",
+        data: courseDetails,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -189,18 +235,24 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { courseId } = req.params;
-      const courseDetails = req.body;
+      const { courseId, ...courseDetails } =
+        EditCourseCreationDetailsRequestSchema.parse({
+          courseId: req.params.courseId,
+          ...req.body,
+        });
       const userId = req.verifiedUser?.id!;
-      if (!courseId) {
-        throw new BadRequestError("Provide the id");
-      }
-      const curriculum = await this.courseService.editCourseCreationDetails(
+      const updatedCourse = await this.courseService.editCourseCreationDetails(
         courseId,
         userId,
         courseDetails
       );
-      res.status(StatusCode.OK).send(curriculum);
+      const response = EditCourseCreationDetailsResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course creation details updated successfully",
+        data: updatedCourse,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -213,7 +265,14 @@ export class CourseController {
   ): Promise<void> {
     try {
       const newCourses = await this.courseService.getNewCourses();
-      res.status(StatusCode.OK).send(newCourses);
+      const response = GetNewCoursesResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course creation details updated successfully",
+        data: newCourses,
+      });
+
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -226,27 +285,21 @@ export class CourseController {
   ): Promise<void> {
     try {
       const userId = req.verifiedUser?.id!;
-      const { courseId, sectionId, lectureData } = req.body as {
-        courseId: string;
-        sectionId: string;
-        lectureData: { title: string; videoUrl: string; duration: number };
-      };
-      if (
-        !courseId ||
-        !sectionId ||
-        !lectureData.title ||
-        !lectureData.videoUrl ||
-        !lectureData.duration
-      ) {
-        throw new BadRequestError("Give valid data");
-      }
-      const curriculum = await this.courseService.addLecture(
+      const { courseId, sectionId, lectureData } =
+        AddLectureRequestSchema.parse(req.body);
+      const lectureResult = await this.courseService.addLecture(
         userId,
         courseId,
         sectionId,
         lectureData
       );
-      res.status(StatusCode.OK).send(curriculum);
+      const response = AddLectureResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Lecture added successfully",
+        data: lectureResult,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -258,11 +311,8 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { userId, courseId, sectionId, lectureId, key } = req.body;
-      //do something here
-      if (!userId || !courseId || !sectionId || !lectureId || !key) {
-        throw new BadRequestError("Must inclue every details");
-      }
+      const { userId, courseId, sectionId, lectureId, key } =
+        AddProcessedLectureRequestSchema.parse(req.body);
       const curriculum = await this.courseService.addLectureAfterProcessing(
         userId,
         courseId,
@@ -270,9 +320,13 @@ export class CourseController {
         lectureId,
         key
       );
-      res
-        .status(StatusCode.OK)
-        .send({ message: "Lecture Updated Successfully" });
+      const response = AddProcessedLectureResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Lecture Updated Successfully",
+        data: null,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -284,7 +338,9 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { courseId, lectureId } = req.params;
+      const { courseId, lectureId } = GenerateLectureUrlRequestSchema.parse(
+        req.params
+      );
       const { id, role } = req.verifiedUser!;
 
       if (!courseId || !lectureId) {
@@ -319,7 +375,13 @@ export class CourseController {
           secure: true,
         }
       );
-      res.status(StatusCode.OK).send({ url });
+      const response = GenerateLectureUrlResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Lecture URL generated successfully",
+        data: { url },
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -331,13 +393,13 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { instructorId } = req.params;
+      const { instructorId, status } =
+        GetCoursesOfInstructorRequestSchema.parse({
+          instructorId: req.params.instructorId,
+          status: req.query.status,
+        });
       const { id, role } = req.verifiedUser!;
-      const { status } = req.query;
-      //do something here
-      if (!instructorId || !status || typeof status !== "string") {
-        throw new BadRequestError("Must inclue every details");
-      }
+
       if (instructorId !== id && role !== "admin") {
         throw new AppError(
           "You dont have access to this route",
@@ -348,7 +410,13 @@ export class CourseController {
         instructorId,
         status
       );
-      res.status(StatusCode.OK).send(courses);
+      const response = GetCoursesOfInstructorResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Instructor courses retrieved successfully",
+        data: courses,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -360,13 +428,16 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { id } = req.verifiedUser!;
-      const { lectureId } = req.params;
-      if (!lectureId || !id) {
-        throw new BadRequestError("Must inclue every details");
-      }
-      const courses = await this.courseService.deleteLecture(id, lectureId);
-      res.status(StatusCode.OK).send(courses);
+      const userId = req.verifiedUser!.id;
+      const { lectureId } = DeleteLectureRequestSchema.parse(req.params);
+      const courses = await this.courseService.deleteLecture(userId, lectureId);
+      const response = DeleteLectureResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Lecture deleted successfully",
+        data: null,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -378,13 +449,16 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { id } = req.verifiedUser!;
-      const { sectionId } = req.params;
-      if (!sectionId || !id) {
-        throw new BadRequestError("Must inclue every details");
-      }
-      const courses = await this.courseService.deleteSection(id, sectionId);
-      res.status(StatusCode.OK).send(courses);
+      const userId = req.verifiedUser!.id;
+      const { sectionId } = DeleteSectionRequestSchema.parse(req.params);
+      const courses = await this.courseService.deleteSection(userId, sectionId);
+      const response = DeleteSectionResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Section deleted successfully",
+        data: null,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -395,17 +469,20 @@ export class CourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { id } = req.verifiedUser!;
-      const { courseId } = req.params;
+      const userId = req.verifiedUser!.id;
+      const { courseId } = SubmitCourseForReviewRequestSchema.parse(req.params);
 
-      if (!courseId || !id) {
-        throw new BadRequestError("Must inclue every details");
-      }
       const courses = await this.courseService.submitCourseForReview(
-        id,
+        userId,
         courseId
       );
-      res.status(StatusCode.OK).send(courses);
+      const response = SubmitCourseForReviewResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course submitted for review successfully",
+        data: null,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -418,17 +495,21 @@ export class CourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      const { courseId, lectureId } = req.body;
-      if (!id || !courseId || !lectureId) {
-        throw new BadRequestError("Invalid IDs provided");
-      }
-
-      const response = await this.courseService.markLectureAsCompleted(
+      const { courseId, lectureId } = MarkLectureAsCompletedRequestSchema.parse(
+        req.body
+      );
+      const result = await this.courseService.markLectureAsCompleted(
         id,
         courseId,
         lectureId
       );
-      res.status(StatusCode.OK).send(response);
+      const response = MarkLectureAsCompletedResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Lecture marked as completed",
+        data: result,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -441,13 +522,15 @@ export class CourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      const { courseId } = req.params;
-
-      if (!courseId || !id) {
-        throw new BadRequestError("Must inclue every details");
-      }
-      const response = await this.courseService.listCourse(id, courseId);
-      res.status(StatusCode.OK).send(response);
+      const { courseId } = ListCourseRequestSchema.parse(req.params);
+      await this.courseService.listCourse(id, courseId);
+      const response = ListCourseResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course listed successfully",
+        data: null,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -460,21 +543,21 @@ export class CourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      const { draggedLectureId, targetLectureId } = req.body as {
-        draggedLectureId: string;
-        targetLectureId: string;
-      };
+      const { draggedLectureId, targetLectureId } =
+        ChangeOrderOfLectureRequestSchema.parse(req.body);
 
-      if (!draggedLectureId || !targetLectureId) {
-        throw new BadRequestError("Must inclue every details");
-      }
-
-      const response = await this.courseService.changeOrderOfLecture(
+      const result = await this.courseService.changeOrderOfLecture(
         draggedLectureId,
         targetLectureId,
         id
       );
-      res.status(StatusCode.OK).send(response);
+      const response = ChangeOrderOfLectureResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Lecture order changed successfully",
+        data: null,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -487,21 +570,21 @@ export class CourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      const { lectureId, lectureData } = req.body as {
-        lectureId: string;
-        lectureData: { title: string; videoUrl: string; duration: number };
-      };
-
-      if (!lectureId || !lectureData) {
-        throw new BadRequestError("Must inclue every details");
-      }
-
-      const response = await this.courseService.editLecture(
+      const { lectureId, lectureData } = EditLectureRequestSchema.parse(
+        req.body
+      );
+      const updatedLecture = await this.courseService.editLecture(
         lectureId,
         lectureData,
         id
       );
-      res.status(StatusCode.OK).send(response);
+      const response = EditLectureResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Lecture updated successfully",
+        data: updatedLecture,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }
@@ -513,21 +596,21 @@ export class CourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      const { sectionId, sectionData } = req.body as {
-        sectionId: string;
-        sectionData: { title: string; description: string };
-      };
-
-      if (!sectionId || !sectionData) {
-        throw new BadRequestError("Must inclue every details");
-      }
-
-      const response = await this.courseService.editSection(
+      const { sectionId, sectionData } = EditSectionRequestSchema.parse(
+        req.body
+      );
+      const updatedSection = await this.courseService.editSection(
         sectionId,
         sectionData,
         id
       );
-      res.status(StatusCode.OK).send(response);
+      const response = EditSectionResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Section updated successfully",
+        data: updatedSection,
+      });
+      res.status(response.code).json(response);
     } catch (error) {
       next(error);
     }

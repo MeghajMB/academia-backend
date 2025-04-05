@@ -57,7 +57,7 @@ const auctionWorker = new Worker(
       } else {
         status = "no-bids";
       }
-      await gigRepository.update(gigId, { status: status });
+      await gigRepository.update(gigId, { status: status },undefined);
       if (gig.currentBidder) {
         //do the necessary updates
         const participants = [

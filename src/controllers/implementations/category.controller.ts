@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { CategoryService } from "../../services/implementations/category.service";
 import { StatusCode } from "../../enums/status-code.enum";
+import { ICategoryController } from "../interfaces/category-controller.interface";
 
-export class CategoryController {
+export class CategoryController implements ICategoryController {
   private categoryService: CategoryService;
 
   constructor(categoryService: CategoryService) {

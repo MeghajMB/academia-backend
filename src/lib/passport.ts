@@ -22,7 +22,7 @@ passport.use(
         let user = await userRepository.findByEmail(email);
 
         if (!user) {
-          user = await userRepository.createUser({
+          user = await userRepository.create({
             googleId: id,
             name: displayName,
             email,
