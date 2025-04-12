@@ -35,21 +35,18 @@ export const GetUsersResponseSchema = SuccessResponseSchema.extend({
 export type GetUsersResponseDTO = z.infer<typeof GetUsersResponseSchema>;
 
 // Get Courses Response (Assuming paginated course list)
-export const GetCoursesResponseSchema = SuccessResponseSchema.extend({
+export const GetAdminCoursesResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
     courses: z.array(
       z
         .object({
-          _id: z.coerce.string(),
+          id: z.string(),
           title: z.string(),
-          price: z.string(),
+          price: z.number(),
           isBlocked: z.boolean(),
           category: z.object({ name: z.string(), description: z.string() }),
+          status:z.string()
         })
-        .transform(({ _id, ...rest }) => ({
-          id: _id,
-          ...rest,
-        }))
     ),
     pagination: z.object({
       totalDocuments: z.number(),
@@ -59,7 +56,7 @@ export const GetCoursesResponseSchema = SuccessResponseSchema.extend({
     }),
   }),
 });
-export type GetCoursesResponseDTO = z.infer<typeof GetCoursesResponseSchema>;
+export type GetCoursesResponseDTO = z.infer<typeof GetAdminCoursesResponseSchema>;
 
 // Get Instructor Verification Requests Response
 export const GetInstructorVerificationRequestsResponseSchema =
@@ -68,16 +65,13 @@ export const GetInstructorVerificationRequestsResponseSchema =
       requests: z.array(
         z
           .object({
-            _id: z.coerce.string(),
-            name: z.string(),
-            email: z.string(),
-            profilePicture: z.string(),
-            isBlocked: z.boolean(),
+            id: z.string(),
+          name: z.string(),
+          email: z.string(),
+          profilePicture: z.string(),
+          isBlocked: z.boolean(),
+          verified: z.enum(["pending", "rejected", "notRequested", "verified"]),
           })
-          .transform(({ _id, ...rest }) => ({
-            id: _id,
-            ...rest,
-          }))
       ),
       pagination: z.object({
         totalDocuments: z.number(),
@@ -137,17 +131,12 @@ export type GetCategoriesResponseDTO = z.infer<
 
 // Create/Edit
 export const CategoryResponseSchema = SuccessResponseSchema.extend({
-  data: z
-    .object({
-      _id: z.string(),
-      name: z.string(),
-      description: z.string(),
-      isBlocked: z.boolean(),
-    })
-    .transform(({ _id, ...rest }) => ({
-      id: _id,
-      ...rest,
-    })),
+  data: z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    isBlocked: z.boolean(),
+  }),
 });
 export type CategoryResponseDTO = z.infer<typeof CategoryResponseSchema>;
 

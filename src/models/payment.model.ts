@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export type PaymentStatus = "pending" | "success" | "failed";
 
 export interface PaymentDocument extends Document {
+   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   amount: number;
   currency: string;

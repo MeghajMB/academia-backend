@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface ReviewDocument extends Document {
+   _id: mongoose.Types.ObjectId;
   courseId: mongoose.Types.ObjectId|string; // The course being reviewed
   studentId:  mongoose.Types.ObjectId|string; // The student who wrote the review
   rating: number; // Rating (1-5)

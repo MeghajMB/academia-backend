@@ -273,20 +273,23 @@ export class AuthService implements IAuthService {
     await this.userRepository.update(
       existingUser.id,
       { password: hashedPassword },
-      undefined
+      {}
     );
     // Delete reset token from Redis
     await redis.del(resetTokenKey);
     return { message: "OTP send successfully" };
   }
 
-  async signIn({ email, password }: SignInParams): Promise<SignInResponse> {
-    const user = await this.userRepository.findByEmail(email);
+  async signIn(payload: SignInParams): Promise<SignInResponse> {
+    const user = await this.userRepository.findByEmail(payload.email);
 
     if (!user)
       throw new AppError("Invalid Email or password", StatusCode.UNAUTHORIZED);
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      payload.password,
+      user.password
+    );
 
     if (!isPasswordValid)
       throw new AppError("Invalid Email or password", StatusCode.UNAUTHORIZED);
@@ -310,8 +313,18 @@ export class AuthService implements IAuthService {
       60 * 60 * 24
     );
 
-    const { name, role, id, email: userEmail } = user;
-    return { accessToken, refreshToken, name, role, id, userEmail };
+    const { name, role, id, email, verified, profilePicture, goldCoin } = user;
+    return {
+      accessToken,
+      refreshToken,
+      name,
+      role,
+      id,
+      email,
+      verified,
+      profilePicture,
+      goldCoin: Number(goldCoin),
+    };
   }
 
   async signOut({ refreshToken }: SignOutParams): Promise<SignOutResponse> {
@@ -340,7 +353,7 @@ export class AuthService implements IAuthService {
       const updatedUser = await this.userRepository.update(
         currentUser.id,
         { verified: "verified", headline, biography, links },
-        undefined
+        {}
       );
       return { message: "Success" };
     } catch (error) {

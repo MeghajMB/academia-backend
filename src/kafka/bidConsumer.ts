@@ -10,14 +10,14 @@ const kafka = new Kafka({
   brokers: ["localhost:9092"],
 });
 
-const consumer = kafka.consumer({ groupId: "server-b-group" });
+const consumer = kafka.consumer({ groupId: "bid-group" });
 
 const bidService = new BidService(
   new BidRepository(),
   new UserRepository(),
   new GigRepository()
 );
-export async function runConsumer() {
+export async function bidConsumer() {
   await consumer.connect();
   console.log("Consumer connected");
 

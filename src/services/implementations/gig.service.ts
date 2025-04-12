@@ -80,17 +80,63 @@ export class GigService implements IGigService {
       throw error;
     }
   }
-
-  async updateGig(
-    id: string,
-    updateData: any
-  ): Promise<GigDocument | null> {
+  async getAllGigsOfInstructor(
+    {
+      limit,
+      status,
+      page = "1",
+      search,
+      sort,
+    }: {
+      limit: number;
+      status?: "active" | "expired" | "completed" | "no-bids" | "missed";
+      sort?: string;
+      page?: string;
+      search?: string;
+    },
+    userId: string
+  ): Promise<any> {
     try {
-      const updatedGig = await this.gigRepository.update(
-        id,
-        updateData,
-        undefined
-      );
+      const pageNum = parseInt(page) || 1;
+      const skip = (pageNum - 1) * limit;
+
+      const gigs = await this.gigRepository.getPaginatedGigs({
+        limit,
+        status,
+        skip,
+        search,
+        sort,
+        userId,
+      });
+      const updatedGigs = gigs.map((gig) => {
+        return {
+          id: gig._id.toString(),
+          sessionDate: gig.sessionDate.toISOString(),
+          description: gig.description,
+          biddingAllowed: gig.biddingAllowed,
+          sessionDuration: gig.sessionDuration,
+          maxParticipants: gig.maxParticipants,
+          minBid: gig.minBid,
+          status: gig.status,
+          currentBid: gig.currentBid,
+          currentBidder: gig.currentBidder
+            ? gig.currentBidder.toString()
+            : null,
+          title: gig.title,
+          instructorId: gig.instructorId.toString(),
+          biddingExpiresAt: gig.biddingExpiresAt.toISOString(),
+          createdAt: gig.createdAt.toISOString(),
+        };
+      });
+      return updatedGigs;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateGig(id: string, updateData: any): Promise<GigDocument | null> {
+    try {
+      const updatedGig = await this.gigRepository.update(id, updateData, {});
       if (!updatedGig) {
         throw new AppError("Gig not found", StatusCode.NOT_FOUND);
       }
@@ -116,7 +162,7 @@ export class GigService implements IGigService {
       const gigs = await this.gigRepository.getActiveGigsWithPopulatedData();
       const updatedGigs = gigs.map((gig) => {
         return {
-          id: gig._id as string,
+          id: gig._id.toString(),
           instructorId: gig.instructorId._id as string,
           instructorName: gig.instructorId.name,
           instructorProfilePicture: gig.instructorId.profilePicture,
@@ -138,7 +184,6 @@ export class GigService implements IGigService {
       const activeGigs = await this.gigRepository.getActiveGigsOfInstructor(
         userId
       );
-
       return activeGigs;
     } catch (error) {
       throw error;

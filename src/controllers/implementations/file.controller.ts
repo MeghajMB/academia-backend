@@ -17,12 +17,12 @@ export class FileController implements IFileController {
   async generateGetSignedUrl(req: Request, res: Response, next: NextFunction) {
     try {
       const { key } = GenerateGetSignedUrlRequestSchema.parse(req.body);
-      const data = await this.fileService.generateGetSignedUrl(key);
+      const url = await this.fileService.generateGetSignedUrl(key);
       const response = GenerateGetSignedUrlResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Signed GET URL generated successfully",
-        data,
+        data:{url},
       });
       res.status(response.code).json(response);
     } catch (error) {
@@ -33,7 +33,7 @@ export class FileController implements IFileController {
     try {
       const { key, contentType, isPublic, isTemp } =
         GeneratePutSignedUrlRequestSchema.parse(req.body);
-      const data = await this.fileService.generatePutSignedUrl(
+      const url = await this.fileService.generatePutSignedUrl(
         key,
         contentType,
         isPublic,
@@ -43,7 +43,7 @@ export class FileController implements IFileController {
         status: "success",
         code: StatusCode.OK,
         message: "Signed PUT URL generated successfully",
-        data,
+        data:{url},
       });
       res.status(response.code).json(response);
     } catch (error) {

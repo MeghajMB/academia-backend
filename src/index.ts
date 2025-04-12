@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { createServer } from "http";
 import { app } from "./app";
 import SocketService from "./sockets/socket.service";
-import { runConsumer } from "./kafka/consumer";
+import { bidConsumer } from "./kafka/bidConsumer";
 import { runProducer } from "./kafka/producer";
 
 let socketService: SocketService;
@@ -16,7 +16,7 @@ const start = async () => {
     console.log("Connected to MongoDB");
     const server = createServer(app);
     socketService = new SocketService(server);
-    // await runConsumer();
+    // await bidConsumer();
     // await runProducer();
   
     const port = process.env.PORT || 3001;

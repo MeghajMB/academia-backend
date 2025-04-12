@@ -18,6 +18,7 @@ class MediasoupManager {
         [producerId: string]: {
           userId: string;
           userName: string; // Display name
+          profilePicture:string;
           kind: "audio" | "video"; // Track type
           type?: "camera" | "screen" | "mic";
         };
@@ -160,6 +161,7 @@ class MediasoupManager {
     userDetails: {
       userId: string;
       userName: string;
+      profilePicture:string;
     };
     appData: { type: "camera" | "screen" | "mic"; paused?: boolean };
   }) {
@@ -184,6 +186,7 @@ class MediasoupManager {
       kind: kind,
       userId: userDetails.userId,
       userName: userDetails.userName,
+      profilePicture:userDetails.profilePicture,
       type: appData.type as "camera" | "screen" | "mic",
     };
 
@@ -228,6 +231,7 @@ class MediasoupManager {
       rtpParameters: consumer.rtpParameters,
       userId: this.rooms[gigId].producerMetadata[producerId].userId,
       userName: this.rooms[gigId].producerMetadata[producerId].userName,
+      profilePicture:this.rooms[gigId].producerMetadata[producerId].profilePicture,
       type: this.rooms[gigId].producerMetadata[producerId].type,
       pause: producer.paused,
     };

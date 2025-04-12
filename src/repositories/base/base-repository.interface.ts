@@ -4,8 +4,8 @@ export interface IRepository<T> {
   findAll(): Promise<T[]>;
   update(
     id: string,
-    updateData: Partial<T> | undefined,
-    deleteData: { [K in keyof T]?: boolean | 1 } | undefined
+    updateData: Partial<T> | Record<never, never>,
+    deleteData: { [K in keyof T]?: boolean | 1 } | Record<never, never>
   ): Promise<T>;
   delete(id: string): Promise<T | null>;
   countAll(): Promise<number>;

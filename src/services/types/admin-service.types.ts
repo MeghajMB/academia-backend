@@ -21,8 +21,18 @@ export interface GetCoursesParams {
   search: string;
 }
 export interface GetCoursesResponse {
-  courses:CourseWithPopulatedCategory[];
-  pagination:Pagination
+  courses: {
+    id: string;
+    title: string;
+    price: number;
+    isBlocked: boolean;
+    category: {
+      name: string;
+      description: string;
+    };
+    status: "listed" | "pending" | "accepted" | "rejected" | "draft";
+  }[];
+  pagination: Pagination;
 }
 export interface GetInstructorVerificationRequestsParams {
   page: number;

@@ -149,7 +149,7 @@ export class BidService implements IBidService {
     const updatedBid = await this.bidRepository.update(
       id,
       updateData,
-      undefined
+      {}
     );
     if (!updatedBid) {
       throw new AppError("Bid not found", StatusCode.NOT_FOUND);

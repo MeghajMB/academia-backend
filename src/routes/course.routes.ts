@@ -11,7 +11,6 @@ import { SectionRepository } from "../repositories/implementations/section.repos
 import { EnrollmentRepository } from "../repositories/implementations/enrollment.repository";
 import { UserRepository } from "../repositories/implementations/user.repository";
 
-
 const router = Router();
 
 // Dependency injection Begin
@@ -36,6 +35,13 @@ const courseController = new CourseController(courseService);
 
 /* GET routes */
 
+//fetch Courses
+router.get(
+  "/all",
+  verifyToken,
+  verifyUser("instructor", "student", "admin"),
+  courseController.getCourses.bind(courseController)
+);
 //fetch the curriculum (lectures and sections)
 router.get(
   "/curriculum/:courseId",

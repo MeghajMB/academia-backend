@@ -14,6 +14,7 @@ import { CategoryRepository } from "../repositories/implementations/category.rep
 import { SectionRepository } from "../repositories/implementations/section.repository";
 import { LectureRepository } from "../repositories/implementations/lecture.repository";
 import { EnrollmentRepository } from "../repositories/implementations/enrollment.repository";
+import { TransactionRepository } from "../repositories/implementations/transaction.repository";
 
 const router = Router();
 
@@ -21,26 +22,16 @@ const router = Router();
 const userRepository = new UserRepository();
 const courseRepository = new CourseRepository();
 const categoryRepository = new CategoryRepository();
-const sectionRepository = new SectionRepository();
-const lectureRepository = new LectureRepository();
+const transactionRepository = new TransactionRepository();
 const enrollmentRepository = new EnrollmentRepository();
 
 const fileService = new FileService();
 
-//services
-const courseService = new CourseService(
-  courseRepository,
-  lectureRepository,
-  sectionRepository,
-  enrollmentRepository,
-  userRepository,
-  fileService
-);
-
 const instructorService = new InstructorService(
   userRepository,
-  categoryRepository,
-  courseService
+  enrollmentRepository,
+  transactionRepository,
+  courseRepository
 );
 
 const instructorController = new InstructorController(instructorService);
@@ -51,6 +42,12 @@ router.get(
   verifyToken,
   verifyUser("instructor"),
   instructorController.getProfile.bind(instructorController)
+);
+router.get(
+  "/analytics",
+  verifyToken,
+  verifyUser("instructor"),
+  instructorController.getInstructorDashboard.bind(instructorController)
 );
 
 export default router;

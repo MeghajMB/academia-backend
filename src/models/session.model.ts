@@ -1,6 +1,7 @@
 import mongoose, { Document, Schema, Model } from "mongoose";
 
 export interface SessionDocument extends Document {
+   _id: mongoose.Types.ObjectId;
   gigId:  mongoose.Types.ObjectId;
   instructorId: mongoose.Types.ObjectId;
   sessionDate: Date;

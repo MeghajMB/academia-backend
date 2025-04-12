@@ -11,9 +11,9 @@ import {
   BlockUserRequestSchema,
   CreateCategoryRequestSchema,
   EditCategoryRequestSchema,
+  getAdminCoursesRequestSchema,
   GetCategoriesRequestSchema,
   GetCourseReviewRequestsRequestSchema,
-  GetCoursesRequestSchema,
   GetInstructorVerificationRequestsRequestSchema,
   GetUsersRequestSchema,
   RejectCourseReviewRequestSchema,
@@ -24,9 +24,9 @@ import {
   BlockResponseSchema,
   CategoryResponseSchema,
   CourseReviewRequestResponseSchema,
+  GetAdminCoursesResponseSchema,
   GetCategoriesResponseSchema,
   GetCourseReviewRequestsResponseSchema,
-  GetCoursesResponseSchema,
   GetInstructorVerificationRequestsResponseSchema,
   GetUsersResponseSchema,
   VerificationRequestResponseSchema,
@@ -61,22 +61,22 @@ export class AdminController implements IAdminController {
       next(error);
     }
   }
-  async getCourses(
+  async getAdminCourses(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const { page, search } = GetCoursesRequestSchema.parse(req.query);
+      const { page, search } = getAdminCoursesRequestSchema.parse(req.query);
       const result = await this.adminService.getCourses({
         page,
         limit: this.pagLimit,
         search,
       });
-      const response = GetCoursesResponseSchema.parse({
+      const response = GetAdminCoursesResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
-        message: "Instructor verification requests retrieved successfully",
+        message: "Courses retrieved successfully",
         data: result,
       });
       res.status(StatusCode.OK).send(response);
@@ -251,7 +251,7 @@ export class AdminController implements IAdminController {
         status: "success",
         code: StatusCode.OK,
         message: "Category updated successfully",
-        result,
+        data:result,
       });
       res.status(StatusCode.OK).send(response);
     } catch (error) {

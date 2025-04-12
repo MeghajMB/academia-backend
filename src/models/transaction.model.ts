@@ -4,6 +4,7 @@ export type TransactionStatus = "pending" | "success" | "failed";
 export type PurchaseType = "course" | "service" | "coins";
 
 export interface TransactionDocument extends Document {
+   _id: mongoose.Types.ObjectId;
   userId:  mongoose.Types.ObjectId;
   amount: number;
   status: TransactionStatus;

@@ -1,14 +1,13 @@
 import { Queue, Worker } from "bullmq";
 import { redis } from "../lib/redis";
 
-import { areBidsStillProcessing } from "../kafka/consumer";
+import { areBidsStillProcessing } from "../kafka/bidConsumer";
 import { scheduleSessionCompletion } from "./session.queue";
 
 import { NotificationService } from "../services/implementations/notification.service";
 import { GigRepository } from "../repositories/implementations/gig.repository";
 import { SessionRepository } from "../repositories/implementations/session.repository";
 import { NotificationRepository } from "../repositories/implementations/notification.repository";
-
 
 //dependency injection
 const gigRepository = new GigRepository();
@@ -57,7 +56,7 @@ const auctionWorker = new Worker(
       } else {
         status = "no-bids";
       }
-      await gigRepository.update(gigId, { status: status },undefined);
+      await gigRepository.update(gigId, { status: status },{});
       if (gig.currentBidder) {
         //do the necessary updates
         const participants = [

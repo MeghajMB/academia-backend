@@ -5,13 +5,22 @@ export const CreateCourseRequestSchema = z.object({
   category: z.string().nonempty("Category is required"),
   imageThumbnail: z.string().nonempty("Image thumbnail is required"),
   description: z.string().nonempty("Description is required"),
-  price: z.coerce.number().min(0, "Price must be non-negative"),
+  price: z.number().min(0, "Price must be non-negative"),
   subtitle: z.string().nonempty("Subtitle is required"),
   title: z.string().nonempty("Title is required"),
   promotionalVideo: z.string().nonempty("Promotional video is required"),
 });
 export type CreateCourseRequestDTO = z.infer<typeof CreateCourseRequestSchema>;
 
+// List courses Request
+export const GetCoursesRequestSchema = z.object({
+  sort:z.string().optional(),
+  category:z.string().optional(),
+  page:z.string().optional(),
+  search:z.string().optional(),
+  limit:z.number()
+});
+export type GetCoursesRequestDTO = z.infer<typeof GetCoursesRequestSchema>;
 // Add Section Request
 export const AddSectionRequestSchema = z.object({
   courseId: z.string().nonempty("Course ID is required"),
@@ -51,12 +60,12 @@ export type GetCourseCreationDetailsRequestDTO = z.infer<
 export const EditCourseCreationDetailsRequestSchema = z.object({
   courseId: z.string().nonempty("Course ID is required"),
   category: z.string().nonempty("Category is required"),
-  imageThumbnail: z.string().nonempty("Image thumbnail is required"),
+  imageThumbnail: z.string().nullable(),
   description: z.string().nonempty("Description is required"),
   price: z.coerce.number().min(0, "Price must be non-negative"),
   subtitle: z.string().nonempty("Subtitle is required"),
   title: z.string().nonempty("Title is required"),
-  promotionalVideo: z.string().nonempty("Promotional video is required"),
+  promotionalVideo: z.string().nullable(),
 });
 export type EditCourseCreationDetailsRequestDTO = z.infer<
   typeof EditCourseCreationDetailsRequestSchema

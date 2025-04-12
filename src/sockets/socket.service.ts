@@ -4,7 +4,14 @@ import { IncomingMessage, ServerResponse, Server as HttpServer } from "http";
 import { BidModel } from "../models/bid.model";
 import { NotificationModel } from "../models/notification.model";
 import MediasoupManager from "../lib/mediaSoup";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { CustomJwtPayload } from "../types/jwt";
+import { UserRepository } from "../repositories/implementations/user.repository";
+import { GigRepository } from "../repositories/implementations/gig.repository";
 //intialize the class
+
+const userRepository = new UserRepository();
+const gigRepository = new GigRepository();
 
 export interface CustomSocket extends Socket {
   userId?: string;
@@ -121,15 +128,36 @@ class SocketService {
       socket.on("joinGig", async ({ gigId, accessToken }, callback) => {
         try {
           const mediasoupManager = this._mediasoupManager;
-          /* Do the necesary validations and store the userid,name and profile picture in socket */
-          socket.userId = accessToken;
-          socket.userName = "New Name";
+    
+          if (socket.gigId == gigId) return;
+
+          let decoded = jwt.verify(
+            accessToken,
+            process.env.JWT_ACCESS_TOKEN_SECRET!
+          ) as CustomJwtPayload;
+          const user = await userRepository.findById(decoded.id);
+          if (!user) {
+            throw new Error("Invalid User");
+          }
+          if (user?.isBlocked) {
+            throw new Error("You are blocked");
+          }
+          const gig = await gigRepository.findById(gigId);
+          if (!gig) {
+            throw new Error("No Gig Found");
+          }
+          if (gig.currentBidder?.toString() != user._id.toString()) {
+            throw new Error("You dont have access to this gig");
+          }
+          const sessionEndTime = gig.sessionDate.getTime() + gig.sessionDuration * 60 * 1000;
+          if (gig.status !== 'expired' || sessionEndTime < Date.now()) {
+            throw new Error("Session is over");
+          }
+          socket.userId = decoded.id;
+          socket.userName = user?.name;
           socket.gigId = gigId;
-          socket.profilePicture = "user profile picture";
-          console.log(
-            socket.userId + "This is the user id i have saved in sockets"
-          );
-          /*  */
+          socket.profilePicture = user.profilePicture;
+          /* Validation End */
           const router = await mediasoupManager.getOrCreateRoomRouter(gigId);
           socket.join(gigId);
           socket.emit("routerCapabilities", {
@@ -211,6 +239,7 @@ class SocketService {
             const userDetails = {
               userId: socket.userId!,
               userName: socket.userName!,
+              profilePicture:socket.profilePicture!
             };
             /*  */
             const producer = await mediasoupManager.createProducer({

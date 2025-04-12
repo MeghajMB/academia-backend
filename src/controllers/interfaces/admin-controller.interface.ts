@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 
 export interface IAdminController {
   getUsers(req: Request, res: Response, next: NextFunction): Promise<void>;
-  getCourses(req: Request, res: Response, next: NextFunction): Promise<void>;
+  getAdminCourses(req: Request, res: Response, next: NextFunction): Promise<void>;
   getInstructorVerificationRequests(
     req: Request,
     res: Response,

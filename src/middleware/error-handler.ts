@@ -42,6 +42,5 @@ export const errorHandler = (
       status: "error",
       code: StatusCode.INTERNAL_SERVER_ERROR,
       message: "Internal server error",
-      errors: [{ message: "Something went wrong" }],
     });
 };

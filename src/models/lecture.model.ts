@@ -1,6 +1,7 @@
 import mongoose, { Schema, Model, Document } from "mongoose";
 
 export interface LectureDocument extends Document {
+   _id: mongoose.Types.ObjectId;
   sectionId: mongoose.Types.ObjectId;
   courseId: mongoose.Types.ObjectId;
   title: string;

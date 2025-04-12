@@ -2,6 +2,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface UserDocument extends Document {
+  _id: mongoose.Types.ObjectId;
   name: string;
   email: string;
   role: "student" | "instructor";
@@ -14,7 +15,7 @@ export interface UserDocument extends Document {
   profilePicture: string;
   googleId: string;
   headline?: string;
-  verified: "pending"| "rejected"| "notRequested"| "verified";
+  verified: "pending" | "rejected" | "notRequested" | "verified";
   rejectedReason: string;
   biography?: string;
   links?: {

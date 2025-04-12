@@ -67,7 +67,7 @@ router.get(
   "/get-courses",
   verifyToken,
   verifyUser("admin"),
-  adminController.getCourses.bind(adminController)
+  adminController.getAdminCourses.bind(adminController)
 );
 
 /* POST Routes */

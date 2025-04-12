@@ -1,20 +1,45 @@
 import { CloudfrontSignedCookiesOutput } from "@aws-sdk/cloudfront-signer";
 import {
   CreateCourse,
+  EditCourseLandingPagePayload,
   GetCourseDetailsResponse,
+  GetCourses,
+  GetCoursesOfInstructorResponse,
   UpdatedSection,
-} from "../types/ccourse-service.types";
+} from "../types/course-service.types";
 import { CourseDocument } from "../../models/course.model";
 import { LectureDocument } from "../../models/lecture.model";
 import { SectionDocument } from "../../models/section.model";
 import { EnrollmentDocument } from "../../models/enrollment.model";
+import { Types } from "mongoose";
 
 export interface ICourseService {
   createCourse(
     courseData: CreateCourse,
     userId: string
-  ): Promise<CourseDocument>;
-  getNewCourses(): Promise<CourseDocument[]>;
+  ): Promise<{ id: string }>;
+  getNewCourses(): Promise<
+    {
+      id: string;
+      userId: string;
+      title: string;
+      price: number;
+      subtitle: string;
+      description: string;
+      category: {
+        description: string;
+        name: string;
+      };
+      totalDuration: number;
+      totalLectures: number;
+      totalSections: number;
+      isBlocked: boolean;
+      status: string;
+      imageThumbnail: string;
+      createdAt: string;
+      updatedAt: string;
+    }[]
+  >;
   markLectureAsCompleted(
     id: string,
     courseId: string,
@@ -24,12 +49,12 @@ export interface ICourseService {
     lectureId: string,
     lectureData: { title: string; videoUrl: string; duration: number },
     id: string
-  ): Promise<LectureDocument>;
+  ): Promise<{ message: "success" }>;
   editSection(
     sectionId: string,
     sectionData: { title: string; description: string },
     instructorId: string
-  ): Promise<SectionDocument>;
+  ): Promise<{ id: string }>;
   getCurriculum(
     courseId: string,
     userId: string,
@@ -57,18 +82,31 @@ export interface ICourseService {
   editCourseCreationDetails(
     courseId: string,
     userId: string,
-    courseData: CreateCourse
+    courseData: EditCourseLandingPagePayload
   ): Promise<CourseDocument>;
   enrollStudent(
     courseId: string,
     userId: string,
     transactionId: string
   ): Promise<EnrollmentDocument>;
+  getCourses(payload: {
+    category?: string;
+    sort?: string;
+    page?: string;
+    search?: string;
+    limit:number
+  }): Promise<GetCourses>;
   addSection(
     section: { title: string; description: string },
     courseId: string,
     userId: string
-  ): Promise<SectionDocument>;
+  ): Promise<{
+    id: string;
+    courseId: string;
+    title: string;
+    order: number;
+    description: string;
+  }>;
   addLecture(
     userId: string,
     courseId: string,
@@ -78,7 +116,7 @@ export interface ICourseService {
   getCoursesOfInstructor(
     instructorId: string,
     status: string
-  ): Promise<CourseDocument[]>;
+  ): Promise<GetCoursesOfInstructorResponse[]>;
   submitCourseForReview(
     instructorId: string,
     courseId: string

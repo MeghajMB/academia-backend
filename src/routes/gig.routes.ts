@@ -12,11 +12,17 @@ const gigRepository = new GigRepository();
 const gigService = new GigService(gigRepository);
 const gigController = new GigController(gigService);
 
-// Routes
+//fetch all active gigs
 router.get(
   "/active",
   verifyToken,
   gigController.getActiveGigs.bind(gigController)
+);
+//fetch all gigs
+router.get(
+  "/all",
+  verifyToken,
+  gigController.getGigsOfInstructor.bind(gigController)
 );
 //fetch active gig of instructor
 router.get(
@@ -25,6 +31,7 @@ router.get(
   verifyUser("instructor","admin"),
   gigController.getActiveGigsOfInstructor.bind(gigController)
 );
+//create a gig
 router.post(
   "/create",
   verifyToken,

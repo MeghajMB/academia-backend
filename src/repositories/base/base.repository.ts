@@ -1,4 +1,4 @@
-import { Model, Document } from "mongoose";
+import { Model, Document, Types } from "mongoose";
 import { IRepository } from "./base-repository.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
@@ -45,22 +45,25 @@ export abstract class BaseRepository<T extends Document>
 
   async update(
     id: string,
-    updateData: Partial<T> | undefined,
-    deleteData: { [K in keyof T]?: boolean | 1 } | undefined
+    updateData: Partial<T> | Record<never, never>,
+    deleteData: { [K in keyof T]?: boolean | 1 } | Record<never, never>
   ): Promise<T> {
     try {
-      const updatedEntity = await this.model.findByIdAndUpdate(
-        id,
-        { $set: updateData, $unset: deleteData },
-        {
-          new: true,
-        }
-      );
+      const updatedEntity = await this.model
+        .findByIdAndUpdate(
+          id,
+          { $set: updateData, $unset: deleteData },
+          {
+            new: true,
+          }
+        )
+        .lean<T & { _id: Types.ObjectId }>();
       if (!updatedEntity) {
         throw new DatabaseError("Entity not found", StatusCode.NOT_FOUND);
       }
       return updatedEntity;
     } catch (error) {
+      console.log(error);
       throw new DatabaseError(
         "Database error while updating entity",
         StatusCode.INTERNAL_SERVER_ERROR

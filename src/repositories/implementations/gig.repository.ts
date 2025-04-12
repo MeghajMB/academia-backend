@@ -6,13 +6,51 @@ import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { GigWithInstructorData } from "../types/gig-repository.types";
 
-
 export class GigRepository
   extends BaseRepository<GigDocument>
   implements IGigRepository
 {
   constructor() {
     super(GigModel);
+  }
+
+  async getPaginatedGigs({
+    limit,
+    status,
+    skip,
+    search,
+    sort,
+    userId
+  }: {
+    limit: number;
+    status?: string;
+    skip: number;
+    search?: string;
+    sort?: string;
+    userId:string
+  }) {
+    try {
+      const query = {instructorId:userId} as Record<any, any>;
+      const sortQuery = {};
+      if (search) {
+        query.title = { $regex: search, $options: "i" };
+      }
+      if (status) {
+        query.status = status;
+      }
+      if (sort) {
+      }
+      const gigs = await GigModel.find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort(sortQuery);
+      return gigs;
+    } catch (error: unknown) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async updateCurrentBidderWithSession(

@@ -65,7 +65,7 @@ export const RefreshTokenResponseSchema = SuccessResponseSchema.extend({
     role: z.string(),
     name: z.string(),
     email: z.string(),
-    verified: z.boolean(),
+    verified: z.enum(["verified", "pending", "rejected", "notRequested"]),
     goldCoin: z.number(),
     profilePicture: z.string(),
   }),
@@ -79,10 +79,13 @@ export const SignInResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
     accessToken: z.string(),
     refreshToken: z.string(),
+    verified:z.string(),
     id: z.string(),
     name: z.string(),
     role: z.string(),
-    userEmail: z.string(),
+    email: z.string(),
+    goldCoin: z.number().optional(),
+    profilePicture: z.string(),
   }),
 });
 export type SignInResponseDTO = z.infer<typeof SignInResponseSchema>;

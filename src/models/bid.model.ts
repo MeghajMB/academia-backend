@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 // Bid Model - Represents a user's bid on a service
 export interface BidDocument extends Document {
+  _id: mongoose.Types.ObjectId;
   gigId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   amount: number; // Bid amount

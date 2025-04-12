@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export interface EnrollmentDocument extends Document {
+  _id: Types.ObjectId;
   studentId: Types.ObjectId;
   courseId: Types.ObjectId;
   transactionId: Types.ObjectId; // Payment reference

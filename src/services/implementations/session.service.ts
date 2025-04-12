@@ -26,7 +26,7 @@ export class SessionService {
       await this.sessionRepository.update(sessionId, {
         participants: updatedParticipants,
         status: "completed",
-      },undefined);
+      },{});
       return users
     } catch (error) {
       throw error;

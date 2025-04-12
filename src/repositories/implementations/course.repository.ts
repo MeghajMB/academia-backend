@@ -9,6 +9,7 @@ import {
   CourseWithPopulatedFields,
 } from "../types/course-repository.types";
 import { CategoryDocument } from "../../models/categoy.model";
+import { UserDocument } from "../../models/user.model";
 
 export class CourseRepository
   extends BaseRepository<CourseDocument>
@@ -34,6 +35,34 @@ export class CourseRepository
     }
   }
 
+  async findAllPaginatedCourses({
+    query,
+    skip,
+    sort,
+    limit
+  }: {
+    query: Record<any, any>;
+    skip: number;
+    sort: Record<any, any>;
+    limit:number
+  }): Promise<CourseWithPopulatedFields[]> {
+    try {
+      const courses = await CourseModel.find(query)
+        .populate<{category:CategoryDocument}>("category")
+        .populate<{userId:UserDocument}>("userId")
+        .skip(skip)
+        .limit(limit)
+        .sort(sort)
+        .lean();
+      return courses;
+    } catch (error: unknown) {
+      console.log(error)
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
   async findByIdWithPopulatedData(
     courseId: string
   ): Promise<CourseWithPopulatedFields | null> {
@@ -51,10 +80,10 @@ export class CourseRepository
     }
   }
 
-  async findNewCourses(): Promise<CourseDocument[]> {
+  async findNewCourses(): Promise<CourseWithPopulatedCategory[]> {
     try {
       const newCourses = await CourseModel.find({ status: "listed" })
-        .populate("category")
+        .populate<CourseDocument & { category: CategoryDocument }>("category")
         .sort({ createdAt: -1 })
         .limit(4)
         .lean();
@@ -85,8 +114,8 @@ export class CourseRepository
 
   async fetchCoursesWithInstrucorIdAndStatus(
     instructorId: string,
-    status: string
-  ): Promise<CourseDocument[] | null> {
+    status: "pending" | "accepted" | "rejected" | "draft" | "listed"
+  ): Promise<CourseDocument[]> {
     try {
       const courses = await CourseModel.find({
         userId: instructorId,
@@ -103,9 +132,9 @@ export class CourseRepository
 
   async findCoursesWithFilter(
     filter: FilterQuery<CourseDocument>
-  ): Promise<CourseDocument[] | null> {
+  ): Promise<CourseWithPopulatedCategory[]> {
     try {
-      const courses = await CourseModel.find(filter).lean();
+      const courses = await CourseModel.find(filter).populate<{category:CategoryDocument}>('category').lean();
       return courses;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -187,7 +216,7 @@ export class CourseRepository
         .limit(limit)
         .lean();
 
-      return courses as unknown as CourseWithPopulatedCategory[];
+      return courses;
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error.message);

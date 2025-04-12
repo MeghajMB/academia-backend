@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { CategoryService } from "../../services/implementations/category.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { ICategoryController } from "../interfaces/category-controller.interface";
+import { GetAllCategoriesSchema } from "../dtos/category/response.dto";
 
 export class CategoryController implements ICategoryController {
   private categoryService: CategoryService;
@@ -10,10 +11,16 @@ export class CategoryController implements ICategoryController {
     this.categoryService = categoryService;
   }
 
-  async getAllCategories(req: Request, res: Response,next:NextFunction) {
+  async getAllCategories(req: Request, res: Response, next: NextFunction) {
     try {
-      const categories = await this.categoryService.getAllCategories();
-      res.status(StatusCode.OK).json(categories);
+      const result = await this.categoryService.getAllCategories();
+      const response = GetAllCategoriesSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Categories retrieved successfully",
+        data: result,
+      });
+      res.status(StatusCode.OK).json(response);
     } catch (error) {
       next(error);
     }

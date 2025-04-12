@@ -1,9 +1,16 @@
 import { EnrollmentDocument } from "../../models/enrollment.model";
 import { IRepository } from "../base/base-repository.interface";
-import { ClientSession } from "mongoose";
-import { Enrollment, EnrollmentWithCourse } from "../types/enrollment-repository.types";
+import { ClientSession, RootFilterQuery } from "mongoose";
+import {
+  Enrollment,
+  EnrollmentWithCourse,
+} from "../types/enrollment-repository.types";
 
-export interface IEnrollmentRepository  extends IRepository<EnrollmentDocument>  {
+export interface IEnrollmentRepository extends IRepository<EnrollmentDocument> {
+  getEnrollmentMetrics(courseId:string):Promise<EnrollmentDocument[]>
+  countWithFilter(
+    filter: RootFilterQuery<EnrollmentDocument> | undefined
+  ): Promise<number>;
   createEnrollmentWithSession(
     courseId: string,
     userId: string,

@@ -28,7 +28,6 @@ import { StatusCode } from "./enums/status-code.enum";
 //jobs
 import "./jobs/delete-expired-lectures";
 
-
 const app = express();
 
 app.use(

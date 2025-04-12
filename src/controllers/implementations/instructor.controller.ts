@@ -21,5 +21,18 @@ export class InstructorController implements IInstructorController {
       next(error);
     }
   }
+  async getInstructorDashboard(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.verifiedUser;
+      const result = await this.instructorService.getDashboard(user?.id!);
+      res.status(StatusCode.OK).send(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 
 }

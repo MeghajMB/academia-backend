@@ -127,7 +127,7 @@ export class UserRepository
     try {
       let query: any = { role };
       if (search) {
-        query.name = { $regex: search, $options: "i" }; // Case-insensitive search
+        query.name = { $regex: search, $options: "i" };
       }
       const users = await UserModel.find(query)
         .skip(skip)

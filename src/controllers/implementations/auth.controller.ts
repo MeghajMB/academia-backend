@@ -181,7 +181,7 @@ export class AuthController implements IAuthController {
         status: "success",
         code: StatusCode.OK, // 200 since it's a logout, not creation
         message: "Signed out successfully",
-        data: result,
+        data: null,
       });
       res.clearCookie("refreshToken", {
         httpOnly: true,

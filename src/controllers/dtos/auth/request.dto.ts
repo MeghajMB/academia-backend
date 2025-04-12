@@ -80,10 +80,8 @@ export type RefreshTokenRequestDTO = z.infer<typeof RefreshTokenRequestSchema>;
 
 // Sign In
 export const SignInRequestSchema = z.object({
-  email: z.string().email({ message: "Invalid email format" }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters long" }),
+  email: z.string({ message: "Email is required" }),
+  password: z.string({ message: "Password is required" }),
 });
 export type SignInRequestDTO = z.infer<typeof SignInRequestSchema>;
 // Sign Out

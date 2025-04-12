@@ -7,6 +7,31 @@ const SuccessResponseSchema = z.object({
   data: z.any(),
 });
 
+// Get all gigs
+export const GetGigsOfInstructorResponseSchema = SuccessResponseSchema.extend({
+  data: z.array(
+    z.object({
+      id: z.string(),
+      sessionDate: z.string(),
+      description: z.string(),
+      biddingAllowed: z.boolean(),
+      sessionDuration: z.number(),
+      maxParticipants: z.number(),
+      minBid: z.number(),
+      status: z.enum(["active", "expired", "completed", "no-bids", "missed"]),
+      currentBid: z.number(),
+      currentBidder: z.string().nullable(),
+      title: z.string(),
+      instructorId: z.string(),
+      biddingExpiresAt: z.string(),
+      createdAt: z.string(),
+    })
+  ),
+});
+export type GetGigsOfInstructorResponseDTO = z.infer<
+  typeof GetGigsOfInstructorResponseSchema
+>;
+
 // Create Gig Response
 export const CreateGigResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
@@ -17,9 +42,13 @@ export const CreateGigResponseSchema = SuccessResponseSchema.extend({
     sessionDuration: z.number(),
     maxParticipants: z.number(),
     minBid: z.number(),
+    status: z.enum(["active", "expired"]),
+    currentBid: z.number(),
+    currentBidder: z.string(),
     title: z.string(),
     instructorId: z.string(),
-    createdAt: z.string().optional(), // Assuming ISO date string or similar
+    biddingExpiresAt: z.string(),
+    createdAt: z.string(),
   }),
 });
 export type CreateGigResponseDTO = z.infer<typeof CreateGigResponseSchema>;

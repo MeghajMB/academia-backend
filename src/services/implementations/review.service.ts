@@ -34,7 +34,7 @@ export class ReviewService implements IReviewService {
           rating: reviewData.rating,
           comment: reviewData.comment,
         },
-        undefined
+        {}
       );
       return newReview;
     }
@@ -54,7 +54,7 @@ export class ReviewService implements IReviewService {
     await this.enrollmentRepository.update(
       enrollment._id.toString(),
       { reviewStatus: true },
-      undefined
+      {}
     );
 
     // Create review

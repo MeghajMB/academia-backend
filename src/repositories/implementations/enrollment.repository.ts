@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { RootFilterQuery } from "mongoose";
 import {
   EnrollmentModel,
   EnrollmentDocument,
@@ -19,6 +19,40 @@ export class EnrollmentRepository
   constructor() {
     super(EnrollmentModel);
   }
+  async getEnrollmentMetrics(courseId: string): Promise<EnrollmentDocument[]> {
+    try {
+      const enrollments = await EnrollmentModel.aggregate([
+        { $match: { courseId } },
+        {
+          $group: {
+            _id: "$courseId",
+            count: { $sum: 1 },
+            avgProgress: { $avg: "$progress.percentage" },
+          },
+        },
+      ]);
+      return enrollments;
+    } catch (error) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+  async countWithFilter(
+    filter: RootFilterQuery<EnrollmentDocument> | undefined
+  ): Promise<number> {
+    try {
+      const count = await EnrollmentModel.countDocuments(filter);
+      return count;
+    } catch (error) {
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   async findByStudentId(studentId: string): Promise<EnrollmentWithCourse[]> {
     try {
       const enrolledcourse = await EnrollmentModel.find({
@@ -40,7 +74,7 @@ export class EnrollmentRepository
     userId: string,
     transactionId: string,
     session: mongoose.mongo.ClientSession
-  ):Promise<EnrollmentDocument> {
+  ): Promise<EnrollmentDocument> {
     try {
       const enrollment = new EnrollmentModel({
         courseId,

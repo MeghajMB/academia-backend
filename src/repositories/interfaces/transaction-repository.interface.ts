@@ -3,6 +3,7 @@ import { TransactionDocument } from "../../models/transaction.model";
 import { IRepository } from "../base/base-repository.interface";
 
 export interface ITransactionRepository extends IRepository<TransactionDocument> {
+   getInstructorAnalytics(courseId: string,timeframe: "day" | "week" | "month" | "year"):Promise<any>
   createTransaction(
     userId: string,
     amount: number,

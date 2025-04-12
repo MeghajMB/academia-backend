@@ -53,7 +53,11 @@ export class AdminService implements IAdminService {
       throw error;
     }
   }
-  async getCourses({ page, limit, search }: GetCoursesParams):Promise<GetCoursesResponse> {
+  async getCourses({
+    page,
+    limit,
+    search,
+  }: GetCoursesParams): Promise<GetCoursesResponse> {
     const skip = (page - 1) * limit;
     const totalDocuments = await this.courseRepository.countDocuments(
       "status",
@@ -74,8 +78,21 @@ export class AdminService implements IAdminService {
       currentPage: page,
       limit,
     };
+    const updatedCourses = courses.map((course) => {
+      return {
+        id: course._id.toString(),
+        title: course.title,
+        price: course.price,
+        isBlocked: course.isBlocked,
+        category: {
+          name: course.category.name,
+          description: course.category.description,
+        },
+        status: course.status,
+      };
+    });
 
-    return { courses, pagination };
+    return { courses: updatedCourses, pagination };
   }
 
   async getInstructorVerificationRequests({
@@ -99,8 +116,18 @@ export class AdminService implements IAdminService {
       currentPage: page,
       limit,
     };
+    const updatedRequests = requests?.map((request) => {
+      return {
+        id: request._id.toString(),
+        name: request.name,
+        email: request.email,
+        profilePicture: request.profilePicture,
+        isBlocked: request.isBlocked,
+        verified: request.verified,
+      };
+    });
 
-    return { requests, pagination };
+    return { requests:updatedRequests, pagination };
   }
 
   async rejectVerificationRequest({
@@ -115,7 +142,7 @@ export class AdminService implements IAdminService {
     await this.userRepository.update(
       userId,
       { verified: "rejected", rejectedReason: rejectReason },
-      undefined
+      {}
     );
 
     return { message: "Verification request rejected" };
@@ -158,7 +185,7 @@ export class AdminService implements IAdminService {
     await this.userRepository.update(
       userId,
       { isBlocked: !user.isBlocked },
-      undefined
+      {}
     );
     if (user.isBlocked) {
       await redis.del(`refreshToken:${user.id}`);
@@ -189,7 +216,7 @@ export class AdminService implements IAdminService {
       await this.categoryRepository.update(
         categoryId,
         { isBlocked: !category.isBlocked },
-        undefined
+        {}
       );
       return {
         message: category.isBlocked ? "Category blocked" : "Category unblocked",
@@ -239,16 +266,21 @@ export class AdminService implements IAdminService {
           StatusCode.CONFLICT
         );
       }
-
       // Update the category
-      const updatedCategory = await this.categoryRepository.updateCategory(
+      const updatedCategory = await this.categoryRepository.update(
         categoryId,
-        category
+        category,
+        {}
       );
       if (!updatedCategory) {
         throw new AppError("Category not found", StatusCode.NOT_FOUND);
       }
-      return updatedCategory;
+      return {
+        id: updatedCategory._id.toString(),
+        name: updatedCategory.name,
+        description: updatedCategory.description,
+        isBlocked: updatedCategory.isBlocked,
+      };
     } catch (error) {
       throw error;
     }

@@ -1,6 +1,7 @@
 import mongoose, { Schema, Model, Document } from "mongoose";
 
 export interface SectionDocument extends Document {
+   _id: mongoose.Types.ObjectId;
   courseId:  mongoose.Types.ObjectId;
   title: string;
   order: number;

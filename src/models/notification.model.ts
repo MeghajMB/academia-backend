@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface NotificationDocument extends Document {
+   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId; // Receiver of the notification
   type: "course" | "payment" | "message" | "system"; // Type of notification
   title: string; // Short title for the notification

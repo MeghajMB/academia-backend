@@ -22,6 +22,7 @@ import {
   GetCourseCreationDetailsRequestSchema,
   GetCourseDetailsRequestSchema,
   GetCoursesOfInstructorRequestSchema,
+  GetCoursesRequestSchema,
   GetCurriculumRequestSchema,
   ListCourseRequestSchema,
   MarkLectureAsCompletedRequestSchema,
@@ -42,6 +43,7 @@ import {
   GetCourseCreationDetailsResponseSchema,
   GetCourseDetailsResponseSchema,
   GetCoursesOfInstructorResponseSchema,
+  GetCoursesResponseSchema,
   GetCurriculumResponseSchema,
   GetEnrolledCoursesOfUserResponseSchema,
   GetNewCoursesResponseSchema,
@@ -52,6 +54,7 @@ import {
 import { ICourseController } from "../interfaces/course-controller.interface";
 
 export class CourseController implements ICourseController {
+  private pageLimit = 10;
   constructor(private courseService: ICourseService) {}
 
   async createCourse(
@@ -86,7 +89,7 @@ export class CourseController implements ICourseController {
         status: "success",
         code: StatusCode.OK,
         message: "success",
-        data: { id: result._id },
+        data: { id: result.id },
       });
       res.status(response.code).send(response);
     } catch (error) {
@@ -94,6 +97,25 @@ export class CourseController implements ICourseController {
     }
   }
 
+  async getCourses(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const payload = GetCoursesRequestSchema.parse({...req.query,limit:this.pageLimit});
+      const courses = await this.courseService.getCourses(payload);
+      const response = GetCoursesResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Section added successfully",
+        data: courses,
+      });
+      res.status(response.code).send(response);
+    } catch (error) {
+      next(error);
+    }
+  }
   async addSection(
     req: Request,
     res: Response,
@@ -250,7 +272,7 @@ export class CourseController implements ICourseController {
         status: "success",
         code: StatusCode.OK,
         message: "Course creation details updated successfully",
-        data: updatedCourse,
+        data: null,
       });
       res.status(response.code).send(response);
     } catch (error) {

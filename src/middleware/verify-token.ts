@@ -3,12 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import { AppError } from "../util/errors/app-error";
 import { redis } from "../lib/redis";
 import { StatusCode } from "../enums/status-code.enum";
-
-interface CustomJwtPayload {
-  id: string;
-  email: string;
-  role:  "admin" | "student" | "instructor";
-}
+import { CustomJwtPayload } from "../types/jwt";
 
 export const verifyToken = async (
   req: Request,
@@ -32,7 +27,7 @@ export const verifyToken = async (
     try {
       decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET!);
     } catch (err) {
-      throw new AppError("Invalid or expired token", StatusCode.FORBIDDEN);
+      throw new AppError("TOKEN_EXPIRED", StatusCode.FORBIDDEN);
     }
 
     const verifiedUser = decoded as CustomJwtPayload;
@@ -41,7 +36,7 @@ export const verifyToken = async (
     const userExists = await redis.get(`refreshToken:${verifiedUser.id}`);
     if (!userExists) {
       throw new AppError(
-        "User does not exist or session has expired",
+        "TOKEN_EXPIRED",
         StatusCode.FORBIDDEN
       );
     }

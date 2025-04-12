@@ -24,6 +24,8 @@ export const AddSectionResponseSchema = SuccessResponseSchema.extend({
     id: z.string(),
     title: z.string(),
     description: z.string(),
+    courseId: z.string(),
+    order: z.number(),
   }),
 });
 export type AddSectionResponseDTO = z.infer<typeof AddSectionResponseSchema>;
@@ -51,14 +53,21 @@ export const GetCurriculumResponseSchema = SuccessResponseSchema.extend({
   data: z.array(
     z.object({
       id: z.string(),
+      courseId: z.string(),
       title: z.string(),
+      order: z.number(),
       description: z.string(),
       lectures: z.array(
         z.object({
           id: z.string(),
+          sectionId: z.string(),
+          courseId: z.string(),
           title: z.string(),
           videoUrl: z.string(),
           duration: z.number(),
+          order: z.number(),
+          status: z.string(),
+          progress: z.enum(["completed", "not completed", "locked","instructor"]),
         })
       ),
     })
@@ -71,45 +80,67 @@ export type GetCurriculumResponseDTO = z.infer<
 // Get Course Details Response
 export const GetCourseDetailsResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
-    id: z.string(),
-    title: z.string(),
-    subtitle: z.string(),
-    description: z.string(),
-    price: z.number(),
+    courseId: z.string(),
+    instructorId: z.string(),
+    instructorName: z.string(),
+    totalDuration: z.number(),
+    totalLectures: z.number(),
     imageThumbnail: z.string(),
     promotionalVideo: z.string(),
+    canReview: z.boolean(),
+    hasReviewed: z.boolean(),
     category: z.string(),
+    title: z.string(),
+    price: z.number(),
+    subtitle: z.string(),
+    description: z.string(),
+    enrollmentStatus: z.enum(["enrolled", "not enrolled","instructor"]),
     sections: z.array(
       z.object({
         id: z.string(),
         title: z.string(),
-        description: z.string(),
+        order: z.number(),
         lectures: z.array(
           z.object({
             id: z.string(),
             title: z.string(),
-            videoUrl: z.string(),
-            duration: z.number(),
+            order: z.number(),
           })
         ),
       })
     ),
   }),
 });
+
 export type GetCourseDetailsResponseDTO = z.infer<
   typeof GetCourseDetailsResponseSchema
 >;
 
-// Get Course Creation Details Response (similar to GetCourseDetails)
 export const GetCourseCreationDetailsResponseSchema =
-  GetCourseDetailsResponseSchema;
+  SuccessResponseSchema.extend({
+    data: z.object({
+      courseId: z.string(),
+      imageThumbnail: z.string(),
+      promotionalVideo: z.string(),
+      category: z.string(),
+      title: z.string(),
+      price: z.number(),
+      subtitle: z.string(),
+      description: z.string(),
+      rejectedReason: z.string(),
+      canSubmitReview: z.boolean(),
+    }),
+  });
+
 export type GetCourseCreationDetailsResponseDTO = z.infer<
   typeof GetCourseCreationDetailsResponseSchema
 >;
 
 // Edit Course Creation Details Response (similar to GetCourseDetails)
 export const EditCourseCreationDetailsResponseSchema =
-  GetCourseDetailsResponseSchema;
+  SuccessResponseSchema.extend({
+    data: z.null(),
+  });
 export type EditCourseCreationDetailsResponseDTO = z.infer<
   typeof EditCourseCreationDetailsResponseSchema
 >;
@@ -119,12 +150,20 @@ export const GetNewCoursesResponseSchema = SuccessResponseSchema.extend({
   data: z.array(
     z.object({
       id: z.string(),
+      userId: z.string(),
       title: z.string(),
-      subtitle: z.string(),
       price: z.number(),
+      subtitle: z.string(),
+      description: z.string(),
+      category: z.object({ description: z.string(), name: z.string() }),
+      totalDuration: z.number(),
+      totalLectures: z.number(),
+      totalSections: z.number(),
+      isBlocked: z.boolean(),
+      status: z.enum(["pending", "accepted", "rejected", "draft", "listed"]),
       imageThumbnail: z.string(),
-      promotionalVideo: z.string(),
-      category: z.string(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
     })
   ),
 });
@@ -168,13 +207,22 @@ export const GetCoursesOfInstructorResponseSchema =
     data: z.array(
       z.object({
         id: z.string(),
+        userId: z.string(),
         title: z.string(),
-        subtitle: z.string(),
         price: z.number(),
+        subtitle: z.string(),
+        description: z.string(),
+        category: z.object({ description: z.string(), name: z.string() }),
+        totalDuration: z.number(),
+        totalLectures: z.number(),
+        totalSections: z.number(),
+        isBlocked: z.boolean(),
+        status: z.enum(["pending", "accepted", "rejected", "draft", "listed"]),
+        rejectedReason: z.string(),
         imageThumbnail: z.string(),
         promotionalVideo: z.string(),
-        category: z.string(),
-        status: z.string(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
       })
     ),
   });
@@ -249,8 +297,44 @@ export type EditLectureResponseDTO = z.infer<typeof EditLectureResponseSchema>;
 export const EditSectionResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
     id: z.string(),
-    title: z.string(),
-    description: z.string(),
   }),
 });
 export type EditSectionResponseDTO = z.infer<typeof EditSectionResponseSchema>;
+
+//get courses
+export const GetCoursesResponseSchema = SuccessResponseSchema.extend({
+  data: z.object({
+    courses: z.array(
+      z.object({
+        id: z.string(),
+        instructorDetails: z.object({
+          name: z.string(),
+          id: z.string(),
+        }),
+        title: z.string(),
+        price: z.number(),
+        subtitle: z.string(),
+        rating: z.number().nullable(),
+        category: z.object({
+          name: z.string(),
+          id: z.string(),
+        }),
+        totalDuration: z.number(),
+        totalLectures: z.number(),
+        totalSections: z.number(),
+        isBlocked: z.boolean(),
+        status: z.string(),
+        imageThumbnail: z.string(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+      })
+    ),
+    pagination: z.object({
+      totalDocuments: z.number(),
+      totalPages: z.number(),
+      currentPage: z.number(),
+      limit: z.number(),
+    }),
+  }),
+});
+export type GetCoursesResponseDTO = z.infer<typeof GetCoursesResponseSchema>;

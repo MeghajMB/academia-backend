@@ -79,7 +79,10 @@ export interface RefreshTokenParams {
     name: string;
     role: string;
     id: string;
-    userEmail: string;
+    email: string;
+    profilePicture:string;
+    goldCoin:number;
+    verified:string
   }
   
   export interface SignOutParams {

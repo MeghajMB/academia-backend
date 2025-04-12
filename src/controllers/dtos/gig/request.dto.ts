@@ -1,6 +1,17 @@
 // src/dtos/gig.dto.ts
 import { z } from "zod";
 
+export const GetGigsOfInstructorRequestSchema = z.object({
+  sort: z.string().optional(),
+  status: z
+    .enum(["active", "expired", "completed", "no-bids", "missed"])
+    .optional(),
+  page: z.string().optional(),
+  search: z.string().optional(),
+  limit: z.number(),
+});
+export type GetGigsOfInstructorRequestDTO = z.infer<typeof GetGigsOfInstructorRequestSchema>;
+
 // Create Gig Request
 export const CreateGigRequestSchema = z.object({
   sessionDate: z.string().nonempty("Session date is required"), // Could use z.date() if you parse it later

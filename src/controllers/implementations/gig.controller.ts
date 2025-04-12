@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { GigService } from "../../services/implementations/gig.service";
 import { StatusCode } from "../../enums/status-code.enum";
-import { BadRequestError } from "../../util/errors/bad-request-error";
 import { AppError } from "../../util/errors/app-error";
 import {
   CreateGigRequestSchema,
   DeleteGigRequestSchema,
   GetActiveGigsOfInstructorRequestSchema,
   GetGigByIdRequestSchema,
+  GetGigsOfInstructorRequestSchema,
   UpdateGigRequestSchema,
 } from "../dtos/gig/request.dto";
 import {
@@ -16,13 +16,32 @@ import {
   GetActiveGigsOfInstructorResponseSchema,
   GetActiveGigsResponseSchema,
   GetGigByIdResponseSchema,
+  GetGigsOfInstructorResponseSchema,
   UpdateGigResponseSchema,
 } from "../dtos/gig/response.dto";
 import { IGigController } from "../interfaces/gig-controller.interface";
 
 export class GigController implements IGigController {
+  private pageLimit=10;
   constructor(private gigService: GigService) {}
 
+  async getGigsOfInstructor(req: Request, res: Response, next: NextFunction) {
+    try {
+      const payload = GetGigsOfInstructorRequestSchema.parse({...req.query,limit:this.pageLimit});
+      const userId = req.verifiedUser!.id;
+
+      const gig = await this.gigService.getAllGigsOfInstructor(payload,userId);
+      const response = GetGigsOfInstructorResponseSchema.parse({
+        status: "success",
+        code: StatusCode.CREATED,
+        message: "Gig created successfully",
+        data: gig,
+      });
+      res.status(response.code).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
   async createGig(req: Request, res: Response, next: NextFunction) {
     try {
       const gigData = CreateGigRequestSchema.parse(req.body);

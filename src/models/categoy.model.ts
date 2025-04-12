@@ -1,6 +1,7 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export interface CategoryDocument extends Document {
+  _id:Types.ObjectId
   name: string;
   description: string;
   isBlocked: boolean;

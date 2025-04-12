@@ -2,6 +2,7 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export interface CourseDocument extends Document {
+  _id: mongoose.Types.ObjectId;
   userId: Types.ObjectId;
   title: string;
   price: number;

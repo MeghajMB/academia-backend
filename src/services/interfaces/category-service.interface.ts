@@ -1,5 +1,5 @@
-import { ICategoryResult } from "../../repositories/interfaces/category-repository.interface";
+import { GetAllCategoriesResponse } from "../types/category-service.types";
 
 export interface ICategoryService {
-     getAllCategories(): Promise<ICategoryResult[]|null>;
+  getAllCategories(): Promise<GetAllCategoriesResponse[]>;
 }

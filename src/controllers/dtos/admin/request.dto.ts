@@ -9,11 +9,11 @@ export const GetUsersRequestSchema = z.object({
 export type GetUsersRequestDTO = z.infer<typeof GetUsersRequestSchema>;
 
 // Get Courses Request
-export const GetCoursesRequestSchema = z.object({
+export const getAdminCoursesRequestSchema = z.object({
   page: z.coerce.number().int().transform((val) => (val < 1 ? 1 : val)).default(1),
   search: z.string().default(""),
 });
-export type GetCoursesRequestDTO = z.infer<typeof GetCoursesRequestSchema>;
+export type getAdminCoursesRequestDTO = z.infer<typeof getAdminCoursesRequestSchema>;
 
 // Get Instructor Verification Requests Request
 export const GetInstructorVerificationRequestsRequestSchema = z.object({

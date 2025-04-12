@@ -105,7 +105,7 @@ export class PaymentService implements IPaymentService {
         enrollent = await this.courseService.enrollStudent(
           paymentDetails.itemId,
           paymentDetails.userId,
-          transaction._id as string
+          transaction._id.toString()
         );
       } else {
         throw new BadRequestError("Payment verification failed");
