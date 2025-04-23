@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { AuthService } from "../../services/implementations/auth.service";
+import { AuthService } from "../../services/auth/auth.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   ForgotPasswordRequestSchema,

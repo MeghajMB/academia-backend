@@ -4,10 +4,10 @@ import { redis } from "../lib/redis";
 import { areBidsStillProcessing } from "../kafka/bidConsumer";
 import { scheduleSessionCompletion } from "./session.queue";
 
-import { NotificationService } from "../services/implementations/notification.service";
-import { GigRepository } from "../repositories/implementations/gig.repository";
-import { SessionRepository } from "../repositories/implementations/session.repository";
-import { NotificationRepository } from "../repositories/implementations/notification.repository";
+import { NotificationService } from "../services/notification/notification.service";
+import { GigRepository } from "../repositories/gig/gig.repository";
+import { SessionRepository } from "../repositories/session/session.repository";
+import { NotificationRepository } from "../repositories/notification/notification.repository";
 
 //dependency injection
 const gigRepository = new GigRepository();

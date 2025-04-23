@@ -6,8 +6,8 @@ import { NotificationModel } from "../models/notification.model";
 import MediasoupManager from "../lib/mediaSoup";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { CustomJwtPayload } from "../types/jwt";
-import { UserRepository } from "../repositories/implementations/user.repository";
-import { GigRepository } from "../repositories/implementations/gig.repository";
+import { UserRepository } from "../repositories/user/user.repository";
+import { GigRepository } from "../repositories/gig/gig.repository";
 //intialize the class
 
 const userRepository = new UserRepository();
@@ -102,6 +102,7 @@ class SocketService {
             .sort({ createdAt: 1 })
             .limit(3);
           const notificationCount = await NotificationModel.countDocuments({
+            userId,
             isRead: false,
           });
           socket.emit(`notifications`, {

@@ -6,7 +6,7 @@ import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
 
 import sanitizeHtml from "sanitize-html";
-import { ICourseService } from "../../services/interfaces/course-service.interface";
+import { ICourseService } from "../../services/course/course.interface";
 import {
   AddLectureRequestSchema,
   AddProcessedLectureRequestSchema,

@@ -1,15 +1,17 @@
 import { Request, Response, NextFunction } from "express";
-import { ReviewService } from "../../services/implementations/review.service";
+import { ReviewService } from "../../services/review/review.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   AddReviewRequestSchema,
   DeleteReviewRequestSchema,
+  EditReviewRequestSchema,
   GetReviewsByStudentRequestSchema,
   GetReviewsOfCourseRequestSchema,
 } from "../dtos/review/request.dto";
 import {
   AddReviewResponseSchema,
   DeleteReviewResponseSchema,
+  EditReviewResponseSchema,
   GetReviewsByStudentResponseSchema,
   GetReviewsOfCourseResponseSchema,
 } from "../dtos/review/response.dto";
@@ -42,8 +44,9 @@ export class ReviewController implements IReviewController {
 
   async getReviewsOfCourse(req: Request, res: Response, next: NextFunction) {
     try {
-      const { courseId } = GetReviewsOfCourseRequestSchema.parse(req.params);
-      const reviews = await this.reviewService.getReviewsByCourse(courseId);
+      const { courseId,userId } = GetReviewsOfCourseRequestSchema.parse(req.params);
+     
+      const reviews = await this.reviewService.getReviewsByCourse(courseId,userId);
       const response = GetReviewsOfCourseResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
@@ -72,6 +75,22 @@ export class ReviewController implements IReviewController {
     }
   }
 
+  async editReview(req: Request, res: Response, next: NextFunction) {
+    try {
+      const payload = EditReviewRequestSchema.parse(req.body);
+      const user = req.verifiedUser!;
+      await this.reviewService.editReview(payload, user.id);
+      const response = EditReviewResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Review Edited successfully",
+        data: null,
+      });
+      res.status(response.code).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
   async deleteReview(req: Request, res: Response, next: NextFunction) {
     try {
       const { reviewId } = DeleteReviewRequestSchema.parse(req.params);

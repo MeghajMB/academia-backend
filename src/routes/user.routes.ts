@@ -2,10 +2,10 @@
 import { Router } from "express";
 import { UserController } from "../controllers/implementations/user.controller";
 
-import { UserService } from "../services/implementations/user.service";
+import { UserService } from "../services/user/user.service";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
-import { UserRepository } from "../repositories/implementations/user.repository";
+import { UserRepository } from "../repositories/user/user.repository";
 
 const router = Router();
 
@@ -21,6 +21,12 @@ router.get(
   verifyToken,
   verifyUser("instructor", "student", "admin"),
   userController.getProfile.bind(userController)
+);
+router.get(
+  "/instructor-profile/:instructorId",
+  verifyToken,
+  verifyUser("instructor", "student", "admin"),
+  userController.getInstructorProfile.bind(userController)
 );
 
 export default router;

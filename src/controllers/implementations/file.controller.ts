@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCode } from "../../enums/status-code.enum";
-import { FileService } from "../../services/implementations/file.service";
+import { FileService } from "../../services/file/file.service";
 import {
   GenerateGetSignedUrlResponseSchema,
   GeneratePutSignedUrlResponseSchema,

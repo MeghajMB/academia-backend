@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { GigService } from "../../services/implementations/gig.service";
+import { GigService } from "../../services/gig/gig.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { AppError } from "../../util/errors/app-error";
 import {
@@ -34,7 +34,7 @@ export class GigController implements IGigController {
       const response = GetGigsOfInstructorResponseSchema.parse({
         status: "success",
         code: StatusCode.CREATED,
-        message: "Gig created successfully",
+        message: "Gigs retrived successfully",
         data: gig,
       });
       res.status(response.code).json(response);

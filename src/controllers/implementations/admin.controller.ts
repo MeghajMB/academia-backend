@@ -1,6 +1,6 @@
 // src/interfaces/controllers/AuthController.ts
 import { NextFunction, Request, Response } from "express";
-import { AdminService } from "../../services/implementations/admin.service";
+import { AdminService } from "../../services/admin/admin.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { IAdminController } from "../interfaces/admin-controller.interface";
 import {

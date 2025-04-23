@@ -1,5 +1,5 @@
 import { Model, Document, Types } from "mongoose";
-import { IRepository } from "./base-repository.interface";
+import { IRepository } from "./base.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 

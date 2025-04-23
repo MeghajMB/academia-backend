@@ -1,22 +1,21 @@
 // src/interfaces/routes/userRoutes.ts
 import { Router } from "express";
-import { UserController } from "../controllers/implementations/user.controller";
-
-import { UserService } from "../services/implementations/user.service";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
 
-import { PaymentService } from "../services/implementations/payment.service";
+import { PaymentService } from "../services/payment/payment.service";
 import { PaymentController } from "../controllers/implementations/payment.controller";
-import { CourseService } from "../services/implementations/course.service";
+import { CourseService } from "../services/course/course.service";
 
-import { FileService } from "../services/implementations/file.service";
-import { TransactionRepository } from "../repositories/implementations/transaction.repository";
-import { CourseRepository } from "../repositories/implementations/course.repository";
-import { LectureRepository } from "../repositories/implementations/lecture.repository";
-import { SectionRepository } from "../repositories/implementations/section.repository";
-import { EnrollmentRepository } from "../repositories/implementations/enrollment.repository";
-import { UserRepository } from "../repositories/implementations/user.repository";
+import { FileService } from "../services/file/file.service";
+import { TransactionRepository } from "../repositories/transaction/transaction.repository";
+import { CourseRepository } from "../repositories/course/course.repository";
+import { LectureRepository } from "../repositories/lecture/lecture.repository";
+import { SectionRepository } from "../repositories/section/section.repository";
+import { EnrollmentRepository } from "../repositories/enrollment/enrollment.repository";
+import { UserRepository } from "../repositories/user/user.repository";
+import { PaymentRepository } from "../repositories/payment/payment.repository";
+import { ReviewRepository } from "../repositories/review/review.repository";
 
 const router = Router();
 
@@ -27,6 +26,8 @@ const lectureRepository = new LectureRepository();
 const sectionRepository = new SectionRepository();
 const enrollmentRepository = new EnrollmentRepository();
 const userRepository = new UserRepository();
+const paymentRepository=new PaymentRepository()
+const reviewRepository=new ReviewRepository()
 
 const fileService = new FileService();
 
@@ -36,14 +37,16 @@ const courseService = new CourseService(
   sectionRepository,
   enrollmentRepository,
   userRepository,
-  fileService
+  fileService,
+  reviewRepository
 );
 
 const paymentService = new PaymentService(
   transactionRepository,
   courseRepository,
   courseService,
-  enrollmentRepository
+  enrollmentRepository,
+  paymentRepository
 );
 const paymentController = new PaymentController(paymentService);
 // Dependency injection End

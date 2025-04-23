@@ -57,15 +57,17 @@ export type CreateGigResponseDTO = z.infer<typeof CreateGigResponseSchema>;
 export const GetGigByIdResponseSchema = SuccessResponseSchema.extend({
   data: z.object({
     id: z.string(),
-    sessionDate: z.string(),
-    description: z.string(),
-    biddingAllowed: z.boolean(),
-    sessionDuration: z.number(),
-    maxParticipants: z.number(),
-    minBid: z.number(),
-    title: z.string(),
     instructorId: z.string(),
-    createdAt: z.string().optional(),
+    title: z.string(),
+    description: z.string(),
+    sessionDuration: z.number(),
+    minBid: z.number(),
+    currentBid: z.number(),
+    currentBidder: z.string().nullable(),
+    status: z.enum(["active", "missed", "expired", "completed", "no-bids"]),
+    biddingExpiresAt: z.string(), //
+    sessionDate: z.string(),
+    createdAt: z.string(),
   }),
 });
 export type GetGigByIdResponseDTO = z.infer<typeof GetGigByIdResponseSchema>;
@@ -75,15 +77,15 @@ export const GetActiveGigsResponseSchema = SuccessResponseSchema.extend({
   data: z.array(
     z.object({
       id: z.string(),
-      sessionDate: z.string(),
-      description: z.string(),
-      biddingAllowed: z.boolean(),
-      sessionDuration: z.number(),
-      maxParticipants: z.number(),
-      minBid: z.number(),
-      title: z.string(),
       instructorId: z.string(),
-      createdAt: z.string().optional(),
+      instructorName: z.string(),
+      instructorProfilePicture: z.string(),
+      title: z.string(),
+      sessionDuration: z.number(),
+      minBid: z.number(),
+      biddingExpiresAt: z.string(),
+      sessionDate: z.string(),
+      biddingAllowed: z.boolean(),
     })
   ),
 });

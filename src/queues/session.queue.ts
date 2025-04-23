@@ -1,9 +1,9 @@
 import { Queue, Worker } from "bullmq";
 import { redis } from "../lib/redis";
-import { SessionService } from "../services/implementations/session.service";
-import { NotificationService } from "../services/implementations/notification.service";
-import { NotificationRepository } from "../repositories/implementations/notification.repository";
-import { SessionRepository } from "../repositories/implementations/session.repository";
+import { SessionService } from "../services/session/session.service";
+import { NotificationService } from "../services/notification/notification.service";
+import { NotificationRepository } from "../repositories/notification/notification.repository";
+import { SessionRepository } from "../repositories/session/session.repository";
 
 const sessionQueue = new Queue("sessionQueue", { connection: redis });
 

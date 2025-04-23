@@ -14,6 +14,7 @@ export type AddReviewRequestDTO = z.infer<typeof AddReviewRequestSchema>;
 // Get Reviews Of Course Request
 export const GetReviewsOfCourseRequestSchema = z.object({
   courseId: z.string().nonempty("Course ID is required"),
+  userId: z.string().optional(),
 });
 export type GetReviewsOfCourseRequestDTO = z.infer<
   typeof GetReviewsOfCourseRequestSchema
@@ -32,3 +33,12 @@ export const DeleteReviewRequestSchema = z.object({
   reviewId: z.string().nonempty("Review ID is required"),
 });
 export type DeleteReviewRequestDTO = z.infer<typeof DeleteReviewRequestSchema>;
+
+// Edit Review Request
+export const EditReviewRequestSchema = z.object({
+  courseId: z.string(),
+  comment: z.string(),
+  reviewId: z.string(),
+  rating: z.number(),
+});
+export type EditReviewRequestDTO = z.infer<typeof EditReviewRequestSchema>;

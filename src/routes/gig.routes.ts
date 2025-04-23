@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { GigController } from "../controllers/implementations/gig.controller";
-import { GigService } from "../services/implementations/gig.service";
+import { GigService } from "../services/gig/gig.service";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
-import { GigRepository } from "../repositories/implementations/gig.repository";
+import { GigRepository } from "../repositories/gig/gig.repository";
 
 const router = Router();
 
@@ -38,6 +38,7 @@ router.post(
   verifyUser("instructor"),
   gigController.createGig.bind(gigController)
 );
+//get gig with id
 router.get("/id/:gigId", verifyToken, gigController.getGigById.bind(gigController));
 router.put(
   "/:id",

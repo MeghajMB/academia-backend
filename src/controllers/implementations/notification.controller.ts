@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { NotificationService } from "../../services/implementations/notification.service";
+import { NotificationService } from "../../services/notification/notification.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   GetUserNotificationsResponseSchema,
+  MarkAllNotificationAsReadResponseSchema,
   MarkNotificationAsReadResponseSchema,
   SendNotificationResponseSchema,
 } from "../dtos/notification/response.dto";
@@ -74,8 +75,29 @@ export class NotificationController implements INotificationController {
         status: "success",
         code: StatusCode.OK,
         message: "Notification marked as read",
-        data: updatedNotification,
+        data: null,
       });
+      res.status(response.code).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+  async markAllNotificationAsRead(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const userId = req.verifiedUser?.id;
+      const updatedNotification =
+        await this.notificationService.markAllNotificationAsRead(userId!);
+      const response = MarkAllNotificationAsReadResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "All notification marked as read",
+        data: null,
+      });
+      console.log(response);
       res.status(response.code).json(response);
     } catch (error) {
       next(error);

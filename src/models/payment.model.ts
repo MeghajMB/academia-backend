@@ -1,17 +1,15 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export type PaymentStatus = "pending" | "success" | "failed";
-
 export interface PaymentDocument extends Document {
    _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   amount: number;
   currency: string;
-  status: PaymentStatus;
-  orderId: string;
-  paymentId?: string;
-  paymentMethod?: string;
-  purchaseType: "course" | "service" | "coins";
+  status: 'created' | 'attempted' | 'paid' | 'failed';
+  razorpayOrderId: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+  purchaseType: "course" | "coins";
   purchaseId: string;
 }
 
@@ -22,15 +20,15 @@ const PaymentSchema = new Schema<PaymentDocument>(
     currency: { type: String, default: "INR" },
     status: {
       type: String,
-      enum: ["pending", "success", "failed"],
-      default: "pending",
+      enum: ["created","attempted", "paid", "failed"],
+      default: "created",
     },
-    orderId: { type: String, required: true, unique: true },
-    paymentId: { type: String },
-    paymentMethod: { type: String },
+    razorpayOrderId: { type: String, required: true, unique: true },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
     purchaseType: {
       type: String,
-      enum: ["course", "service", "coins"],
+      enum: ["course", "coins"],
       required: true,
     },
     purchaseId: { type: String, required: true },

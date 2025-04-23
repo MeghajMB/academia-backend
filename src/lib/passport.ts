@@ -2,7 +2,7 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import jwt from "jsonwebtoken";
 
 import passport from "passport";
-import { UserRepository } from "../repositories/implementations/user.repository";
+import { UserRepository } from "../repositories/user/user.repository";
 
 const userRepository = new UserRepository();
 passport.use(

@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { ReviewController } from "../controllers/implementations/review.controller";
-import { ReviewService } from "../services/implementations/review.service";
+import { ReviewService } from "../services/review/review.service";
 
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
-import { ReviewRepository } from "../repositories/implementations/review.repository";
-import { EnrollmentRepository } from "../repositories/implementations/enrollment.repository";
-import { CourseRepository } from "../repositories/implementations/course.repository";
+import { ReviewRepository } from "../repositories/review/review.repository";
+import { EnrollmentRepository } from "../repositories/enrollment/enrollment.repository";
+import { CourseRepository } from "../repositories/course/course.repository";
 
 const router = Router();
 
@@ -46,12 +46,21 @@ router.post(
   verifyUser("student", "instructor", "admin"),
   reviewController.addReview.bind(reviewController)
 );
+/* PUT Routes */
+
+//edit a review
+router.put(
+  "/edit-review",
+  verifyToken,
+  verifyUser("student", "instructor", "admin"),
+  reviewController.editReview.bind(reviewController)
+);
 
 /* DELETE Routes */
 
 //delete review
 router.delete(
-  "/:reviewId",
+  "/delete/:reviewId",
   verifyToken,
   verifyUser("student", "instructor", "admin"),
   reviewController.deleteReview.bind(reviewController)

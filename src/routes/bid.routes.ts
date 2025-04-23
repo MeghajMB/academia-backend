@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { BidController } from "../controllers/implementations/bid.controller";
 
-import { BidService } from "../services/implementations/bid.service";
+import { BidService } from "../services/bid/bid.service";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
-import { BidRepository } from "../repositories/implementations/bid.repository";
-import { UserRepository } from "../repositories/implementations/user.repository";
-import { GigRepository } from "../repositories/implementations/gig.repository";
+import { BidRepository } from "../repositories/bid/bid.repository";
+import { UserRepository } from "../repositories/user/user.repository";
+import { GigRepository } from "../repositories/gig/gig.repository";
 
 //import { KafkaService } from "../services/kafkaService";
 

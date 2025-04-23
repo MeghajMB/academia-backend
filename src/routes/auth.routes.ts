@@ -2,16 +2,16 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/implementations/auth.controller";
 
-import { AuthService } from "../services/implementations/auth.service";
+import { AuthService } from "../services/auth/auth.service";
 import { verifyToken } from "../middleware/verify-token";
 
 import {
   authenticateGoogle,
   googleController,
   googleCallback,
-} from "../services/implementations/google.service";
+} from "../services/google/google.service";
 import { verifyUser } from "../middleware/verify-user";
-import { UserRepository } from "../repositories/implementations/user.repository";
+import { UserRepository } from "../repositories/user/user.repository";
 
 const router = Router();
 

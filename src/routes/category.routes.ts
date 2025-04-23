@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { CategoryController } from "../controllers/implementations/category.controller";
-import { CategoryService } from "../services/implementations/category.service";
+import { CategoryService } from "../services/category/category.service";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
-import { CategoryRepository } from "../repositories/implementations/category.repository";
+import { CategoryRepository } from "../repositories/category/category.repository";
 
 const router = Router();
 

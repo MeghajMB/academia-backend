@@ -46,7 +46,7 @@ export const GetUserNotificationsResponseSchema = SuccessResponseSchema.extend({
       message: z.string(),
       entityId: z.string(),
       isRead: z.boolean(),
-      createdAt: z.string().optional(),
+      createdAt: z.string(),
     })
   ),
 });
@@ -57,17 +57,18 @@ export type GetUserNotificationsResponseDTO = z.infer<
 // Mark Notification As Read Response
 export const MarkNotificationAsReadResponseSchema =
   SuccessResponseSchema.extend({
-    data: z.object({
-      id: z.string(),
-      userId: z.string(),
-      type: z.string(),
-      title: z.string(),
-      message: z.string(),
-      entityId: z.string(),
-      isRead: z.literal(true), // After marking as read, it should be true
-      createdAt: z.string().optional(),
-    }),
+    data: z.null(),
   });
 export type MarkNotificationAsReadResponseDTO = z.infer<
   typeof MarkNotificationAsReadResponseSchema
+>;
+
+// Mark Notification As Read Response
+export const MarkAllNotificationAsReadResponseSchema =
+  SuccessResponseSchema.extend({
+    data: z.null(),
+  });
+
+export type MarkAllNotificationAsReadResponseDTO = z.infer<
+  typeof MarkAllNotificationAsReadResponseSchema
 >;

@@ -2,15 +2,15 @@
 import { Router } from "express";
 import { AdminController } from "../controllers/implementations/admin.controller";
 
-import { AdminService } from "../services/implementations/admin.service";
+import { AdminService } from "../services/admin/admin.service";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
 
-import { NotificationService } from "../services/implementations/notification.service";
-import { UserRepository } from "../repositories/implementations/user.repository";
-import { CategoryRepository } from "../repositories/implementations/category.repository";
-import { CourseRepository } from "../repositories/implementations/course.repository";
-import { NotificationRepository } from "../repositories/implementations/notification.repository";
+import { NotificationService } from "../services/notification/notification.service";
+import { UserRepository } from "../repositories/user/user.repository";
+import { CategoryRepository } from "../repositories/category/category.repository";
+import { CourseRepository } from "../repositories/course/course.repository";
+import { NotificationRepository } from "../repositories/notification/notification.repository";
 
 const router = Router();
 

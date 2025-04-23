@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { NotificationController } from "../controllers/implementations/notification.controller";
-import { NotificationService } from "../services/implementations/notification.service";
+import { NotificationService } from "../services/notification/notification.service";
 
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
-import { NotificationRepository } from "../repositories/implementations/notification.repository";
+import { NotificationRepository } from "../repositories/notification/notification.repository";
 
 const router = Router();
 
@@ -30,6 +30,12 @@ router.patch(
   verifyToken,
   verifyUser("student", "instructor", "admin"),
   notificationController.markNotificationAsRead.bind(notificationController)
+);
+router.patch(
+  "/mark-read",
+  verifyToken,
+  verifyUser("student", "instructor", "admin"),
+  notificationController.markAllNotificationAsRead.bind(notificationController)
 );
 
 export default router;

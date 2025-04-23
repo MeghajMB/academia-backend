@@ -9,7 +9,7 @@ export interface TransactionDocument extends Document {
   amount: number;
   status: TransactionStatus;
   purchaseType: PurchaseType;
-  purchaseId?: string; // Course ID, Service ID, or Coin Package ID
+  purchaseId?: mongoose.Types.ObjectId; // Course ID, Service ID, or Coin Package ID
   paymentId?: string;
   orderId?: string;
   paymentMethod?: string;
@@ -22,7 +22,7 @@ const TransactionSchema = new Schema<TransactionDocument>(
     amount: { type: Number, required: true },
     status: { type: String, enum: ["pending", "success", "failed"], default: "pending" },
     purchaseType: { type: String, enum: ["course", "service", "coins"], required: true },
-    purchaseId: { type: String },
+    purchaseId: { type: mongoose.Schema.Types.ObjectId },
     orderId: { type: String },
     paymentId: { type: String,required:true },
     paymentMethod: { type: String },

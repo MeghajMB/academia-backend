@@ -14,9 +14,9 @@ export type GetGigsOfInstructorRequestDTO = z.infer<typeof GetGigsOfInstructorRe
 
 // Create Gig Request
 export const CreateGigRequestSchema = z.object({
-  sessionDate: z.string().nonempty("Session date is required"), // Could use z.date() if you parse it later
+  sessionDate: z.string().nonempty("Session date is required"),
   description: z.string().nonempty("Description is required"),
-  biddingAllowed: z.boolean(), // Required boolean
+  biddingAllowed: z.boolean(),
   sessionDuration: z.coerce
     .number()
     .min(1, "Session duration must be positive"),

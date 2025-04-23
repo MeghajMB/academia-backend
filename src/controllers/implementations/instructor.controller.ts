@@ -1,8 +1,9 @@
 // src/interfaces/controllers/AuthController.ts
 import { NextFunction, Request, Response } from "express";
-import { InstructorService } from "../../services/implementations/instructor.service";
+import { InstructorService } from "../../services/instructor/instructor.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { IInstructorController } from "../interfaces/instructor-controller.interface";
+import { GetAnalyticsRequestSchema } from "../dtos/instructor/request.dto";
 //external dependencies
 
 export class InstructorController implements IInstructorController {
@@ -21,18 +22,36 @@ export class InstructorController implements IInstructorController {
       next(error);
     }
   }
-  async getInstructorDashboard(
+
+  async getAnalyticsSummary(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const user = req.verifiedUser;
-      const result = await this.instructorService.getDashboard(user?.id!);
+      const result = await this.instructorService.getAnalyticsSummary(
+        user?.id!
+      );
       res.status(StatusCode.OK).send(result);
     } catch (error) {
       next(error);
     }
   }
-
+  async getAnalytics(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.verifiedUser;
+      const {filter} = GetAnalyticsRequestSchema.parse(req.query);
+      const result = await this.instructorService.getAnalytics(
+        user?.id!,filter
+      );
+      res.status(StatusCode.OK).send(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

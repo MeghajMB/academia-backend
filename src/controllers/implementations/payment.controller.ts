@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 // services
-import { PaymentService } from "../../services/implementations/payment.service";
+import { PaymentService } from "../../services/payment/payment.service";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { IPaymentController } from "../interfaces/payment-controller.interface";

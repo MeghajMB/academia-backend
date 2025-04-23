@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { BidService } from "../../services/implementations/bid.service";
+import { BidService } from "../../services/bid/bid.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   GetBidByIdResponseSchema,

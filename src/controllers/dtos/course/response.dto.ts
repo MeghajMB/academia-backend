@@ -37,10 +37,10 @@ export const GetEnrolledCoursesOfUserResponseSchema =
       z.object({
         id: z.string(),
         title: z.string(),
-        subtitle: z.string(),
-        price: z.number(),
+        completedAt: z.string().nullable(),
         imageThumbnail: z.string(),
-        // Add more fields as per service response
+        progressPercentage:z.number(),
+        certificate:z.string().nullable()
       })
     ),
   });
@@ -322,6 +322,7 @@ export const GetCoursesResponseSchema = SuccessResponseSchema.extend({
         totalDuration: z.number(),
         totalLectures: z.number(),
         totalSections: z.number(),
+        totalReviews:z.number(),
         isBlocked: z.boolean(),
         status: z.string(),
         imageThumbnail: z.string(),

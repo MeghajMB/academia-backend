@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { CategoryService } from "../../services/implementations/category.service";
+import { CategoryService } from "../../services/category/category.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { ICategoryController } from "../interfaces/category-controller.interface";
 import { GetAllCategoriesSchema } from "../dtos/category/response.dto";
