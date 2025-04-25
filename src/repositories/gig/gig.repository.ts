@@ -22,7 +22,7 @@ export class GigRepository
     filter: "quarter" | "month" | "year",
     start: Date,
     end: Date
-  ): Promise<AggregatedGigEarnings[]|[]> {
+  ): Promise<AggregatedGigEarnings[] | []> {
     try {
       const result = await GigModel.aggregate([
         {
@@ -33,20 +33,41 @@ export class GigRepository
           },
         },
         {
+          $addFields: {
+            formattedDate:
+              filter === "month"
+                ? { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                : filter === "quarter"
+                ? {
+                    $dateToString: {
+                      format: "%G-%V", // ISO week format used for "quarter"-like grouping
+                      date: "$createdAt",
+                    },
+                  }
+                : { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, // year filter
+          },
+        },
+        {
           $group: {
-            _id: {
-              year: { $year: "$createdAt" },
-              ...(filter === "month" && { month: { $month: "$createdAt" } }),
-              ...(filter === "quarter" && {
-                quarter: { $ceil: { $divide: [{ $month: "$createdAt" }, 3] } },
-              }),
-            },
-            total: { $sum: "$currentBid" },
+            _id: "$formattedDate",
+            earnings: { $sum: "$currentBid" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id",
+            earnings: 1,
+          },
+        },
+        {
+          $sort: {
+            date: 1,
           },
         },
       ]);
-      console.log(result)
-      return result;
+  
+      return result as AggregatedGigEarnings[];
     } catch (error: unknown) {
       console.log(error);
       throw new DatabaseError(
@@ -55,6 +76,7 @@ export class GigRepository
       );
     }
   }
+  
   async getGigMetrics(
     userId: string
   ): Promise<getGigMetricsRepositoryResponse[] | []> {

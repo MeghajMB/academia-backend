@@ -107,82 +107,11 @@ export class InstructorService {
           ),
           this.gigRepository.getGigEarnings(userId, filter, start, end),
         ]);
-      const studentGrowth = studentGrowthResult.map((student) => {
-        let date: string;
-
-        if (filter === "month") {
-          // Format as YYYY-MM-01 for month labels
-          date = `${student._id.year}-${String(student._id.month).padStart(
-            2,
-            "0"
-          )}-01`;
-        } else if (filter === "quarter") {
-          // Use first day of quarter: Jan, Apr, Jul, Oct
-          const quarterStartMonth = (student._id.quarter - 1) * 3 + 1;
-          date = `${student._id.year}-${String(quarterStartMonth).padStart(
-            2,
-            "0"
-          )}-01`;
-        } else {
-          // Yearly format
-          date = `${student._id.year}-01-01`;
-        }
-
-        return {
-          date,
-          count: student.count,
-        };
-      });
-      const courseEarnings = courseEarningsResult.map((earning) => {
-        let date: string;
-
-        if (filter === "month") {
-          // Format as YYYY-MM-01 for month labels
-          date = `${earning._id.year}-${String(earning._id.month).padStart(
-            2,
-            "0"
-          )}-01`;
-        } else if (filter === "quarter") {
-          // Use first day of quarter: Jan, Apr, Jul, Oct
-          const quarterStartMonth = (earning._id.quarter - 1) * 3 + 1;
-          date = `${earning._id.year}-${String(quarterStartMonth).padStart(
-            2,
-            "0"
-          )}-01`;
-        } else {
-          // Yearly format
-          date = `${earning._id.year}-01-01`;
-        }
-
-        return {
-          date,
-          earnings: earning.total,
-        };
-      });
-      const gigEarnings = gigEarningsResult.map((gig) => {
-        let date: string;
-
-        if (filter === "month") {
-          // Format as YYYY-MM-01 for month labels
-          date = `${gig._id.year}-${String(gig._id.month).padStart(2, "0")}-01`;
-        } else if (filter === "quarter") {
-          // Use first day of quarter: Jan, Apr, Jul, Oct
-          const quarterStartMonth = (gig._id.quarter - 1) * 3 + 1;
-          date = `${gig._id.year}-${String(quarterStartMonth).padStart(
-            2,
-            "0"
-          )}-01`;
-        } else {
-          // Yearly format
-          date = `${gig._id.year}-01-01`;
-        }
-
-        return {
-          date,
-          earnings: gig.total,
-        };
-      });
-      return { courseEarnings, studentGrowth, gigEarnings };
+      return {
+        courseEarnings:courseEarningsResult,
+        studentGrowth: studentGrowthResult,
+        gigEarnings:gigEarningsResult,
+      };
     } catch (error) {
       console.log(error);
       throw error;

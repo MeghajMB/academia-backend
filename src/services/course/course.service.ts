@@ -17,8 +17,10 @@ import { CourseDocument } from "../../models/course.model";
 import { LectureDocument } from "../../models/lecture.model";
 import { EnrollmentDocument } from "../../models/enrollment.model";
 import {
+  AddLectureResponse,
   CreateCourse,
   EditCourseLandingPagePayload,
+  GetCourseAnalyticsResponse,
   GetCourseCreationDetailsResponse,
   GetCourseDetailsResponse,
   GetCourses,
@@ -40,6 +42,77 @@ export class CourseService implements ICourseService {
     private fileService: FileService,
     private reviewRepository: IReviewRepository
   ) {}
+  async getCourseAnalytics(
+    filter: "month" | "quarter" | "year",
+    courseId: string,
+    userId: string
+  ): Promise<GetCourseAnalyticsResponse> {
+    try {
+      const now = new Date();
+      const start = new Date();
+      const end = new Date();
+
+      switch (filter) {
+        case "month":
+          start.setFullYear(now.getFullYear(), 0, 1);
+          end.setFullYear(now.getFullYear(), 11, 31);
+          break;
+        case "quarter":
+          start.setFullYear(now.getFullYear(), 0, 1);
+          end.setFullYear(now.getFullYear(), 11, 31);
+          break;
+        case "year":
+          start.setFullYear(now.getFullYear() - 4, 0, 1);
+          break;
+      }
+
+      const [courseMetrics, courseMetricsSummary] = await Promise.all([
+        this.courseRepository.getAnalytics(
+          courseId,
+          userId,
+          start,
+          end,
+          filter
+        ),
+        this.courseRepository.getAnalyticsSummary(courseId, userId),
+      ]);
+
+      const reviewDistribution = {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+      };
+      courseMetricsSummary.reviews.forEach((review) => {
+        const rating = review.rating;
+        if (reviewDistribution[rating] !== undefined) {
+          reviewDistribution[rating]++;
+        }
+      });
+
+      const updatedCourseMetricsSummary = {
+        totalRevenue: courseMetricsSummary.totalRevenue,
+        totalStudents: courseMetricsSummary.totalStudents,
+        averageProgress: courseMetricsSummary.averageProgress,
+        averageRating:courseMetricsSummary.averageRating,
+        reviewCount:courseMetricsSummary.reviewCount,
+        reviewDistribution,
+      };
+      const updatedCourseMetrics = {
+        enrollments: courseMetrics[0]?.enrollments || [],
+        transactions: courseMetrics[0]?.transactions || [],
+      };
+
+      return {
+        courseMetrics: updatedCourseMetrics,
+        courseMetricsSummary: updatedCourseMetricsSummary,
+      };
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 
   async createCourse(
     courseData: CreateCourse,
@@ -933,7 +1006,7 @@ export class CourseService implements ICourseService {
     courseId: string,
     sectionId: string,
     lectureData: { title: string; videoUrl: string; duration: number }
-  ): Promise<LectureDocument> {
+  ): Promise<AddLectureResponse> {
     const existingCourse = await this.courseRepository.findById(courseId);
 
     if (existingCourse?.userId.toString() !== userId) {
@@ -979,8 +1052,17 @@ export class CourseService implements ICourseService {
 
     const command = new SendMessageCommand(params);
     await sqsClient.send(command);
-
-    return newLecture;
+    const updatedLecture = {
+      id: newLecture._id.toString(),
+      title: newLecture.title,
+      videoUrl: newLecture.videoUrl,
+      duration: newLecture.duration,
+      order: newLecture.order,
+      status: newLecture.status,
+      sectionId: newLecture.sectionId.toString(),
+      progress: "instructor",
+    };
+    return updatedLecture;
   }
 
   async addLectureAfterProcessing(

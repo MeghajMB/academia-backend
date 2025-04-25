@@ -6,7 +6,10 @@ import {
 import { BaseRepository } from "../base/base.repository";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-import { AggregatedEarnings, getInstructorEarningsRepositoryResponse } from "./transaction.types";
+import {
+  AggregatedEarnings,
+  getInstructorEarningsRepositoryResponse,
+} from "./transaction.types";
 import { Types } from "mongoose";
 
 export class TransactionRepository
@@ -21,7 +24,7 @@ export class TransactionRepository
     filter: "quarter" | "month" | "year",
     start: Date,
     end: Date
-  ): Promise<AggregatedEarnings[]|[]> {
+  ): Promise<AggregatedEarnings[] | []> {
     try {
       const result = await TransactionModel.aggregate([
         {
@@ -46,27 +49,50 @@ export class TransactionRepository
           },
         },
         {
+          $addFields: {
+            formattedDate:
+              filter === "month"
+                ? { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                : filter === "quarter"
+                ? {
+                    $dateToString: {
+                      format: "%G-%V",
+                      date: "$createdAt",
+                    },
+                  }
+                : { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          },
+        },
+        {
           $group: {
-            _id: {
-              year: { $year: "$createdAt" },
-              ...(filter === "month" && { month: { $month: "$createdAt" } }),
-              ...(filter === "quarter" && {
-                quarter: { $ceil: { $divide: [{ $month: "$createdAt" }, 3] } },
-              }),
-            },
-            total: { $sum: "$amount" },
+            _id: "$formattedDate",
+            earnings: { $sum: "$amount" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id",
+            earnings: 1,
+          },
+        },
+        {
+          $sort: {
+            date: 1,
           },
         },
       ]);
-      return result
+
+      return result as AggregatedEarnings[];
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR
       );
     }
   }
+
   async createTransaction(
     userId: string,
     amount: number,

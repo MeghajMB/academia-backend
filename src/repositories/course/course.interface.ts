@@ -7,10 +7,24 @@ import {
   CourseWithPopulatedFields,
   FetchAllPaginatedCoursesResult,
   fetchCourseMetricsRepositoryResponse,
+  getAnalyticsResponse,
+  getAnalyticsSummaryResponse,
 } from "./course.types";
 
 export interface ICourseRepository extends IRepository<CourseDocument> {
-  fetchCourseMetrics(userId:string):Promise<fetchCourseMetricsRepositoryResponse[]|[]>
+  getAnalyticsSummary(courseId: string, userId: string): Promise<getAnalyticsSummaryResponse>;
+  getAnalytics(
+    courseId: string,
+    userId: string,
+    start: Date,
+    end: Date,
+    filter:'month'|'quarter'|'year'
+  ): Promise<[getAnalyticsResponse] | []>;
+
+  fetchCourseMetrics(
+    userId: string
+  ): Promise<fetchCourseMetricsRepositoryResponse[] | []>;
+
   findAllPaginatedCourses({
     query,
     skip,

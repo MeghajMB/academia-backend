@@ -4,7 +4,7 @@ import { Course } from "../course/course.types";
 /* Core Enrollment types */
 
 export interface Enrollment {
-  _id:Types.ObjectId;
+  _id: Types.ObjectId;
   studentId: Types.ObjectId;
   courseId: Types.ObjectId;
   transactionId: Types.ObjectId;
@@ -32,10 +32,6 @@ export type EnrollmentWithCourse = Omit<Enrollment, "courseId"> & {
 };
 
 export interface AggregatedStudentGrowth {
-  _id: {
-    year: number;
-    month: number;
-    quarter:number;
-  };
+  date: string;
   count: number;
-};
+}

@@ -13,7 +13,7 @@ export interface GetCourseDetailsResponse {
   price: number;
   subtitle: string;
   description: string;
-  enrollmentStatus: "enrolled" | "not enrolled"|"instructor";
+  enrollmentStatus: "enrolled" | "not enrolled" | "instructor";
   canReview: boolean;
   hasReviewed: boolean;
   sections: {
@@ -43,7 +43,7 @@ export interface GetEnrolledCoursesOfUserResponse {
   id: string;
   imageThumbnail: string;
   title: string;
-  completedAt: string|null;
+  completedAt: string | null;
   progressPercentage: number;
   certificate: string | null;
 }
@@ -76,14 +76,14 @@ export interface CreateCourse {
   promotionalVideo: string;
 }
 
-export interface EditCourseLandingPagePayload{
+export interface EditCourseLandingPagePayload {
   category: string;
-  imageThumbnail: string|null;
+  imageThumbnail: string | null;
   description: string;
   price: number;
   subtitle: string;
   title: string;
-  promotionalVideo: string|null;
+  promotionalVideo: string | null;
 }
 
 export interface GetCourses {
@@ -140,3 +140,35 @@ export interface GetCoursesOfInstructorResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface AddLectureResponse {
+  id: string;
+  title: string;
+  videoUrl: string;
+  duration: number;
+  order: number;
+  status: "processing" | "processed" | "archived";
+  sectionId: string;
+  progress: string;
+}
+
+export type GetCourseAnalyticsResponse = {
+  courseMetrics: {
+    enrollments: { count: number; averageProgress: number; date: string }[];
+    transactions: { totalAmount: number; date: string }[];
+  };
+  courseMetricsSummary: {
+    totalRevenue: number;
+    totalStudents: number;
+    averageProgress: number;
+    averageRating: number;
+    reviewCount:number;
+    reviewDistribution: {
+      1: number;
+      2: number;
+      3: number;
+      4: number;
+      5: number;
+    };
+  };
+};

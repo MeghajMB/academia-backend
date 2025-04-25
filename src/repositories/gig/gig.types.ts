@@ -27,10 +27,6 @@ export interface getGigMetricsRepositoryResponse {
 }
 
 export interface AggregatedGigEarnings {
-  _id: {
-    year: number;
-    month: number;
-    quarter:number;
-  };
-  total: number;
+  date:string
+  earnings: number;
 };

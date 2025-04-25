@@ -38,6 +38,13 @@ const courseController = new CourseController(courseService);
 
 /* GET routes */
 
+//get Course analytics
+router.get(
+  "/analytics/:courseId",
+  verifyToken,
+  verifyUser("instructor"),
+  courseController.getCourseAnalytics.bind(courseController)
+);
 //fetch Courses
 router.get(
   "/all",

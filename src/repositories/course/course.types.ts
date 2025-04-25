@@ -77,7 +77,7 @@ export interface ICourseResultWithUserId extends Document {
   updatedAt: Date;
 }
 
-export interface fetchCourseMetricsRepositoryResponse  {
+export interface fetchCourseMetricsRepositoryResponse {
   totalCourses: number;
   totalEarnings: number;
   totalStudents: number;
@@ -90,4 +90,18 @@ export interface fetchCourseMetricsRepositoryResponse  {
     4: number;
     5: number;
   };
-};
+}
+
+export interface getAnalyticsResponse {
+  enrollments: { count: number; averageProgress: number; date: string }[];
+  transactions: { totalAmount: number; date: string }[];
+}
+
+export interface getAnalyticsSummaryResponse {
+  totalRevenue: number;
+  totalStudents: number;
+  averageProgress: number;
+  averageRating:number;
+  reviewCount:number;
+  reviews: { _id: Types.ObjectId; rating: 1 | 2 | 3 | 4 | 5 }[];
+}

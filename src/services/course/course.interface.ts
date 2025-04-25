@@ -1,17 +1,16 @@
 import { CloudfrontSignedCookiesOutput } from "@aws-sdk/cloudfront-signer";
 import {
+  AddLectureResponse,
   CreateCourse,
   EditCourseLandingPagePayload,
+  GetCourseAnalyticsResponse,
   GetCourseDetailsResponse,
   GetCourses,
   GetCoursesOfInstructorResponse,
   UpdatedSection,
 } from "./course.types";
 import { CourseDocument } from "../../models/course.model";
-import { LectureDocument } from "../../models/lecture.model";
-import { SectionDocument } from "../../models/section.model";
 import { EnrollmentDocument } from "../../models/enrollment.model";
-import { Types } from "mongoose";
 
 export interface ICourseService {
   createCourse(
@@ -96,6 +95,7 @@ export interface ICourseService {
     search?: string;
     limit:number
   }): Promise<GetCourses>;
+  getCourseAnalytics(filter: "month" | "quarter" | "year",courseId:string,userId:string):Promise<GetCourseAnalyticsResponse>;
   addSection(
     section: { title: string; description: string },
     courseId: string,
@@ -112,7 +112,7 @@ export interface ICourseService {
     courseId: string,
     sectionID: string,
     lectureData: { title: string; videoUrl: string; duration: number }
-  ): Promise<LectureDocument>;
+  ): Promise<AddLectureResponse>;
   getCoursesOfInstructor(
     instructorId: string,
     status: string

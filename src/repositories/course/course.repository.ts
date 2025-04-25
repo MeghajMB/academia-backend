@@ -9,6 +9,8 @@ import {
   CourseWithPopulatedFields,
   FetchAllPaginatedCoursesResult,
   fetchCourseMetricsRepositoryResponse,
+  getAnalyticsResponse,
+  getAnalyticsSummaryResponse,
 } from "./course.types";
 import { CategoryDocument } from "../../models/categoy.model";
 
@@ -19,9 +21,268 @@ export class CourseRepository
   constructor() {
     super(CourseModel);
   }
-  async fetchCourseMetrics(userId: string):Promise<fetchCourseMetricsRepositoryResponse[]> {
+  async getAnalyticsSummary(
+    courseId: string,
+    userId: string
+  ): Promise<getAnalyticsSummaryResponse> {
     try {
-      const courseMetrics =await CourseModel.aggregate([
+      const metricsSummary = await CourseModel.aggregate([
+        {
+          $match: {
+            _id: new Types.ObjectId(courseId),
+            userId: new Types.ObjectId(userId),
+            status: "listed",
+          },
+        },
+        {
+          $lookup: {
+            from: "reviews",
+            let: { courseId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$courseId", "$$courseId"] },
+                },
+              },
+              {
+                $project: {
+                  rating: 1,
+                },
+              },
+            ],
+            as: "reviews",
+          },
+        },
+        {
+          $lookup: {
+            from: "transactions",
+            let: { courseId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$purchaseType", "course"] },
+                      { $eq: ["$status", "success"] },
+                      { $eq: ["$purchaseId", "$$courseId"] },
+                    ],
+                  },
+                },
+              },
+              {
+                $project: {
+                  amount: 1,
+                },
+              },
+            ],
+            as: "transactions",
+          },
+        },
+        {
+          $lookup: {
+            from: "enrollments",
+            let: { courseId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$courseId", "$$courseId"],
+                  },
+                },
+              },
+              {
+                $project: {
+                  percentage: "$progress.percentage",
+                },
+              },
+            ],
+            as: "enrollments",
+          },
+        },
+        {
+          $project: {
+            totalRevenue: { $sum: "$transactions.amount" },
+            totalStudents: { $size: "$enrollments" },
+            averageProgress: {
+              $cond: [
+                { $gt: [{ $size: "$enrollments" }, 0] },
+                {
+                  $avg: "$enrollments.percentage",
+                },
+                0,
+              ],
+            },
+            reviewCount: { $size: "$reviews" },
+            averageRating: {
+              $cond: [
+                { $gt: [{ $size: "$reviews" }, 0] },
+                { $round: [{ $avg: "$reviews.rating" }, 1] },
+                0,
+              ],
+            },
+            reviews:1
+          },
+        },
+      ]);
+      return (
+        metricsSummary[0] ?? {
+          totalRevenue: 0,
+          totalStudents: 0,
+          averageProgress: 0,
+          reviews: [],
+        }
+      );
+    } catch (error: unknown) {
+      console.log(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+  async getAnalytics(
+    courseId: string,
+    userId: string,
+    start: Date,
+    end: Date,
+    filter:'month'|'quarter'|'year'
+  ): Promise<[getAnalyticsResponse] | []> {
+    try {
+      const result = await CourseModel.aggregate([
+        {
+          $match: {
+            userId: new Types.ObjectId(userId),
+            status: "listed",
+            _id: new Types.ObjectId(courseId),
+          },
+        },
+        {
+          $facet: {
+            enrollments: [
+              {
+                $lookup: {
+                  from: "enrollments",
+                  let: { courseId: "$_id" },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: { $eq: ["$courseId", "$$courseId"] },
+                        createdAt: { $gte: start, $lte: end },
+                      },
+                    },
+                    {
+                      $project: {
+                        date: {
+                          $dateToString: {
+                            format:
+                              filter === "year"
+                                ? "%Y-%m"
+                                : filter === "quarter"
+                                ? "%Y-%m-%d"
+                                : "%Y-%m-%d",
+                            date: "$createdAt",
+                          },
+                        },
+                        progress: "$progress.percentage",
+                      },
+                    },
+                    {
+                      $group: {
+                        _id: "$date",
+                        count: { $sum: 1 },
+                        averageProgress: { $avg: "$progress" },
+                      },
+                    },
+                    {
+                      $project: {
+                        date: "$_id",
+                        count: 1,
+                        averageProgress: { $round: ["$averageProgress", 1] },
+                        _id: 0,
+                      },
+                    },
+                    { $sort: { date: 1 } },
+                  ],
+                  as: "enrollments",
+                },
+              },
+            ],
+            transactions: [
+              {
+                $lookup: {
+                  from: "transactions",
+                  let: { courseId: "$_id" },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ["$purchaseType", "course"] },
+                            { $eq: ["$status", "success"] },
+                            { $eq: ["$purchaseId", "$$courseId"] },
+                          ],
+                        },
+                        createdAt: { $gte: start, $lte: end },
+                      },
+                    },
+                    {
+                      $project: {
+                        date: {
+                          $dateToString: {
+                            format:
+                              filter === "year"
+                                ? "%Y-%m"
+                                : filter === "quarter"
+                                ? "%Y-%m-%d"
+                                : "%Y-%m-%d",
+                            date: "$createdAt",
+                          },
+                        },
+                        amount: 1,
+                      },
+                    },
+                    {
+                      $group: {
+                        _id: "$date",
+                        totalAmount: { $sum: "$amount" },
+                      },
+                    },
+                    {
+                      $project: {
+                        date: "$_id",
+                        totalAmount: 1,
+                        _id: 0,
+                      },
+                    },
+                    { $sort: { date: 1 } },
+                  ],
+                  as: "transactions",
+                },
+              },
+            ],
+          },
+        },
+        {
+          $project: {
+            enrollments: { $arrayElemAt: ["$enrollments.enrollments", 0] },
+            transactions: { $arrayElemAt: ["$transactions.transactions", 0] },
+          },
+        },
+      ]);   
+      return result as [getAnalyticsResponse] | [];
+    } catch (error: unknown) {
+      console.log(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+  async fetchCourseMetrics(
+    userId: string
+  ): Promise<fetchCourseMetricsRepositoryResponse[]> {
+    try {
+      const courseMetrics = await CourseModel.aggregate([
         {
           $match: {
             userId: new Types.ObjectId(userId),
@@ -121,7 +382,7 @@ export class CourseRepository
         {
           $addFields: {
             averageRating: {
-              $ifNull: ["$averageRating", 0], // safe here!
+              $ifNull: ["$averageRating", 0],
             },
             reviewDistribution: {
               $arrayToObject: {
@@ -146,7 +407,7 @@ export class CourseRepository
           },
         },
       ]);
-      
+
       return courseMetrics as unknown as fetchCourseMetricsRepositoryResponse[];
     } catch (error) {
       console.log(error);

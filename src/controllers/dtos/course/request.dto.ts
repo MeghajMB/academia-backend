@@ -14,11 +14,11 @@ export type CreateCourseRequestDTO = z.infer<typeof CreateCourseRequestSchema>;
 
 // List courses Request
 export const GetCoursesRequestSchema = z.object({
-  sort:z.string().optional(),
-  category:z.string().optional(),
-  page:z.string().optional(),
-  search:z.string().optional(),
-  limit:z.number()
+  sort: z.string().optional(),
+  category: z.string().optional(),
+  page: z.string().optional(),
+  search: z.string().optional(),
+  limit: z.number(),
 });
 export type GetCoursesRequestDTO = z.infer<typeof GetCoursesRequestSchema>;
 // Add Section Request
@@ -182,4 +182,11 @@ export const EditSectionRequestSchema = z.object({
 });
 export type EditSectionRequestDTO = z.infer<typeof EditSectionRequestSchema>;
 
-// --- Response DTOs ---
+// GetCourseAnalytics
+export const GetCourseAnalyticsRequestSchema = z.object({
+  filter: z.enum(["month", "quarter", "year"]),
+  courseId:z.string()
+});
+export type GetCourseAnalyticsRequestDTO = z.infer<
+  typeof GetCourseAnalyticsRequestSchema
+>;

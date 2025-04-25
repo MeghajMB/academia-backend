@@ -8,10 +8,6 @@ export interface getInstructorEarningsRepositoryResponse {
   count: number;
 }
 export interface AggregatedEarnings {
-  _id: {
-    year: number;
-    month: number;
-    quarter:number;
-  };
-  total: number;
+  date:string;
+  earnings:number;
 };

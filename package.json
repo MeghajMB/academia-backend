@@ -16,9 +16,6 @@
     "@aws-sdk/client-sqs": "^3.743.0",
     "@aws-sdk/cloudfront-signer": "^3.734.0",
     "@aws-sdk/s3-request-presigner": "^3.731.1",
-    "@types/morgan": "^1.9.9",
-    "@types/node-cron": "^3.0.11",
-    "@types/sanitize-html": "^2.13.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.41.8",
     "cookie-parser": "^1.4.7",
@@ -48,6 +45,9 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/morgan": "^1.9.9",
+    "@types/node-cron": "^3.0.11",
+    "@types/sanitize-html": "^2.13.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",

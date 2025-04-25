@@ -7,7 +7,11 @@ import { BaseRepository } from "../base/base.repository";
 import { IEnrollmentRepository } from "./enrollment.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-import { AggregatedStudentGrowth, Enrollment, EnrollmentWithCourse } from "./enrollment.types";
+import {
+  AggregatedStudentGrowth,
+  Enrollment,
+  EnrollmentWithCourse,
+} from "./enrollment.types";
 
 export class EnrollmentRepository
   extends BaseRepository<EnrollmentDocument>
@@ -21,9 +25,28 @@ export class EnrollmentRepository
     filter: "quarter" | "month" | "year",
     start: Date,
     end: Date
-  ): Promise<AggregatedStudentGrowth[]|[]> {
+  ): Promise<AggregatedStudentGrowth[] | []> {
     try {
+      let dateFormat: string;
+      switch (filter) {
+        case "month":
+          dateFormat = "%Y-%m-%d"; // Daily data
+          break;
+        case "quarter":
+          // Will group by week (ISO week number)
+          dateFormat = "%G-%V"; // ISO year-week
+          break;
+        case "year":
+          dateFormat = "%Y-%m"; // Monthly data
+          break;
+      }
+
       const result = await EnrollmentModel.aggregate([
+        {
+          $match: {
+            purchaseDate: { $gte: start, $lte: end },
+          },
+        },
         {
           $lookup: {
             from: "courses",
@@ -33,27 +56,31 @@ export class EnrollmentRepository
           },
         },
         { $unwind: "$course" },
-
         {
           $match: {
             "course.userId": new Types.ObjectId(userId),
           },
         },
-
         {
           $group: {
             _id: {
-              year: { $year: "$purchaseDate" },
-              month: { $month: "$purchaseDate" },
+              date: {
+                $dateToString: { format: dateFormat, date: "$purchaseDate" },
+              },
             },
             count: { $sum: 1 },
           },
         },
-
+        {
+          $project: {
+            _id: 0,
+            date: "$_id.date",
+            count: 1,
+          },
+        },
         {
           $sort: {
-            "_id.year": 1,
-            "_id.month": 1,
+            date: 1,
           },
         },
       ]);

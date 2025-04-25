@@ -178,6 +178,10 @@ export const AddLectureResponseSchema = SuccessResponseSchema.extend({
     title: z.string(),
     videoUrl: z.string(),
     duration: z.number(),
+    order: z.number(),
+    status: z.string(),
+    sectionId: z.string(),
+    progress: z.enum(["completed", "not completed", "locked", "instructor"]),
   }),
 });
 export type AddLectureResponseDTO = z.infer<typeof AddLectureResponseSchema>;
@@ -339,3 +343,40 @@ export const GetCoursesResponseSchema = SuccessResponseSchema.extend({
   }),
 });
 export type GetCoursesResponseDTO = z.infer<typeof GetCoursesResponseSchema>;
+
+//get courseAnalytics
+export const GetCourseAnalyticsResponseSchema = SuccessResponseSchema.extend({
+  data: z.object({
+    courseMetrics: z.object({
+      enrollments: z.array(
+        z.object({
+          averageProgress: z.number(),
+          count:z.number(),
+          date: z.string(),
+        })
+      ),
+      transactions: z.array(
+        z.object({
+          totalAmount: z.number(),
+          date: z.string(),
+        })
+      ),
+    }),
+    courseMetricsSummary: z.object({
+      totalRevenue: z.number(),
+      totalStudents: z.number(),
+      averageProgress: z.number(),
+      averageRating: z.number(),
+      reviewCount: z.number(),
+      reviewDistribution: z.object({
+        1: z.number(),
+        2: z.number(),
+        3: z.number(),
+        4: z.number(),
+        5: z.number(),
+      }),
+    }),
+  }),
+});
+
+export type GetCourseAnalyticsResponseDTO = z.infer<typeof GetCourseAnalyticsResponseSchema>;

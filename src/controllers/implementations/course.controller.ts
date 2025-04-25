@@ -19,6 +19,7 @@ import {
   EditLectureRequestSchema,
   EditSectionRequestSchema,
   GenerateLectureUrlRequestSchema,
+  GetCourseAnalyticsRequestSchema,
   GetCourseCreationDetailsRequestSchema,
   GetCourseDetailsRequestSchema,
   GetCoursesOfInstructorRequestSchema,
@@ -40,6 +41,7 @@ import {
   EditLectureResponseSchema,
   EditSectionResponseSchema,
   GenerateLectureUrlResponseSchema,
+  GetCourseAnalyticsResponseSchema,
   GetCourseCreationDetailsResponseSchema,
   GetCourseDetailsResponseSchema,
   GetCoursesOfInstructorResponseSchema,
@@ -103,12 +105,15 @@ export class CourseController implements ICourseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const payload = GetCoursesRequestSchema.parse({...req.query,limit:this.pageLimit});
+      const payload = GetCoursesRequestSchema.parse({
+        ...req.query,
+        limit: this.pageLimit,
+      });
       const courses = await this.courseService.getCourses(payload);
       const response = GetCoursesResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
-        message: "Section added successfully",
+        message: "Courses Retrieved Successfully",
         data: courses,
       });
       res.status(response.code).send(response);
@@ -116,6 +121,34 @@ export class CourseController implements ICourseController {
       next(error);
     }
   }
+  async getCourseAnalytics(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { filter, courseId } = GetCourseAnalyticsRequestSchema.parse({
+        ...req.query,
+        ...req.params,
+      });
+      const userId = req.verifiedUser?.id;
+      const result = await this.courseService.getCourseAnalytics(
+        filter,
+        courseId,
+        userId!
+      );
+      const response = GetCourseAnalyticsResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Course Analytics Retrieved Successfully",
+        data: result,
+      });
+      res.status(response.code).send(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async addSection(
     req: Request,
     res: Response,
@@ -154,7 +187,7 @@ export class CourseController implements ICourseController {
       const response = GetEnrolledCoursesOfUserResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
-        message: "Section added successfully",
+        message: "Courses fetched successfully",
         data: enrolledCourses,
       });
       res.status(response.code).send(response);
