@@ -1,14 +1,10 @@
-// repository
 import { IUserRepository } from "../../repositories/user/user.interface";
 import { ICategoryRepository } from "../../repositories/category/category.interface";
 import { ICourseRepository } from "../../repositories/course/course.interface";
-//services
 import { IAdminService } from "./admin.interface";
-//errors
 import { AppError } from "../../util/errors/app-error";
 import { NotFoundError } from "../../util/errors/not-found-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-//externl dependencies
 import { redis } from "../../lib/redis";
 import { StatusCode } from "../../enums/status-code.enum";
 import { INotificationService } from "../notification/notification.interface";
@@ -22,10 +18,10 @@ import {
 
 export class AdminService implements IAdminService {
   constructor(
-    private userRepository: IUserRepository,
-    private categoryRepository: ICategoryRepository,
-    private courseRepository: ICourseRepository,
-    private notificationService: INotificationService
+    private readonly userRepository: IUserRepository,
+    private readonly categoryRepository: ICategoryRepository,
+    private readonly courseRepository: ICourseRepository,
+    private readonly notificationService: INotificationService
   ) {}
 
   async getUsers({ role, page, limit, search }: GetUsersParams) {
@@ -53,6 +49,7 @@ export class AdminService implements IAdminService {
       throw error;
     }
   }
+  
   async getCourses({
     page,
     limit,
@@ -127,7 +124,7 @@ export class AdminService implements IAdminService {
       };
     });
 
-    return { requests:updatedRequests, pagination };
+    return { requests: updatedRequests, pagination };
   }
 
   async rejectVerificationRequest({
@@ -192,6 +189,7 @@ export class AdminService implements IAdminService {
     }
     return { message: user.isBlocked ? "User blocked" : "User unblocked" };
   }
+  
   async blockOrUnblockCourse(id: string) {
     try {
       const course = await this.courseRepository.toggleCourseStatus(id);
@@ -242,6 +240,7 @@ export class AdminService implements IAdminService {
       throw error;
     }
   }
+  
   async editCategory(
     category: { name: string; description: string },
     categoryId: string
@@ -285,6 +284,7 @@ export class AdminService implements IAdminService {
       throw error;
     }
   }
+  
   async getCourseReviewRequests(page: number, limit: number) {
     try {
       const skip = (page - 1) * limit;
@@ -299,6 +299,18 @@ export class AdminService implements IAdminService {
           skip,
           totalDocuments
         );
+      const updatedRequests = requests.map((request) => {
+        return {
+          id: request._id.toString(),
+          price: request.price,
+          title: request.title,
+          isBlocked: request.isBlocked,
+          category: {
+            name: request.category.name,
+            description: request.category.description,
+          },
+        };
+      });
       const pagination = {
         totalDocuments,
         totalPages: Math.ceil(totalDocuments / limit),
@@ -306,11 +318,12 @@ export class AdminService implements IAdminService {
         limit,
       };
 
-      return { requests, pagination };
+      return { requests: updatedRequests, pagination };
     } catch (error) {
       throw error;
     }
   }
+  
   async rejectCourseReviewRequest(rejectReason: string, courseId: string) {
     try {
       const course = await this.courseRepository.rejectCourseReviewRequest(
@@ -320,7 +333,7 @@ export class AdminService implements IAdminService {
       if (!course) throw new BadRequestError("No course found");
       await this.notificationService.sendNotification(
         course?.userId.toString(),
-        "course",
+        "system",
         "Course Rejected",
         rejectReason,
         courseId

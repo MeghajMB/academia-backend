@@ -6,40 +6,39 @@ import moment from "moment-timezone";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { scheduleAuctionClose } from "../../queues/auction.queue";
 import { GigRepository } from "../../repositories/gig/gig.repository";
-import {
-  CreateGigParams,
-  GetActiveGigsResponse,
-} from "./gig.types";
+import { CreateGigParams, CreateGigServiceResponse, GetActiveGigsResponse } from "./gig.types";
 import { IGigService } from "./gig.interface";
 
 export class GigService implements IGigService {
-  constructor(private gigRepository: GigRepository) {}
+  constructor(private readonly gigRepository: GigRepository) {}
 
   async createGig(
     gigData: CreateGigParams,
     instructorId: string
-  ): Promise<GigDocument> {
+  ): Promise<CreateGigServiceResponse> {
     try {
-      const cleanedDate = gigData.sessionDate.split("[")[0]; // Remove timezone region
-      const sessionDate = moment.utc(cleanedDate).tz("Asia/Kolkata"); // Convert to Moment object
+      const cleanedDate = gigData.sessionDate.split("[")[0];
+      const momentSessionDate = moment(cleanedDate);
 
-      if (!sessionDate.isValid()) {
+      if (!momentSessionDate.isValid()) {
         throw new BadRequestError("Invalid service date format.");
       }
-      const currentDate = moment().tz("Asia/Kolkata");
+      const sessionDate = momentSessionDate.toDate();
+      //uncomment in production
+      /*       const currentDate = moment.utc(); // Always use UTC inside backend
 
       // Calculate bidding expiration (24 hours before sessionDate)
-      const biddingExpiresAt = moment(sessionDate).subtract(24, "hours");
+      const biddingExpiresAt = moment.utc(sessionDate).subtract(24, "hours");
 
       if (biddingExpiresAt.isBefore(currentDate)) {
         throw new BadRequestError(
           "Bidding cannot start because there is less than 24 hours before the service date."
         );
-      }
+      } */
       // Check for conflicting gigs
       const existingGig = await this.gigRepository.findConflictingGig(
         instructorId,
-        sessionDate.toDate(),
+        sessionDate,
         gigData.sessionDuration
       );
       if (existingGig) {
@@ -55,15 +54,33 @@ export class GigService implements IGigService {
         description: gigData.description,
         sessionDuration: gigData.sessionDuration,
         minBid: Math.ceil(Number(gigData.minBid)),
-        sessionDate: sessionDate.toDate(), // Convert to Date object
-        biddingExpiresAt: biddingExpiresAt.toDate(), // 24 hrs before sessionDate
-        //biddingExpiresAt: new Date(Date.now() + 120000),
+        sessionDate: sessionDate, // Convert to Date object
+        //biddingExpiresAt: biddingExpiresAt.toDate(), // 24 hrs before sessionDate
+        biddingExpiresAt: new Date(Date.now() + 120000), //development
       };
 
       const newGig = await this.gigRepository.create(updatedGigData);
-      await scheduleAuctionClose(newGig.id, biddingExpiresAt.toDate());
-      //await scheduleAuctionClose(newGig.id, new Date(Date.now() + 15000));
-      return newGig;
+      //await scheduleAuctionClose(newGig.id, biddingExpiresAt.toDate());
+      await scheduleAuctionClose(
+        newGig._id.toString(),
+        new Date(Date.now() + 120000)
+      ); //development
+      const updatedGig = {
+        id: newGig._id.toString(),
+        sessionDate: newGig.sessionDate.toISOString(),
+        description: newGig.description,
+        biddingAllowed: newGig.biddingAllowed,
+        sessionDuration: newGig.sessionDuration,
+        maxParticipants: newGig.maxParticipants,
+        minBid: newGig.minBid,
+        status: newGig.status,
+        currentBid: newGig.currentBid,
+        title: newGig.title,
+        instructorId: newGig.instructorId.toString(),
+        biddingExpiresAt: newGig.biddingExpiresAt.toISOString(),
+        createdAt: newGig.createdAt.toISOString(),
+      };
+      return updatedGig;
     } catch (error) {
       throw error;
     }
@@ -82,13 +99,13 @@ export class GigService implements IGigService {
     biddingExpiresAt: string;
     sessionDate: string;
     createdAt: string;
-} | null> {
+  } | null> {
     try {
       const gig = await this.gigRepository.findById(id);
       if (!gig) {
         throw new AppError("Gig not found", StatusCode.NOT_FOUND);
       }
-      const updatedGig={
+      const updatedGig = {
         id: gig._id.toString(),
         instructorId: gig.instructorId.toString(),
         title: gig.title,
@@ -96,12 +113,12 @@ export class GigService implements IGigService {
         sessionDuration: gig.sessionDuration,
         minBid: gig.minBid,
         currentBid: gig.currentBid,
-        currentBidder: gig.currentBidder?.toString()||null,
+        currentBidder: gig.currentBidder?.toString() || null,
         status: gig.status,
         biddingExpiresAt: gig.biddingExpiresAt.toISOString(),
         sessionDate: gig.sessionDate.toISOString(),
         createdAt: gig.createdAt.toISOString(),
-      }
+      };
       return updatedGig;
     } catch (error) {
       throw error;
@@ -199,7 +216,7 @@ export class GigService implements IGigService {
           minBid: gig.minBid,
           biddingExpiresAt: gig.biddingExpiresAt.toISOString(),
           sessionDate: gig.sessionDate.toISOString(),
-          biddingAllowed:gig.biddingAllowed
+          biddingAllowed: gig.biddingAllowed,
         };
       });
       return updatedGigs;

@@ -6,7 +6,7 @@ import { NotificationDocument } from "../../models/notification.model";
 import { GetUserNotificationResponse } from "./notification.types";
 
 export class NotificationService implements INotificationService {
-  constructor(private notificationRepository: NotificationRepository) {}
+  constructor(private readonly notificationRepository: NotificationRepository) {}
 
   async sendNotification(
     userId: string,
@@ -24,13 +24,11 @@ export class NotificationService implements INotificationService {
         entityId: new Types.ObjectId(entityId),
         isRead: false,
       });
-      const notificationCount =
-        await this.notificationRepository.countUnreadNotifications(userId);
+
       redisPubSub.pub.publish(
         `notifications:${userId}`,
         JSON.stringify({
-          notification: [notification],
-          count: notificationCount,
+          notification: notification,
         })
       );
       return notification;
@@ -39,29 +37,33 @@ export class NotificationService implements INotificationService {
     }
   }
 
-  async getUserNotifications(userId: string): Promise<GetUserNotificationResponse[]> {
+  async getUserNotifications(
+    userId: string
+  ): Promise<GetUserNotificationResponse[]> {
     try {
       const unreadNotifications =
         await this.notificationRepository.getUserUnreadNotifications(userId);
-        const updatedNotifications=unreadNotifications.map((notification)=>{
-          return {
-            id:notification._id.toString(),
-            userId: notification.userId.toString(),
-            type: notification.type,
-            title: notification.title,
-            message: notification.message,
-            entityId: notification.entityId?.toString(),
-            isRead: notification.isRead,
-            createdAt: notification.createdAt.toISOString(),
-          }
-        })
+      const updatedNotifications = unreadNotifications.map((notification) => {
+        return {
+          id: notification._id.toString(),
+          userId: notification.userId.toString(),
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          entityId: notification.entityId?.toString(),
+          isRead: notification.isRead,
+          createdAt: notification.createdAt.toISOString(),
+        };
+      });
       return updatedNotifications;
     } catch (error) {
       throw error;
     }
   }
 
-  async markNotificationAsRead(notificationId: string):Promise<{message:"success"}> {
+  async markNotificationAsRead(
+    notificationId: string
+  ): Promise<{ message: "success" }> {
     try {
       const result = await this.notificationRepository.markAsRead(
         notificationId
@@ -71,11 +73,11 @@ export class NotificationService implements INotificationService {
       throw error;
     }
   }
-  async markAllNotificationAsRead(userID: string):Promise<{message:"success"}> {
+  async markAllNotificationAsRead(
+    userID: string
+  ): Promise<{ message: "success" }> {
     try {
-      const result = await this.notificationRepository.markAllAsRead(
-        userID
-      );
+      const result = await this.notificationRepository.markAllAsRead(userID);
       return { message: "success" };
     } catch (error) {
       throw error;

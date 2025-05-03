@@ -18,3 +18,20 @@ export interface GetActiveGigsResponse {
     biddingExpiresAt: string;
     sessionDate: string;
   }
+
+ export interface CreateGigServiceResponse {
+    id: string;
+    sessionDate: string; // ISO string
+    description: string;
+    biddingAllowed: boolean;
+    sessionDuration: number;
+    maxParticipants: number;
+    minBid: number;
+    status: "active" | "expired" | "completed" | "no-bids" | "missed";
+    currentBid: number;
+    title: string;
+    instructorId: string;
+    biddingExpiresAt: string; 
+    createdAt: string; 
+  };
+  

@@ -1,15 +1,7 @@
-// src/services/AuthService.ts
 import { IUserRepository } from "../../repositories/user/user.interface";
-
-//services
-
 import { redis } from "../../lib/redis";
-
-//errors
 import { ExistingUserError } from "../../util/errors/existing-user-error";
 import { AppError } from "../../util/errors/app-error";
-
-//externl dependencies
 import bcrypt from "bcryptjs";
 import { authenticator } from "otplib";
 import jwt, { JwtPayload } from "jsonwebtoken";
@@ -43,7 +35,7 @@ import {
 } from "./auth.types";
 
 export class AuthService implements IAuthService {
-  constructor(private userRepository: IUserRepository) {}
+  constructor(private readonly userRepository: IUserRepository) {}
 
   async refreshToken({
     refreshToken,

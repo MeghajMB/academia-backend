@@ -5,7 +5,7 @@ import { redis } from "../../lib/redis";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 
 import mongoose from "mongoose";
-import { produceMessage } from "../../kafka/producer";
+import { publishNewBids } from "../../kafka/producers/producer";
 import { GigRepository } from "../../repositories/gig/gig.repository";
 import { UserRepository } from "../../repositories/user/user.repository";
 import { BidRepository } from "../../repositories/bid/bid.repository";
@@ -14,9 +14,9 @@ import { IBidService } from "./bid.interface";
 
 export class BidService implements IBidService {
   constructor(
-    private bidRepository: BidRepository,
-    private userRepository: UserRepository,
-    private gigRepository: GigRepository
+    private readonly bidRepository: BidRepository,
+    private readonly userRepository: UserRepository,
+    private readonly gigRepository: GigRepository
   ) {}
 
   async placeBid(
@@ -40,7 +40,7 @@ export class BidService implements IBidService {
       if (new Date(gig.biddingExpiresAt).getTime() < Date.now()) {
         throw new BadRequestError("Bidding time has ended");
       }
-      await produceMessage({ data: bidData, id: userId });
+      await publishNewBids({ data: bidData, id: userId });
       return { message: "success" };
     } catch (error) {
       throw error;

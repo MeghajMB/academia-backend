@@ -4,7 +4,7 @@ import { ICategoryService } from "./category.interface";
 import { GetAllCategoriesResponse } from "./category.types";
 
 export class CategoryService implements ICategoryService {
-  constructor(private categoryRepository: ICategoryRepository) {}
+  constructor(private readonly categoryRepository: ICategoryRepository) {}
 
   async getAllCategories(): Promise<GetAllCategoriesResponse[]> {
     try {

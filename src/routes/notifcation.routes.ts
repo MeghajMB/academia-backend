@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { NotificationController } from "../controllers/implementations/notification.controller";
+import { NotificationController } from "../controllers/notification/notification.controller";
 import { NotificationService } from "../services/notification/notification.service";
 
 import { verifyToken } from "../middleware/verify-token";

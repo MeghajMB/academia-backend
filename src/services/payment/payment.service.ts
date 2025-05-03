@@ -11,11 +11,11 @@ import { IPaymentRepository } from "../../repositories/payment/payment.interface
 
 export class PaymentService implements IPaymentService {
   constructor(
-    private transactionRepository: TransactionRepository,
-    private courseRepository: ICourseRepository,
-    private courseService: ICourseService,
-    private enrollmentRepository: IEnrollmentRepository,
-    private paymentRepository: IPaymentRepository
+    private readonly transactionRepository: TransactionRepository,
+    private readonly courseRepository: ICourseRepository,
+    private readonly courseService: ICourseService,
+    private readonly enrollmentRepository: IEnrollmentRepository,
+    private readonly paymentRepository: IPaymentRepository
   ) {}
 
   verifyPaymentSignature(paymentData: any, secret: string): boolean {

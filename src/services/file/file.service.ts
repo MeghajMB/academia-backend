@@ -8,8 +8,8 @@ import {
 import { IFileService } from "./file.interface";
 
 export class FileService implements IFileService {
-  private bucketName = process.env.AWS_BUCKET_NAME!;
-  private tempBucketName = process.env.AWS_TEMP_BUCKET_NAME;
+  private readonly bucketName = process.env.AWS_BUCKET_NAME!;
+  private readonly tempBucketName = process.env.AWS_TEMP_BUCKET_NAME;
 
   async generatePutSignedUrl(
     key: string,

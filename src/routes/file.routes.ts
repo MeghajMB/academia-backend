@@ -1,8 +1,7 @@
-// src/interfaces/routes/userRoutes.ts
 import { Router } from "express";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
-import { FileController } from "../controllers/implementations/file.controller";
+import { FileController } from "../controllers/file/file.controller";
 import { FileService } from "../services/file/file.service";
 
 const router = Router();

@@ -1,14 +1,11 @@
 import { Router } from "express";
-import { BidController } from "../controllers/implementations/bid.controller";
-
+import { BidController } from "../controllers/bid/bid.controller";
 import { BidService } from "../services/bid/bid.service";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
 import { BidRepository } from "../repositories/bid/bid.repository";
 import { UserRepository } from "../repositories/user/user.repository";
 import { GigRepository } from "../repositories/gig/gig.repository";
-
-//import { KafkaService } from "../services/kafkaService";
 
 const router = Router();
 
@@ -17,7 +14,6 @@ const bidRepository = new BidRepository();
 const userRepository = new UserRepository();
 const gigRepository = new GigRepository();
 const bidService = new BidService(bidRepository, userRepository, gigRepository);
-//const kafkaService = new KafkaService(bidService);
 const bidController = new BidController(bidService);
 
 // Routes

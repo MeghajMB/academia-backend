@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { InstructorController } from "../controllers/implementations/instructor.controller";
+import { InstructorController } from "../controllers/instructor/instructor.controller";
 
 import { InstructorService } from "../services/instructor/instructor.service";
 import { verifyToken } from "../middleware/verify-token";

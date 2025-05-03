@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { CategoryController } from "../controllers/implementations/category.controller";
+import { CategoryController } from "../controllers/category/category.controller";
 import { CategoryService } from "../services/category/category.service";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";

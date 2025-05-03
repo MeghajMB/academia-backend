@@ -1,6 +1,6 @@
 // src/interfaces/routes/userRoutes.ts
 import { Router } from "express";
-import { UserController } from "../controllers/implementations/user.controller";
+import { UserController } from "../controllers/user/user.controller";
 
 import { UserService } from "../services/user/user.service";
 import { verifyToken } from "../middleware/verify-token";

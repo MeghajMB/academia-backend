@@ -1,13 +1,14 @@
 import { Queue, Worker } from "bullmq";
 import { redis } from "../lib/redis";
 
-import { areBidsStillProcessing } from "../kafka/bidConsumer";
+import { areBidsStillProcessing } from "../kafka/consumers/bid.consumer";
 import { scheduleSessionCompletion } from "./session.queue";
 
 import { NotificationService } from "../services/notification/notification.service";
 import { GigRepository } from "../repositories/gig/gig.repository";
 import { SessionRepository } from "../repositories/session/session.repository";
 import { NotificationRepository } from "../repositories/notification/notification.repository";
+import { scheduleSessionNotification } from "./session-notification.queue";
 
 //dependency injection
 const gigRepository = new GigRepository();
@@ -67,6 +68,7 @@ const auctionWorker = new Worker(
             totalTimeSpent: 0,
           },
         ];
+        
         const session = await sessionRepository.create({
           gigId: gigId,
           instructorId: gig.instructorId,
@@ -86,6 +88,8 @@ const auctionWorker = new Worker(
             )
           )
         );
+        const users=participants.map((user)=>user.userId.toString())
+        scheduleSessionNotification(users, new Date(new Date(gig.sessionDate).getTime() - 1 * 1 * 1000));
       }
 
       await redis.del(`pendingBids:${gigId}`);

@@ -1,6 +1,7 @@
 import { GigDocument } from "../../models/gig.model";
 import {
   CreateGigParams,
+  CreateGigServiceResponse,
   GetActiveGigsResponse,
 } from "./gig.types";
 
@@ -8,7 +9,7 @@ export interface IGigService {
   createGig(
     gigData: CreateGigParams,
     instructorId: string
-  ): Promise<GigDocument>;
+  ): Promise<CreateGigServiceResponse>;
 
   getGigById(id: string): Promise<{
     id: string;

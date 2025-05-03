@@ -1,19 +1,17 @@
-// src/interfaces/routes/userRoutes.ts
 import { Router } from "express";
 import { verifyToken } from "../middleware/verify-token";
 import { verifyUser } from "../middleware/verify-user";
 
 import { PaymentService } from "../services/payment/payment.service";
-import { PaymentController } from "../controllers/implementations/payment.controller";
+import { PaymentController } from "../controllers/payment/payment.controller";
 import { CourseService } from "../services/course/course.service";
 
 import { FileService } from "../services/file/file.service";
 import { TransactionRepository } from "../repositories/transaction/transaction.repository";
 import { CourseRepository } from "../repositories/course/course.repository";
-import { LectureRepository } from "../repositories/lecture/lecture.repository";
-import { SectionRepository } from "../repositories/section/section.repository";
+import { LectureRepository } from "../repositories/course/lecture/lecture.repository";
+import { SectionRepository } from "../repositories/course/section/section.repository";
 import { EnrollmentRepository } from "../repositories/enrollment/enrollment.repository";
-import { UserRepository } from "../repositories/user/user.repository";
 import { PaymentRepository } from "../repositories/payment/payment.repository";
 import { ReviewRepository } from "../repositories/review/review.repository";
 
@@ -25,7 +23,6 @@ const courseRepository = new CourseRepository();
 const lectureRepository = new LectureRepository();
 const sectionRepository = new SectionRepository();
 const enrollmentRepository = new EnrollmentRepository();
-const userRepository = new UserRepository();
 const paymentRepository=new PaymentRepository()
 const reviewRepository=new ReviewRepository()
 
@@ -36,7 +33,6 @@ const courseService = new CourseService(
   lectureRepository,
   sectionRepository,
   enrollmentRepository,
-  userRepository,
   fileService,
   reviewRepository
 );

@@ -12,6 +12,27 @@ export class UserRepository
   constructor() {
     super(UserModel);
   }
+  async addRedeemableCoins(
+    userId: string,
+    coinsToAdd: number,
+    session?: ClientSession
+  ): Promise<UserDocument | null> {
+    try {
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        userId,
+        { $inc: { redeemableCoins: coinsToAdd } },
+        { session, new: true }
+      );
+
+      return updatedUser;
+    } catch (error: unknown) {
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
   async addGoldCoins(
     userId: string,
     coinsToAdd: number,

@@ -12,9 +12,9 @@ import { IReviewRepository } from "../../repositories/review/review.interface";
 
 export class ReviewService implements IReviewService {
   constructor(
-    private reviewRepository: IReviewRepository,
-    private enrollmentRepository: IEnrollmentRepository,
-    private courseRepository: ICourseRepository
+    private readonly reviewRepository: IReviewRepository,
+    private readonly enrollmentRepository: IEnrollmentRepository,
+    private readonly courseRepository: ICourseRepository
   ) {}
 
   async addReview(

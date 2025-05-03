@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ReviewController } from "../controllers/implementations/review.controller";
+import { ReviewController } from "../controllers/review/review.controller";
 import { ReviewService } from "../services/review/review.service";
 
 import { verifyToken } from "../middleware/verify-token";
@@ -10,7 +10,11 @@ import { CourseRepository } from "../repositories/course/course.repository";
 
 const router = Router();
 
-// Dependency Injection
+/**
+ * Dependency Injection
+ * Initializes repositories and services for the Reviews bounded context.
+ */
+
 const reviewRepository = new ReviewRepository();
 const enrollmentRepository = new EnrollmentRepository();
 const courseRepository = new CourseRepository();
@@ -21,49 +25,51 @@ const reviewService = new ReviewService(
 );
 const reviewController = new ReviewController(reviewService);
 
-// Routes
+/**
+ * Routes for managing reviews in the Reviews bounded context.
+ */
 
-/* GET Routes */
-
-//get reviews of a course
+/**
+ * GET /reviews/course/:courseId
+ * Fetches all reviews for a specific course.
+ */
 router.get(
-  "/get/:courseId",
+  "/course/:courseId",
   reviewController.getReviewsOfCourse.bind(reviewController)
 );
 
-//get reviews of a student
+/**
+ * GET /reviews/student/:studentId
+ * Fetches all reviews submitted by a specific student.
+ */
 router.get(
   "/student/:studentId",
   reviewController.getReviewsByStudent.bind(reviewController)
 );
 
-/* POST Routes */
-
-//add a review
+/**
+ * POST /add-review
+ * Creates a new review for a course.
+ */
 router.post(
   "/add-review",
   verifyToken,
   verifyUser("student", "instructor", "admin"),
   reviewController.addReview.bind(reviewController)
 );
-/* PUT Routes */
 
-//edit a review
-router.put(
-  "/edit-review",
-  verifyToken,
-  verifyUser("student", "instructor", "admin"),
-  reviewController.editReview.bind(reviewController)
-);
-
-/* DELETE Routes */
-
-//delete review
-router.delete(
-  "/delete/:reviewId",
-  verifyToken,
-  verifyUser("student", "instructor", "admin"),
-  reviewController.deleteReview.bind(reviewController)
-);
+/**
+ * PUT /reviews/:reviewId
+ * Updates an existing review by its ID.
+ */
+router
+  .route("/:reviewId")
+  .all(verifyToken, verifyUser("student", "instructor", "admin"))
+  .put(reviewController.editReview.bind(reviewController))
+  /**
+   * DELETE /reviews/:reviewId
+   * Deletes a review by its ID.
+   */
+  .delete(reviewController.deleteReview.bind(reviewController));
 
 export default router;

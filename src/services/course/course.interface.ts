@@ -1,6 +1,4 @@
-import { CloudfrontSignedCookiesOutput } from "@aws-sdk/cloudfront-signer";
 import {
-  AddLectureResponse,
   CreateCourse,
   EditCourseLandingPagePayload,
   GetCourseAnalyticsResponse,
@@ -39,21 +37,6 @@ export interface ICourseService {
       updatedAt: string;
     }[]
   >;
-  markLectureAsCompleted(
-    id: string,
-    courseId: string,
-    lectureId: string
-  ): Promise<{ message: string } | null>;
-  editLecture(
-    lectureId: string,
-    lectureData: { title: string; videoUrl: string; duration: number },
-    id: string
-  ): Promise<{ message: "success" }>;
-  editSection(
-    sectionId: string,
-    sectionData: { title: string; description: string },
-    instructorId: string
-  ): Promise<{ id: string }>;
   getCurriculum(
     courseId: string,
     userId: string,
@@ -96,23 +79,6 @@ export interface ICourseService {
     limit:number
   }): Promise<GetCourses>;
   getCourseAnalytics(filter: "month" | "quarter" | "year",courseId:string,userId:string):Promise<GetCourseAnalyticsResponse>;
-  addSection(
-    section: { title: string; description: string },
-    courseId: string,
-    userId: string
-  ): Promise<{
-    id: string;
-    courseId: string;
-    title: string;
-    order: number;
-    description: string;
-  }>;
-  addLecture(
-    userId: string,
-    courseId: string,
-    sectionID: string,
-    lectureData: { title: string; videoUrl: string; duration: number }
-  ): Promise<AddLectureResponse>;
   getCoursesOfInstructor(
     instructorId: string,
     status: string
@@ -121,37 +87,8 @@ export interface ICourseService {
     instructorId: string,
     courseId: string
   ): Promise<{ message: string }>;
-  deleteLecture(
-    instructorId: string,
-    lectureId: string
-  ): Promise<{ message: string; status: "archived" | "deleted" }>;
-  deleteSection(
-    instructorId: string,
-    sectionId: string
-  ): Promise<{ message: string; status: "archived" | "deleted" }>;
   listCourse(
     instructorId: string,
     courseId: string
   ): Promise<{ message: string }>;
-  changeOrderOfLecture(
-    draggedLectureId: string,
-    targetLectureId: string,
-    id: string
-  ): Promise<{ message: "success" }>;
-  addLectureAfterProcessing(
-    userId: string,
-    courseId: string,
-    sectionId: string,
-    lectureId: string,
-    key: string
-  ): Promise<Boolean | void>;
-  generateLectureUrl(
-    courseId: string,
-    lectureId: string,
-    userId: string,
-    role: string
-  ): Promise<{
-    signedCookies: CloudfrontSignedCookiesOutput;
-    url: string;
-  }>;
 }

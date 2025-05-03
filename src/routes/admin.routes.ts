@@ -1,6 +1,5 @@
-// src/interfaces/routes/userRoutes.ts
 import { Router } from "express";
-import { AdminController } from "../controllers/implementations/admin.controller";
+import { AdminController } from "../controllers/admin/admin.controller";
 
 import { AdminService } from "../services/admin/admin.service";
 import { verifyToken } from "../middleware/verify-token";

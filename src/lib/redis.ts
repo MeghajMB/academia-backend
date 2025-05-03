@@ -1,7 +1,11 @@
 import Redis from "ioredis";
-import { redisConfig } from "../config/redis";
+import config from "../config/configuration";
 
-const redis = new Redis(redisConfig);
+const redis = new Redis({
+  host: config.redis.host || "127.0.0.1",
+  port: Number(config.redis.port) || 6379, // Default Redis port
+  maxRetriesPerRequest: null,
+});
 
 redis.on("connect", () => {
   console.log("Redis connected successfully");

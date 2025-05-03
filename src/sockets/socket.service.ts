@@ -8,16 +8,17 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { CustomJwtPayload } from "../types/jwt";
 import { UserRepository } from "../repositories/user/user.repository";
 import { GigRepository } from "../repositories/gig/gig.repository";
+import { SessionRepository } from "../repositories/session/session.repository";
 //intialize the class
 
 const userRepository = new UserRepository();
-const gigRepository = new GigRepository();
+const sessionRepository = new SessionRepository();
 
 export interface CustomSocket extends Socket {
   userId?: string;
   userName?: string;
   profilePicture?: string;
-  gigId?: string;
+  sessionId?: string;
 }
 
 class SocketService {
@@ -91,8 +92,9 @@ class SocketService {
       });
 
       /* Notification Events */
-      socket.on("registerUser", async (userId) => {
+      socket.on("registerUser", async (userId, callback) => {
         try {
+          console.log(userId);
           socket.join(userId);
           await this.subscribeToChannel(socket, `notifications:${userId}`);
           const notifications = await NotificationModel.find({
@@ -105,7 +107,7 @@ class SocketService {
             userId,
             isRead: false,
           });
-          socket.emit(`notifications`, {
+          callback({
             notifications,
             count: notificationCount,
           });
@@ -126,11 +128,11 @@ class SocketService {
       /**
        * In the joinGig event,validates and emits an event "routerCapabilities" with routercapabiities
        */
-      socket.on("joinGig", async ({ gigId, accessToken }, callback) => {
+      socket.on("joinSession", async ({ sessionId, accessToken }, callback) => {
         try {
           const mediasoupManager = this._mediasoupManager;
-    
-          if (socket.gigId == gigId) return;
+
+          if (socket.sessionId == sessionId) return;
 
           let decoded = jwt.verify(
             accessToken,
@@ -143,24 +145,32 @@ class SocketService {
           if (user?.isBlocked) {
             throw new Error("You are blocked");
           }
-          const gig = await gigRepository.findById(gigId);
-          if (!gig) {
-            throw new Error("No Gig Found");
+          const session = await sessionRepository.findById(sessionId);
+          if (!session) {
+            throw new Error("No Session Found");
           }
-          if (gig.currentBidder?.toString() != user._id.toString()) {
-            throw new Error("You dont have access to this gig");
+
+          if (session.instructorId.toString() != user._id.toString()) {
+            if (
+              !session.participants.find(
+                (value) => value.userId.toString() == user._id.toString()
+              )
+            )
+              throw new Error("You dont have access to this Session");
           }
-          const sessionEndTime = gig.sessionDate.getTime() + gig.sessionDuration * 60 * 1000;
-          if (gig.status !== 'expired' || sessionEndTime < Date.now()) {
+          const sessionEndTime =
+            session.sessionDate.getTime() + session.sessionDuration * 60 * 1000;
+          if (session.status !== "in-progress" || sessionEndTime < Date.now()) {
             throw new Error("Session is over");
           }
+
           socket.userId = decoded.id;
           socket.userName = user?.name;
-          socket.gigId = gigId;
+          socket.sessionId = sessionId;
           socket.profilePicture = user.profilePicture;
           /* Validation End */
-          const router = await mediasoupManager.getOrCreateRoomRouter(gigId);
-          socket.join(gigId);
+          const router = await mediasoupManager.getOrCreateRoomRouter(sessionId);
+          socket.join(sessionId);
           socket.emit("routerCapabilities", {
             routerRtpCapabilities: router.rtpCapabilities,
           });
@@ -176,21 +186,21 @@ class SocketService {
         "createTransport",
         async (
           {
-            gigId,
+            sessionId,
             transportType,
-          }: { gigId: string; transportType: "sender" | "consumer" },
+          }: { sessionId: string; transportType: "sender" | "consumer" },
           callback
         ) => {
           const mediasoupManager = this._mediasoupManager;
           try {
             const transportParams =
               await mediasoupManager.createWebRtcTransport(
-                gigId,
+                sessionId,
                 transportType,
                 socket.userId!
               );
             console.log(
-              "Transport create for" + gigId + "type" + transportType
+              "Transport create for" + sessionId + "type" + transportType
             );
             if (transportType == "sender") {
               socket.emit("sendTransportCreated", transportParams);
@@ -206,11 +216,11 @@ class SocketService {
       /* Connect the producer transport */
       socket.on(
         "connectProducerTransport",
-        async ({ gigId, dtlsParameters, transportId }, callback) => {
+        async ({ sessionId, dtlsParameters, transportId }, callback) => {
           const mediasoupManager = this._mediasoupManager;
           try {
             await mediasoupManager.connectProducerTransport({
-              gigId,
+              sessionId,
               transportId,
               dtlsParameters,
             });
@@ -231,7 +241,7 @@ class SocketService {
       socket.on(
         "transport-produce",
         async (
-          { gigId, transportId, kind, rtpParameters, appData },
+          { sessionId, transportId, kind, rtpParameters, appData },
           callback
         ) => {
           const mediasoupManager = this._mediasoupManager;
@@ -240,18 +250,18 @@ class SocketService {
             const userDetails = {
               userId: socket.userId!,
               userName: socket.userName!,
-              profilePicture:socket.profilePicture!
+              profilePicture: socket.profilePicture!,
             };
             /*  */
             const producer = await mediasoupManager.createProducer({
-              gigId,
+              sessionId,
               transportId,
               kind,
               rtpParameters,
               userDetails,
               appData,
             });
-            socket.to(gigId).emit("newProducer", {
+            socket.to(sessionId).emit("newProducer", {
               producerId: producer.id,
               userId: userDetails.userId,
               userName: userDetails.userName,
@@ -266,11 +276,11 @@ class SocketService {
       /* Connect consumer transport */
       socket.on(
         "connectConsumerTransport",
-        async ({ gigId, dtlsParameters, transportId }, callback) => {
+        async ({ sessionId, dtlsParameters, transportId }, callback) => {
           const mediasoupManager = this._mediasoupManager;
           try {
             await mediasoupManager.connectConsumer({
-              gigId,
+              sessionId,
               dtlsParameters,
               transportId,
             });
@@ -288,13 +298,13 @@ class SocketService {
       socket.on(
         "consumeMedia",
         async (
-          { gigId, consumerTransportId, producerId, rtpCapabilities },
+          { sessionId, consumerTransportId, producerId, rtpCapabilities },
           callback
         ) => {
           const mediasoupManager = this._mediasoupManager;
           try {
             const consumerInfo = await mediasoupManager.createConsumer({
-              gigId,
+              sessionId,
               consumerTransportId,
               producerId,
               rtpCapabilities,
@@ -309,15 +319,15 @@ class SocketService {
         }
       );
       /* This function resumes media reception if it was previously paused. */
-      socket.on("resumePausedConsumer", async ({ gigId, consumerId }) => {
+      socket.on("resumePausedConsumer", async ({ sessionId, consumerId }) => {
         const mediasoupManager = this._mediasoupManager;
         console.log("consume-resume");
-        await mediasoupManager.resumeConsumer({ gigId, consumerId });
+        await mediasoupManager.resumeConsumer({ sessionId, consumerId });
       });
 
       /* This event fetches all the producers */
-      socket.on("getProducers", ({ gigId }, callback) => {
-        const room = this._mediasoupManager.rooms[gigId];
+      socket.on("getProducers", ({ sessionId }, callback) => {
+        const room = this._mediasoupManager.rooms[sessionId];
         const producerDetails = Object.keys(room.producers).map(
           (producerId) => ({
             producerId,
@@ -333,13 +343,13 @@ class SocketService {
       /* This event is for pausing or resuming producers */
       socket.on(
         "producerStateChanged",
-        async ({ gigId, producerId, paused }, callback) => {
+        async ({ sessionId, producerId, paused }, callback) => {
           try {
             const metadata = await this._mediasoupManager.pauseOrResumeproducer(
-              { gigId, producerId, isPaused: paused }
+              { sessionId, producerId, isPaused: paused }
             );
 
-            socket.to(gigId).emit("producerStateChanged", {
+            socket.to(sessionId).emit("producerStateChanged", {
               producerId,
               paused,
               userId: metadata?.userId || "unknown",
@@ -348,7 +358,7 @@ class SocketService {
             });
           } catch (error: any) {
             console.error(
-              `Error in producerStateChanged: producerId=${producerId}, gigId=${gigId}`,
+              `Error in producerStateChanged: producerId=${producerId}, gigId=${sessionId}`,
               error
             );
           }
@@ -356,16 +366,16 @@ class SocketService {
       );
       /* This event is for disconnecting the media */
       socket.on("leaveGig", async () => {
-        const gigId = socket.gigId;
+        const sessionId = socket.sessionId;
         const userId = socket.userId;
-        if (!gigId || !userId) return;
+        if (!sessionId || !userId) return;
         const deletedProducers = await this._mediasoupManager.disconnectUser(
-          gigId,
+          sessionId,
           userId
         );
         for (let i = 0; i < deletedProducers.length; i++) {
           socket
-            .to(gigId)
+            .to(sessionId)
             .emit("producerClosed", { producerId: deletedProducers[i] });
         }
       });
@@ -380,13 +390,13 @@ class SocketService {
           }
         }
         //This is to handle the disconnect the videocall if the data is there
-        const gigId = socket.gigId;
+        const sessionId = socket.sessionId;
         const userId = socket.userId;
-        if (gigId && userId) {
+        if (sessionId && userId) {
           const deletedProducerIds =
-            await this._mediasoupManager.disconnectUser(gigId, userId);
+            await this._mediasoupManager.disconnectUser(sessionId, userId);
           deletedProducerIds.forEach((producerId) => {
-            socket.to(gigId).emit("producerClosed", { producerId });
+            socket.to(sessionId).emit("producerClosed", { producerId });
           });
         }
       });
@@ -398,7 +408,8 @@ class SocketService {
     redisPubSub.sub.on("message", async (channel, message) => {
       try {
         const data = JSON.parse(message);
-
+        console.log(data);
+        console.log(channel);
         if (channel.startsWith("bids:")) {
           const gigId = channel.split(":")[1];
           const topBids = await BidModel.find({ gigId })

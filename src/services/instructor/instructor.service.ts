@@ -11,11 +11,11 @@ import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.
 
 export class InstructorService {
   constructor(
-    private userRepository: IUserRepository,
-    private gigRepository: IGigRepository,
-    private courseRepository: ICourseRepository,
-    private transactionRepository: ITransactionRepository,
-    private enrollmentRepository: IEnrollmentRepository
+    private readonly userRepository: IUserRepository,
+    private readonly gigRepository: IGigRepository,
+    private readonly courseRepository: ICourseRepository,
+    private readonly transactionRepository: ITransactionRepository,
+    private readonly enrollmentRepository: IEnrollmentRepository
   ) {}
 
   async getProfile(userId: string) {
@@ -40,7 +40,7 @@ export class InstructorService {
         totalCourses: 0,
         totalStudents: 0,
         totalEarnings: 0,
-        avgerageRating: 0,
+        averageRating: 0,
         totalReviews: 0,
         reviewDistribution: {
           1: 0,
