@@ -3,14 +3,15 @@ import jwt from "jsonwebtoken";
 
 import passport from "passport";
 import { UserRepository } from "../repositories/user/user.repository";
+import config from "../config/configuration";
 
 const userRepository = new UserRepository();
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: `/api/auth/google/callback`,
+      clientID:config.google.clientId,
+      clientSecret:config.google.clientSecret,
+      callbackURL: `${config.app.backendUrl}/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {

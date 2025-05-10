@@ -23,6 +23,7 @@ export const envSchema = z.object({
 
   DOMAIN_NAME: z.string().min(1),
   CLIENT_URL: z.string().min(1),
+  BACKEND_URL:z.string().min(1),
 
   JWT_ACCESS_TOKEN_SECRET: z.string().min(1),
   JWT_REFRESH_TOKEN_SECRET: z.string().min(1),

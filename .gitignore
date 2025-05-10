@@ -1,4 +1,5 @@
 .env
 node_modules
 src/logs
-k8s
+infra/k8s/secrets
+dist

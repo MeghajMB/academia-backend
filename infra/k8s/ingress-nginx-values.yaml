@@ -1,0 +1,13 @@
+controller:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
+  service:
+    type: LoadBalancer
+    annotations:
+      networking.gke.io/load-balancer-type: External

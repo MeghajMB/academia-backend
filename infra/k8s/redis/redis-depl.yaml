@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: default
+  labels:
+    app: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-depl
+  namespace: default
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.2.5
+        ports:
+        - containerPort: 6379
+          name: redis
+        env:
+        - name: REDIS_APPENDONLY
+          value: "yes"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - PING
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-srv
+  namespace: default
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+  - name: redis
+    protocol: TCP
+    port: 6379
+    targetPort: 6379

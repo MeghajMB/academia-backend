@@ -1,0 +1,14 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: academia-backend-config
+  namespace: default
+spec:
+  healthCheck:
+    checkIntervalSec: 30
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+    type: HTTP
+    port: 3001
+    requestPath: /healthz
