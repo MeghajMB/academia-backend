@@ -1,5 +1,6 @@
-.env
-node_modules
-src/logs
 infra/k8s/secrets
-dist
+infra/helm
+node_modules/
+dist/
+.env
+logs/
