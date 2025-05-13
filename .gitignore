@@ -1,6 +1,16 @@
 infra/k8s/secrets
-infra/helm
+infra/helm/values.yaml
 node_modules/
 dist/
 .env
+.env.*  
 logs/
+secrets/
+#terraform
+terraform.tfvars
+*.tfstate
+*.tfstate.backup
+*.tfvars 
+*.tfvars.json
+.terraform
+*.auto.tfvars  
