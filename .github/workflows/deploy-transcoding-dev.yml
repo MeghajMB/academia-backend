@@ -1,0 +1,49 @@
+name: deploy-transcoding-dev
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'transcoding-dev/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate Docker Hub
+        run: docker login -u $DOCKER_USERNAME -p $DOCKERHUB_TOKEN
+        env:  
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Image
+        run: cd transcoding-dev && docker build -t $DOCKER_USERNAME/academia-transcoder:latest .
+
+      - name: Push Image
+        run: docker push $DOCKER_USERNAME/academia-transcoder:latest
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials $GCP_CLUSTER_NAME --region $GCP_REGION
+        env:  
+          GCP_CLUSTER_NAME: ${{ secrets.GCP_CLUSTER_NAME}}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+
+      - name: Rollout restart deployment
+        run: |
+          kubectl rollout restart deployment academia-transcoder-depl -n default
