@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: academia-main-depl
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: academia-main
+  template:
+    metadata:
+      labels:
+        app: academia-main
+    spec:
+      containers:
+      - name: academia-main
+        image: meghajmb/academia-main:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3001
+        envFrom:
+        - configMapRef:
+            name: academia-main-configs
+        - secretRef:
+            name: academia-main-secrets
+        resources:
+          limits:
+            cpu: "0.1"
+            memory: "400Mi"
+          requests:
+            cpu: "0.05"
+            memory: "200Mi"

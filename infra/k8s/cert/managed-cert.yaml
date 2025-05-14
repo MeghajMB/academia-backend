@@ -1,0 +1,8 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: academia-cert
+  namespace: default
+spec:
+  domains:
+  - api.academiaco.shop
