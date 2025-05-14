@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.main.deploymentName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.main.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.main.appLabel }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.main.appLabel }}
+    spec:
+      containers:
+      - name: {{ .Values.main.appLabel }}
+        image: {{ .Values.main.image.repository }}:{{ .Values.main.image.tag | default "latest" }}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: {{ .Values.main.servicePort }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.main.configMapName }}
+        - secretRef:
+            name: {{ .Values.main.secretName }}
+        resources:
+          limits:
+            cpu: {{ .Values.main.resources.limits.cpu }}
+            memory: {{ .Values.main.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.main.resources.requests.cpu }}
+            memory: {{ .Values.main.resources.requests.memory }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.main.serviceName }}
+  namespace: {{ .Values.namespace }}
+  annotations:
+    cloud.google.com/backend-config: '{"default": "{{ .Values.main.backendConfigName }}"}'
+spec:
+  selector:
+    app: {{ .Values.main.appLabel }}
+  ports:
+  - name: {{ .Values.main.appLabel }}
+    protocol: TCP
+    port: {{ .Values.main.servicePort }}
+    targetPort: {{ .Values.main.servicePort }}

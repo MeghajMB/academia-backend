@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: academia-main-ingress
+  namespace: default
+  labels:
+    app: academia-main
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/managed-certificates: academia-cert
+    kubernetes.io/ingress.regional-static-ip-name: academia-ip
+    kubernetes.io/ingress.allow-http: "true"
+spec:
+  rules:
+    - host: api.academiaco.shop
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: academia-main-srv
+                port:
+                  number: 3001

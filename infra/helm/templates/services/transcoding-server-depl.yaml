@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.transcoder.deploymentName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.transcoder.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.transcoder.appLabel }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.transcoder.appLabel }}
+    spec:
+      containers:
+      - name: {{ .Values.transcoder.appLabel }}
+        image: {{ .Values.transcoder.image.repository }}:{{ .Values.transcoder.image.tag | default "latest" }}
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.transcoder.configMapName }}
+        - secretRef:
+            name: {{ .Values.transcoder.secretName }}
+        resources:
+          limits:
+            cpu: {{ .Values.transcoder.resources.limits.cpu }}
+            memory: {{ .Values.transcoder.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.transcoder.resources.requests.cpu }}
+            memory: {{ .Values.transcoder.resources.requests.memory }}
