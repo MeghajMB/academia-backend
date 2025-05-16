@@ -14,12 +14,13 @@ import { StatusCode } from "./enums/status-code.enum";
 
 //jobs
 import "./jobs/delete-expired-lectures";
+import config from "./config/configuration";
 
 const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: config.app.clientUrl,
     credentials: true,
     methods: ["POST","PATCH", "PUT", "GET", "OPTIONS", "HEAD", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],

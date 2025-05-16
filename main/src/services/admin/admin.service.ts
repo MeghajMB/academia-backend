@@ -3,9 +3,7 @@ import { ICategoryRepository } from "../../repositories/category/category.interf
 import { ICourseRepository } from "../../repositories/course/course.interface";
 import { IAdminService } from "./admin.interface";
 import { AppError } from "../../util/errors/app-error";
-import { NotFoundError } from "../../util/errors/not-found-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-import { redis } from "../../lib/redis";
 import { StatusCode } from "../../enums/status-code.enum";
 import { INotificationService } from "../notification/notification.interface";
 import {
@@ -15,13 +13,16 @@ import {
   GetUsersParams,
   RejectVerificationRequestParams,
 } from "./admin.types";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class AdminService implements IAdminService {
   constructor(
-    private readonly userRepository: IUserRepository,
-    private readonly categoryRepository: ICategoryRepository,
-    private readonly courseRepository: ICourseRepository,
-    private readonly notificationService: INotificationService
+    @inject(Types.userRepository) private readonly userRepository: IUserRepository,
+    @inject(Types.CategoryRepository) private readonly categoryRepository: ICategoryRepository,
+    @inject(Types.CourseRepository) private readonly courseRepository: ICourseRepository,
+    @inject(Types.NotificationService) private readonly notificationService: INotificationService
   ) {}
 
   async getUsers({ role, page, limit, search }: GetUsersParams) {
@@ -49,7 +50,7 @@ export class AdminService implements IAdminService {
       throw error;
     }
   }
-  
+
   async getCourses({
     page,
     limit,
@@ -164,6 +165,14 @@ export class AdminService implements IAdminService {
     const totalDocuments = await this.categoryRepository.countAll();
     const categories =
       await this.categoryRepository.fetchCategoryWithPagination(skip, limit);
+    const updatedCategories = categories.map((category) => {
+      return {
+        id: category._id.toString(),
+        name: category.name,
+        description: category.description,
+        isBlocked: category.isBlocked,
+      };
+    });
     const pagination = {
       totalDocuments,
       totalPages: Math.ceil(totalDocuments / limit),
@@ -171,120 +180,9 @@ export class AdminService implements IAdminService {
       limit,
     };
 
-    return { categories, pagination };
+    return { categories: updatedCategories, pagination };
   }
 
-  async blockUser(userId: string) {
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new NotFoundError();
-    }
-    await this.userRepository.update(
-      userId,
-      { isBlocked: !user.isBlocked },
-      {}
-    );
-    if (user.isBlocked) {
-      await redis.del(`refreshToken:${user.id}`);
-    }
-    return { message: user.isBlocked ? "User blocked" : "User unblocked" };
-  }
-  
-  async blockOrUnblockCourse(id: string) {
-    try {
-      const course = await this.courseRepository.toggleCourseStatus(id);
-      if (!course) {
-        throw new AppError("Course not found", StatusCode.NOT_FOUND);
-      }
-      return {
-        message: course.isBlocked ? "Course blocked" : "Course unblocked",
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async blockCategory(categoryId: string) {
-    try {
-      const category = await this.categoryRepository.findById(categoryId);
-      if (!category) {
-        throw new NotFoundError("Category Not Found");
-      }
-      category.isBlocked = !category.isBlocked;
-      await this.categoryRepository.update(
-        categoryId,
-        { isBlocked: !category.isBlocked },
-        {}
-      );
-      return {
-        message: category.isBlocked ? "Category blocked" : "Category unblocked",
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async createCategory(category: { name: string; description: string }) {
-    try {
-      const existingCategory = await this.categoryRepository.findByName(
-        category.name
-      );
-      if (existingCategory) {
-        throw new AppError("Category already exists", StatusCode.CONFLICT);
-      }
-      const newCategory = await this.categoryRepository.createCategory(
-        category
-      );
-      return newCategory;
-    } catch (error) {
-      throw error;
-    }
-  }
-  
-  async editCategory(
-    category: { name: string; description: string },
-    categoryId: string
-  ) {
-    try {
-      const existingCategory = await this.categoryRepository.findById(
-        categoryId
-      );
-
-      if (!existingCategory) {
-        throw new AppError("Category doesn't exist", StatusCode.NOT_FOUND);
-      }
-
-      // Check if another category already exists with the same name
-      const duplicateCategory = await this.categoryRepository.findByName(
-        category.name
-      );
-
-      if (duplicateCategory && duplicateCategory.id !== categoryId) {
-        throw new AppError(
-          "Category with this name already exists",
-          StatusCode.CONFLICT
-        );
-      }
-      // Update the category
-      const updatedCategory = await this.categoryRepository.update(
-        categoryId,
-        category,
-        {}
-      );
-      if (!updatedCategory) {
-        throw new AppError("Category not found", StatusCode.NOT_FOUND);
-      }
-      return {
-        id: updatedCategory._id.toString(),
-        name: updatedCategory.name,
-        description: updatedCategory.description,
-        isBlocked: updatedCategory.isBlocked,
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-  
   async getCourseReviewRequests(page: number, limit: number) {
     try {
       const skip = (page - 1) * limit;
@@ -323,7 +221,7 @@ export class AdminService implements IAdminService {
       throw error;
     }
   }
-  
+
   async rejectCourseReviewRequest(rejectReason: string, courseId: string) {
     try {
       const course = await this.courseRepository.rejectCourseReviewRequest(

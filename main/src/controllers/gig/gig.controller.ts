@@ -18,19 +18,27 @@ import {
   GetGigByIdResponseSchema,
   GetGigsOfInstructorResponseSchema,
   UpdateGigResponseSchema,
-} from "./response.dto";
+} from "@academia-dev/common";
 import { IGigController } from "./gig.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class GigController implements IGigController {
-  private pageLimit=10;
-  constructor(private readonly gigService: GigService) {}
+  private pageLimit = 10;
+  constructor(
+    @inject(Types.GigService) private readonly gigService: GigService
+  ) {}
 
   async getGigsOfInstructor(req: Request, res: Response, next: NextFunction) {
     try {
-      const payload = GetGigsOfInstructorRequestSchema.parse({...req.query,limit:this.pageLimit});
+      const payload = GetGigsOfInstructorRequestSchema.parse({
+        ...req.query,
+        limit: this.pageLimit,
+      });
       const userId = req.verifiedUser!.id;
 
-      const gig = await this.gigService.getAllGigsOfInstructor(payload,userId);
+      const gig = await this.gigService.getAllGigsOfInstructor(payload, userId);
       const response = GetGigsOfInstructorResponseSchema.parse({
         status: "success",
         code: StatusCode.CREATED,

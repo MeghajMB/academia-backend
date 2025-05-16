@@ -10,7 +10,7 @@ export interface ICategoryRepository extends IRepository<CategoryDocument> {
   fetchCategoryWithPagination(
     skip: number,
     limit: number
-  ): Promise<CategoryDocument[] | null>;
+  ): Promise<CategoryDocument[]>;
   findByName(name: string): Promise<CategoryDocument | null>;
   updateCategory(
     categoryId: string,

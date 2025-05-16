@@ -1,6 +1,6 @@
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { ICourseRepository } from "../../repositories/course/course.interface";
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 import { FileService } from "../file/file.service";
 import { AppError } from "../../util/errors/app-error";
 import { StatusCode } from "../../enums/status-code.enum";
@@ -24,14 +24,22 @@ import {
 import { Enrollment } from "../../repositories/enrollment/enrollment.types";
 import { GetCoursesRequestDTO } from "../../controllers/course/request.dto";
 import { IReviewRepository } from "../../repositories/review/review.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class CourseService implements ICourseService {
   constructor(
+    @inject(Types.CourseRepository)
     private readonly courseRepository: ICourseRepository,
+    @inject(Types.LectureRepository)
     private readonly lectureRepository: ILectureRepository,
+    @inject(Types.SectionRepository)
     private readonly sectionRepository: ISectionRepository,
+    @inject(Types.EnrollmentRepository)
     private readonly enrollmentRepository: IEnrollmentRepository,
-    private readonly fileService: FileService,
+    @inject(Types.FileService) private readonly fileService: FileService,
+    @inject(Types.ReviewRepository)
     private readonly reviewRepository: IReviewRepository
   ) {}
   async getCourseAnalytics(
@@ -119,8 +127,8 @@ export class CourseService implements ICourseService {
       }
       const updatedCourseData = {
         ...courseData,
-        userId: new Types.ObjectId(userId),
-        category: new Types.ObjectId(courseData.category),
+        userId: new mongoose.Types.ObjectId(userId),
+        category: new mongoose.Types.ObjectId(courseData.category),
       };
       const newCourse = await this.courseRepository.create(updatedCourseData);
 
@@ -231,9 +239,9 @@ export class CourseService implements ICourseService {
   ): Promise<EnrollmentDocument> {
     try {
       const listedCourse = await this.enrollmentRepository.create({
-        courseId: new Types.ObjectId(courseId),
-        studentId: new Types.ObjectId(userId),
-        transactionId: new Types.ObjectId(transactionId),
+        courseId: new mongoose.Types.ObjectId(courseId),
+        studentId: new mongoose.Types.ObjectId(userId),
+        transactionId: new mongoose.Types.ObjectId(transactionId),
       });
       return listedCourse;
     } catch (error) {
@@ -349,7 +357,7 @@ export class CourseService implements ICourseService {
           StatusCode.FORBIDDEN
         );
       }
-      let updatedData: {
+      const updatedData: {
         category: mongoose.Types.ObjectId;
         description: string;
         price: number;
@@ -500,9 +508,9 @@ export class CourseService implements ICourseService {
       const enrolledCourses = await this.enrollmentRepository.findByStudentId(
         studentId
       );
-      let updatedEnrolledCourses = await Promise.all(
+      const updatedEnrolledCourses = await Promise.all(
         enrolledCourses.map(async (enrolledCourse) => {
-          let imageUrl = await this.fileService.generateGetSignedUrl(
+          const imageUrl = await this.fileService.generateGetSignedUrl(
             enrolledCourse.courseId.imageThumbnail
           );
           return {
@@ -584,7 +592,7 @@ export class CourseService implements ICourseService {
               status == "instructor"
                 ? "instructor"
                 : enrolledCourse?.progress.completedLectures.includes(
-                    lecture._id as Types.ObjectId
+                    lecture._id as mongoose.Types.ObjectId
                   )
                 ? "completed"
                 : "not completed",
@@ -610,7 +618,9 @@ export class CourseService implements ICourseService {
     ) {
       throw new BadRequestError("enter a valid status");
     }
-    let filter: { userId: string; status?: string } = { userId: instructorId };
+    const filter: { userId: string; status?: string } = {
+      userId: instructorId,
+    };
 
     if (status !== "all") {
       filter.status = status;
@@ -697,4 +707,19 @@ export class CourseService implements ICourseService {
       throw error;
     }
   }
+  
+    async blockOrUnblockCourse(id: string) {
+    try {
+      const course = await this.courseRepository.toggleCourseStatus(id);
+      if (!course) {
+        throw new AppError("Course not found", StatusCode.NOT_FOUND);
+      }
+      return {
+        message: course.isBlocked ? "Course blocked" : "Course unblocked",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
 }

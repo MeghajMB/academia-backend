@@ -6,7 +6,9 @@ import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { ReviewWithPopulatedStudentId } from "./review.types";
 import { UserDocument } from "../../models/user.model";
+import { injectable } from "inversify";
 
+@injectable()
 export class ReviewRepository
   extends BaseRepository<ReviewDocument>
   implements IReviewRepository

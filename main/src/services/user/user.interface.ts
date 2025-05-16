@@ -1,6 +1,6 @@
-import { IUserResult } from "../../repositories/user/user.types";
-
+import { UserProfileResponse } from "./user.types";
 
 export interface IUserService {
-  getProfile(userId: string): Promise<IUserResult>;
+  getProfile(userId: string): Promise<UserProfileResponse>;
+  blockUser(id: string): Promise<{ message: string }>;
 }

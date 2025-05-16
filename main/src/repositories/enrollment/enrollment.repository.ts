@@ -12,7 +12,9 @@ import {
   Enrollment,
   EnrollmentWithCourse,
 } from "./enrollment.types";
+import { injectable } from "inversify";
 
+@injectable()
 export class EnrollmentRepository
   extends BaseRepository<EnrollmentDocument>
   implements IEnrollmentRepository

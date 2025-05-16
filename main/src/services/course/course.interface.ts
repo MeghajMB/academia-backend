@@ -76,9 +76,13 @@ export interface ICourseService {
     sort?: string;
     page?: string;
     search?: string;
-    limit:number
+    limit: number;
   }): Promise<GetCourses>;
-  getCourseAnalytics(filter: "month" | "quarter" | "year",courseId:string,userId:string):Promise<GetCourseAnalyticsResponse>;
+  getCourseAnalytics(
+    filter: "month" | "quarter" | "year",
+    courseId: string,
+    userId: string
+  ): Promise<GetCourseAnalyticsResponse>;
   getCoursesOfInstructor(
     instructorId: string,
     status: string
@@ -91,4 +95,5 @@ export interface ICourseService {
     instructorId: string,
     courseId: string
   ): Promise<{ message: string }>;
+  blockOrUnblockCourse(id: string): Promise<{ message: string }>;
 }

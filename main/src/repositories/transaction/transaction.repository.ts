@@ -8,10 +8,11 @@ import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   AggregatedEarnings,
-  getInstructorEarningsRepositoryResponse,
 } from "./transaction.types";
 import { Types } from "mongoose";
+import { injectable } from "inversify";
 
+@injectable()
 export class TransactionRepository
   extends BaseRepository<TransactionDocument>
   implements ITransactionRepository

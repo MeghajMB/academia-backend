@@ -8,13 +8,19 @@ import {
 import {
   AddSectionResponseSchema,
   EditSectionResponseSchema,
-} from "./response.dto";
+  NullResponseSchema,
+} from "@academia-dev/common";
 import { ISectionController } from "./section.interface";
 import { ISectionService } from "../../../services/course/section/section.interface";
-import { NullResponseSchema } from "../../shared-response.dto";
+import { inject, injectable } from "inversify";
+import { Types } from "../../../container/types";
 
+@injectable()
 export class SectionController implements ISectionController {
-  constructor(private readonly sectionService: ISectionService) {}
+  constructor(
+    @inject(Types.SectionService)
+    private readonly sectionService: ISectionService
+  ) {}
 
   async addSection(
     req: Request,

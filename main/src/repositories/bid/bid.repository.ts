@@ -4,7 +4,9 @@ import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { BaseRepository } from "../base/base.repository";
 import { IBidRepository } from "./bid.interface";
+import { injectable } from "inversify";
 
+@injectable()
 export class BidRepository
   extends BaseRepository<BidDocument>
   implements IBidRepository

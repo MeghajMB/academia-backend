@@ -10,7 +10,6 @@ export interface RefreshTokenParams {
     email: string;
     refreshToken: string;
     verified: string;
-    goldCoin: number;
     profilePicture: string;
   }
   
@@ -81,7 +80,6 @@ export interface RefreshTokenParams {
     id: string;
     email: string;
     profilePicture:string;
-    goldCoin:number;
     verified:string
   }
   

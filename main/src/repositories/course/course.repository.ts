@@ -13,7 +13,9 @@ import {
   getAnalyticsSummaryResponse,
 } from "./course.types";
 import { CategoryDocument } from "../../models/categoy.model";
+import { injectable } from "inversify";
 
+@injectable()
 export class CourseRepository
   extends BaseRepository<CourseDocument>
   implements ICourseRepository
@@ -650,7 +652,7 @@ export class CourseRepository
   }
 
   async fetchPaginatedCoursesWithFilters(
-    filters: { [key: string]: any },
+    filters: Record<string, any>,
     skip: number,
     limit: number
   ): Promise<CourseWithPopulatedCategory[]> {

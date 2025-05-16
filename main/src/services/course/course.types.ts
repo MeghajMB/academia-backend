@@ -152,7 +152,7 @@ export interface AddLectureResponse {
   progress: string;
 }
 
-export type GetCourseAnalyticsResponse = {
+export interface GetCourseAnalyticsResponse {
   courseMetrics: {
     enrollments: { count: number; averageProgress: number; date: string }[];
     transactions: { totalAmount: number; date: string }[];
@@ -171,4 +171,4 @@ export type GetCourseAnalyticsResponse = {
       5: number;
     };
   };
-};
+}

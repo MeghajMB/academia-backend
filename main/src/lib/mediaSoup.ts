@@ -1,31 +1,24 @@
 import * as mediasoup from "mediasoup";
 import os from "os";
+import config from "../config/configuration";
 
 class MediasoupManager {
   public workers: mediasoup.types.Worker<mediasoup.types.AppData>[];
   public nextWorkerIndex: number;
-  public rooms: {
-    [roomId: string]: {
+  public rooms: Record<string, {
       router: mediasoup.types.Router<mediasoup.types.AppData>;
-      consumerTransports: {
-        [transportId: string]: mediasoup.types.WebRtcTransport;
-      };
-      producerTransports: {
-        [transportId: string]: mediasoup.types.WebRtcTransport;
-      };
-      producers: { [producerId: string]: mediasoup.types.Producer };
-      producerMetadata: {
-        [producerId: string]: {
+      consumerTransports: Record<string, mediasoup.types.WebRtcTransport>;
+      producerTransports: Record<string, mediasoup.types.WebRtcTransport>;
+      producers: Record<string, mediasoup.types.Producer>;
+      producerMetadata: Record<string, {
           userId: string;
           userName: string; // Display name
           profilePicture:string;
           kind: "audio" | "video"; // Track type
           type?: "camera" | "screen" | "mic";
-        };
-      };
-      consumers: { [consumerId: string]: mediasoup.types.Consumer };
-    };
-  };
+        }>;
+      consumers: Record<string, mediasoup.types.Consumer>;
+    }>;
 
   constructor() {
     this.workers = [];
@@ -106,7 +99,7 @@ class MediasoupManager {
     if (!room) {
       throw new Error(`Gig ${sessionId} does not exist`);
     }
-    const PUBLIC_IP = process.env.PUBLIC_IP || "127.0.0.1";
+    const PUBLIC_IP = config.app.publicIp;
     const transport = await room.router.createWebRtcTransport({
       listenIps: [{ ip: "0.0.0.0", announcedIp: PUBLIC_IP }],
       enableUdp: true,
@@ -402,4 +395,4 @@ class MediasoupManager {
   }
 }
 
-export default MediasoupManager;
+export const mediasoupManager=new MediasoupManager();

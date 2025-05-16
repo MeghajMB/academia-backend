@@ -33,9 +33,17 @@ import {
   VerifyResetOtpParams,
   VerifyResetOtpResponse,
 } from "./auth.types";
+import { IWalletRepository } from "../../repositories/wallet/wallet.interface";
+import mongoose from "mongoose";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class AuthService implements IAuthService {
-  constructor(private readonly userRepository: IUserRepository) {}
+  constructor(
+    @inject(Types.userRepository) private readonly userRepository: IUserRepository,
+    @inject(Types.WalletRepository) private readonly walletRepository: IWalletRepository
+  ) {}
 
   async refreshToken({
     refreshToken,
@@ -72,7 +80,6 @@ export class AuthService implements IAuthService {
         name: user.name,
         email: user.email,
         verified: user.verified,
-        goldCoin: Number(user.goldCoin),
         profilePicture: user.profilePicture,
       };
     } catch (error) {
@@ -92,14 +99,14 @@ export class AuthService implements IAuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let secret = authenticator.generateSecret();
-    let token = authenticator.generate(secret);
+    const secret = authenticator.generateSecret();
+    const token = authenticator.generate(secret);
 
     const tempUser = { name, email, password: hashedPassword };
     console.log("The otp is ", token);
     // sending email
 
-    let mailOptions = {
+    const mailOptions = {
       from: `info@demomailtrap.com`,
       to: email,
       subject: "Verification Code",
@@ -132,7 +139,7 @@ export class AuthService implements IAuthService {
   async saveUser({ email, otp }: SaveUserParams): Promise<SaveUserResponse> {
     const data = await redis.get(`tempUser:${email}`);
     const storedOtp = await redis.get(`otp:${email}`);
-
+    
     if (!data) {
       throw new AppError("SignIn Again", StatusCode.NOT_FOUND);
     }
@@ -142,22 +149,42 @@ export class AuthService implements IAuthService {
     if (storedOtp !== otp) {
       throw new AppError("Incorrect OTP", 404);
     }
-    const tempUser = await JSON.parse(data);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const tempUser = (await JSON.parse(data)) as {
+        name: string;
+        email: string;
+        password: string;
+      };
 
-    const user = await this.userRepository.create(tempUser);
-    await redis.del(`tempUser:${email}`);
-
-    return { message: "User Created Successfully" };
+      const user = await this.userRepository.createUserWithSession(
+        tempUser,
+        session
+      );
+      const wallet = await this.walletRepository.createWallet(
+        user._id,
+        session
+      );
+      await redis.del(`tempUser:${email}`);
+      await session.commitTransaction();
+      return { message: "User Created Successfully" };
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   }
 
   async sendOtp({ email }: SendOtpParams): Promise<SendOtpResponse> {
-    let secret = authenticator.generateSecret();
-    let token = authenticator.generate(secret);
+    const secret = authenticator.generateSecret();
+    const token = authenticator.generate(secret);
 
     console.log("The otp is ", token);
     // sending email
 
-    let mailOptions = {
+    const mailOptions = {
       from: `info@demomailtrap.com`,
       to: email,
       subject: "Verification Code",
@@ -305,7 +332,7 @@ export class AuthService implements IAuthService {
       60 * 60 * 24
     );
 
-    const { name, role, id, email, verified, profilePicture, goldCoin } = user;
+    const { name, role, id, email, verified, profilePicture } = user;
     return {
       accessToken,
       refreshToken,
@@ -315,7 +342,6 @@ export class AuthService implements IAuthService {
       email,
       verified,
       profilePicture,
-      goldCoin: Number(goldCoin),
     };
   }
 

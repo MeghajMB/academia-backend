@@ -1,23 +1,22 @@
 import { Router } from "express";
-import authRoutes from "./auth.routes";
-import adminRoutes from "./admin.routes";
-import instructorRoutes from "./instructor.routes";
-import userRoutes from "./user.routes";
-import categoryRoutes from "./category.routes";
-import courseRoutes from "./course/course.routes";
-import sectionRoutes from './course/section.routes'
-import lectureRoutes from './course/lecture.routes'
-import fileRoutes from "./file.routes";
-import paymentRoutes from "./payment.routes";
-import reviewRoutes from "./review.routes";
-import gigRoutes from "./gig.routes";
-import bidRoutes from "./bid.routes";
-import notificationRoutes from "./notifcation.routes";
-import coinRoutes from "./coin.routes";
+import authRoutes from "./modules/auth.routes";
+import adminRoutes from "./modules/admin.routes";
+import instructorRoutes from "./modules/instructor.routes";
+import userRoutes from "./modules/user.routes";
+import categoryRoutes from "./modules/category.routes";
+import courseRoutes from "./modules/course/course.routes";
+import sectionRoutes from './modules/course/section.routes'
+import lectureRoutes from './modules/course/lecture.routes'
+import fileRoutes from "./modules/file.routes";
+import paymentRoutes from "./modules/payment.routes";
+import reviewRoutes from "./modules/review.routes";
+import gigRoutes from "./modules/gig.routes";
+import bidRoutes from "./modules/bid.routes";
+import notificationRoutes from "./modules/notifcation.routes";
+import coinRoutes from "./modules/coin.routes";
 
 const router = Router();
 
-// Mount all routes under their respective API paths
 router.use("/auth", authRoutes);
 router.use("/admin", adminRoutes);
 router.use("/instructor", instructorRoutes);

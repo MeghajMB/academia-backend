@@ -18,16 +18,7 @@ export interface IAdminController {
     res: Response,
     next: NextFunction
   ): Promise<void>;
-  blockUser(req: Request, res: Response, next: NextFunction): Promise<void>;
-  blockCourse(req: Request, res: Response, next: NextFunction): Promise<void>;
   getCategories(req: Request, res: Response, next: NextFunction): Promise<void>;
-  createCategory(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void>;
-  editCategory(req: Request, res: Response, next: NextFunction): Promise<void>;
-  blockCategory(req: Request, res: Response, next: NextFunction): Promise<void>;
   getCourseReviewRequests(
     req: Request,
     res: Response,

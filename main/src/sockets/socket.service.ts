@@ -3,13 +3,12 @@ import { redisPubSub } from "../lib/redisPubSub";
 import { IncomingMessage, ServerResponse, Server as HttpServer } from "http";
 import { BidModel } from "../models/bid.model";
 import { NotificationModel } from "../models/notification.model";
-import MediasoupManager from "../lib/mediaSoup";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import {mediasoupManager} from "../lib/mediaSoup";
+import jwt from "jsonwebtoken";
 import { CustomJwtPayload } from "../types/jwt";
 import { UserRepository } from "../repositories/user/user.repository";
-import { GigRepository } from "../repositories/gig/gig.repository";
 import { SessionRepository } from "../repositories/session/session.repository";
-//intialize the class
+import config from "../config/configuration";
 
 const userRepository = new UserRepository();
 const sessionRepository = new SessionRepository();
@@ -23,20 +22,20 @@ export interface CustomSocket extends Socket {
 
 class SocketService {
   private _io: Server;
-  private _socketSubscriptionMap: Map<string, Set<string>> = new Map();
-  private _mediasoupManager: MediasoupManager;
+  private _socketSubscriptionMap = new Map<string, Set<string>>();
+  private _mediasoupManager: typeof mediasoupManager;
 
   constructor(
     server: HttpServer<typeof IncomingMessage, typeof ServerResponse>
   ) {
     this._io = new Server(server, {
       cors: {
-        origin: process.env.CLIENT_URL,
+        origin: config.app.clientUrl,
         methods: ["GET", "POST"],
         credentials: true,
       },
     });
-    this._mediasoupManager = new MediasoupManager();
+    this._mediasoupManager = mediasoupManager
     this.listenForConnections();
     this.listenForRedisMessages();
   }
@@ -134,7 +133,7 @@ class SocketService {
 
           if (socket.sessionId == sessionId) return;
 
-          let decoded = jwt.verify(
+          const decoded = jwt.verify(
             accessToken,
             process.env.JWT_ACCESS_TOKEN_SECRET!
           ) as CustomJwtPayload;

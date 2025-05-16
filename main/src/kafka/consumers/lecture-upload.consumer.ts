@@ -7,10 +7,12 @@ import { UserRepository } from "../../repositories/user/user.repository";
 import { FileService } from "../../services/file/file.service";
 import { LectureMessage } from "../types";
 import { LectureService } from "../../services/course/lecture/lecture.service";
+import { WalletRepository } from "../../repositories/wallet/wallet.repository";
+import config from "../../config/configuration";
 
 const kafka = new Kafka({
-  clientId: process.env.KAFKA_CLIENT_ID,
-  brokers: [process.env.KAFKA_BROKER!],
+  clientId: config.kafka.clientId,
+  brokers: [config.kafka.broker],
 });
 
 const consumer = kafka.consumer({ groupId: "lecture-uploaded-group" });
@@ -18,6 +20,7 @@ const consumer = kafka.consumer({ groupId: "lecture-uploaded-group" });
 const courseRepository = new CourseRepository();
 const lectureRepository = new LectureRepository();
 const enrollmentRepository = new EnrollmentRepository();
+const walletRepository=new WalletRepository()
 const userRepository = new UserRepository();
 
 const fileService = new FileService();
@@ -27,7 +30,8 @@ const lectureService = new LectureService(
   lectureRepository,
   enrollmentRepository,
   userRepository,
-  fileService
+  fileService,
+  walletRepository
 );
 export async function lectureUploadedConsumer() {
   await consumer.connect();

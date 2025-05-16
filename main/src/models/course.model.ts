@@ -32,7 +32,7 @@ export interface CourseDocument extends Document {
   updatedAt: Date;
 }
 
-const CourseSchema: Schema<CourseDocument> = new Schema(
+const CourseSchema: Schema<CourseDocument> = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,

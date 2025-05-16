@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export type TransactionStatus = "pending" | "success" | "failed";
-export type PurchaseType = "course" | "service" | "coins";
+type TransactionStatus = "pending" | "success" | "failed";
+type PurchaseType = "course" | "service" | "coins";
 
 export interface TransactionDocument extends Document {
    _id: mongoose.Types.ObjectId;

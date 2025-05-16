@@ -55,7 +55,7 @@ export interface ICourseRepository extends IRepository<CourseDocument> {
   ): Promise<CourseWithPopulatedFields | null>;
   countDocuments(key: string, value: string): Promise<number>;
   fetchPaginatedCoursesWithFilters(
-    filters: { [key: string]: any },
+    filters: Record<string, any>,
     skip: number,
     limit: number
   ): Promise<CourseWithPopulatedCategory[]>;

@@ -9,7 +9,9 @@ import {
   getGigMetricsRepositoryResponse,
   GigWithInstructorData,
 } from "./gig.types";
+import { injectable } from "inversify";
 
+@injectable()
 export class GigRepository
   extends BaseRepository<GigDocument>
   implements IGigRepository

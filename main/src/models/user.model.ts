@@ -5,13 +5,11 @@ export interface UserDocument extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   email: string;
-  role: "student" | "instructor";
+  role: "student" | "instructor"|"admin";
   password: string;
   phoneNo: number;
   isBlocked: boolean;
-  purpleCoin: Number;
-  goldCoin: Number;
-  redeemableCoins: number;
+  purpleCoin: number;
   profilePicture: string;
   googleId: string;
   headline?: string;
@@ -28,19 +26,17 @@ export interface UserDocument extends Document {
   updatedAt: Date;
 }
 
-const UserSchema: Schema<UserDocument> = new Schema(
+const UserSchema: Schema<UserDocument> = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     role: {
       type: String,
       required: true,
-      enum: ["student", "instructor"],
+      enum: ["student", "instructor","admin"],
       default: "student",
     },
     purpleCoin: { type: Number, default: 0, required: true },
-    goldCoin: { type: Number, default: 0, required: true },
-    redeemableCoins: { type: Number, default: 0, required: true },
     password: { type: String },
     phoneNo: { type: Number },
     isBlocked: { type: Boolean, required: true, default: false },

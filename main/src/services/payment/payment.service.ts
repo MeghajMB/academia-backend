@@ -4,17 +4,25 @@ import { IPaymentService } from "./payment.interface";
 import { ICourseRepository } from "../../repositories/course/course.interface";
 import crypto from "crypto";
 import { ICourseService } from "../course/course.interface";
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 import { TransactionRepository } from "../../repositories/transaction/transaction.repository";
 import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.interface";
 import { IPaymentRepository } from "../../repositories/payment/payment.interface";
+import config from "../../config/configuration";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class PaymentService implements IPaymentService {
   constructor(
+    @inject(Types.TransactionRepository)
     private readonly transactionRepository: TransactionRepository,
+    @inject(Types.CourseRepository)
     private readonly courseRepository: ICourseRepository,
-    private readonly courseService: ICourseService,
+    @inject(Types.CourseService) private readonly courseService: ICourseService,
+    @inject(Types.EnrollmentRepository)
     private readonly enrollmentRepository: IEnrollmentRepository,
+    @inject(Types.PaymentRepository)
     private readonly paymentRepository: IPaymentRepository
   ) {}
 
@@ -31,12 +39,12 @@ export class PaymentService implements IPaymentService {
     itemId: string,
     type: string,
     userId: string
-  ):Promise<{
+  ): Promise<{
     id: string;
-    amount: string |number;
+    amount: string | number;
     currency: string;
     paymentId: string;
-}> {
+  }> {
     try {
       let amount: number;
       switch (type) {
@@ -59,7 +67,7 @@ export class PaymentService implements IPaymentService {
           throw new BadRequestError("Provide adequate details");
       }
 
-      let options = {
+      const options = {
         amount: amount * 100,
         currency: "INR",
         receipt: `txn_${Date.now()}`,
@@ -70,9 +78,9 @@ export class PaymentService implements IPaymentService {
 
       const payment = await this.paymentRepository.create({
         razorpayOrderId: razorpayOrder.id,
-        userId: new Types.ObjectId(userId),
+        userId: new mongoose.Types.ObjectId(userId),
         purchaseId: itemId,
-        purchaseType:type,
+        purchaseType: type,
         amount: options.amount,
         currency: options.currency,
         status: "created",
@@ -104,7 +112,7 @@ export class PaymentService implements IPaymentService {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-      const secret = process.env.RAZORPAY_KEY_SECRET!;
+      const secret = config.razorpay.keySecret;
 
       const paymentData = {
         order_id: razorpayOrderId,
@@ -120,17 +128,19 @@ export class PaymentService implements IPaymentService {
         throw new BadRequestError("Payment verification failed");
       }
       //find existing payment
-      const payment = await this.paymentRepository.findByRazorpayOrderId(razorpayOrderId);
+      const payment = await this.paymentRepository.findByRazorpayOrderId(
+        razorpayOrderId
+      );
       if (!payment) {
-        throw new BadRequestError('Payment record not found');
+        throw new BadRequestError("Payment record not found");
       }
-      if (payment.status === 'paid') {
-        throw new BadRequestError('Payment already processed');
+      if (payment.status === "paid") {
+        throw new BadRequestError("Payment already processed");
       }
       await this.paymentRepository.update(
         payment._id.toString(),
         {
-          status: 'paid',
+          status: "paid",
           razorpayPaymentId,
           razorpaySignature,
           updatedAt: new Date(),

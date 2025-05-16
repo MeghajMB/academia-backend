@@ -1,21 +1,29 @@
 import { NextFunction, Request, Response } from "express";
-// services
 import { PaymentService } from "../../services/payment/payment.service";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-import { StatusCode } from "../../enums/status-code.enum";
 import { IPaymentController } from "./payment.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class PaymentController implements IPaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    @inject(Types.PaymentService)
+    private readonly paymentService: PaymentService
+  ) {}
 
   async createOrder(req: Request, res: Response, next: NextFunction) {
     try {
       const { itemId, type } = req.body;
-      const userId=req.verifiedUser!.id
+      const userId = req.verifiedUser!.id;
       if (!itemId || !type) {
         throw new BadRequestError("Invalid data");
       }
-      const order = await this.paymentService.createRazorPayOrder(itemId, type,userId);
+      const order = await this.paymentService.createRazorPayOrder(
+        itemId,
+        type,
+        userId
+      );
 
       res.send({
         order_id: order.id,
@@ -41,8 +49,8 @@ export class PaymentController implements IPaymentController {
           amount: number;
         };
       };
-      const userId=req.verifiedUser?.id!
-      
+      const userId = req.verifiedUser?.id!;
+
       if (
         !razorpayDetails.razorpay_order_id ||
         !razorpayDetails.razorpay_payment_id ||
@@ -60,7 +68,7 @@ export class PaymentController implements IPaymentController {
         razorpayDetails.razorpay_order_id,
         razorpayDetails.razorpay_payment_id,
         razorpayDetails.razorpay_signature,
-        {...paymentDetails,userId} // Pass the payment details including courseId, userId, etc.
+        { ...paymentDetails, userId } // Pass the payment details including courseId, userId, etc.
       );
 
       res.status(200).send({

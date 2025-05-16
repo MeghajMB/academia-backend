@@ -4,10 +4,16 @@ import { UserService } from "../../services/user/user.service";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { IUserController } from "./user.interface";
-import { GetInstructorProfileResponseSchema } from "./response.dto";
+import { GetInstructorProfileResponseSchema, NullResponseSchema } from "@academia-dev/common";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+import { BlockUserRequestSchema } from "../admin/request.dto";
 
+@injectable()
 export class UserController implements IUserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    @inject(Types.UserService) private readonly userService: UserService
+  ) {}
 
   async getProfile(
     req: Request,
@@ -25,6 +31,7 @@ export class UserController implements IUserController {
       next(error);
     }
   }
+
   async getInstructorProfile(
     req: Request,
     res: Response,
@@ -47,4 +54,46 @@ export class UserController implements IUserController {
       next(error);
     }
   }
+
+  async getWallet(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { instructorId } = req.params;
+      if (!instructorId) {
+        throw new BadRequestError("Specify userid");
+      }
+      const result = await this.userService.getInstructorProfile(instructorId);
+      const response = GetInstructorProfileResponseSchema.parse({
+        status: "success",
+        code: StatusCode.CREATED,
+        message: "Successfully fetched Instructor Profile",
+        data: result,
+      });
+      res.status(response.code).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+    async blockUser(
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> {
+      try {
+        const { userId } = BlockUserRequestSchema.parse(req.params);
+        await this.userService.blockUser(userId);
+        const response = NullResponseSchema.parse({
+          status: "success",
+          code: StatusCode.OK,
+          message: "success",
+          data: null,
+        });
+        res.status(200).send(response);
+      } catch (error) {
+        next(error);
+      }
+    }
 }

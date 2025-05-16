@@ -1,4 +1,3 @@
-// src/interfaces/controllers/AuthController.ts
 import { NextFunction, Request, Response } from "express";
 import { AdminService } from "../../services/admin/admin.service";
 import { StatusCode } from "../../enums/status-code.enum";
@@ -6,11 +5,8 @@ import { IAdminController } from "./admin.interface";
 import {
   ApproveCourseReviewRequestSchema,
   ApproveVerificationRequestSchema,
-  BlockCategoryRequestSchema,
   BlockCourseRequestSchema,
   BlockUserRequestSchema,
-  CreateCategoryRequestSchema,
-  EditCategoryRequestSchema,
   getAdminCoursesRequestSchema,
   GetCategoriesRequestSchema,
   GetCourseReviewRequestsRequestSchema,
@@ -20,21 +16,23 @@ import {
   RejectVerificationRequestSchema,
 } from "./request.dto";
 import {
-  BlockCategoryResponseSchema,
-  BlockResponseSchema,
-  CategoryResponseSchema,
-  CourseReviewRequestResponseSchema,
   GetAdminCoursesResponseSchema,
   GetCategoriesResponseSchema,
   GetCourseReviewRequestsResponseSchema,
   GetInstructorVerificationRequestsResponseSchema,
   GetUsersResponseSchema,
-  VerificationRequestResponseSchema,
-} from "./response.dto";
+  NullResponseSchema,
+} from "@academia-dev/common";
+import { inject, injectable } from "inversify";
+import { IAdminService } from "../../services/admin/admin.interface";
+import { Types } from "../../container/types";
 
+@injectable()
 export class AdminController implements IAdminController {
-  private pagLimit = 10;
-  constructor(private readonly adminService: AdminService) {}
+  private readonly pagLimit = 10;
+  constructor(
+    @inject(Types.AdminService) private readonly adminService: IAdminService
+  ) {}
 
   async getUsers(
     req: Request,
@@ -121,11 +119,11 @@ export class AdminController implements IAdminController {
         req.body
       );
 
-      const result = await this.adminService.rejectVerificationRequest({
+      await this.adminService.rejectVerificationRequest({
         rejectReason,
         userId,
       });
-      const response = VerificationRequestResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Verification request processed",
@@ -144,56 +142,14 @@ export class AdminController implements IAdminController {
   ): Promise<void> {
     try {
       const { userId } = ApproveVerificationRequestSchema.parse(req.body);
-      const result = await this.adminService.approveVerificationRequest(userId);
-      const response = VerificationRequestResponseSchema.parse({
+      await this.adminService.approveVerificationRequest(userId);
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Verification request processed",
         data: null,
       });
       res.status(200).send(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async blockUser(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { userId } = BlockUserRequestSchema.parse(req.params);
-      const data = await this.adminService.blockUser(userId);
-      const response = BlockResponseSchema.parse({
-        status: "success",
-        code: StatusCode.OK,
-        message: "success",
-        data: null,
-      });
-      res.status(200).send(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async blockCourse(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { courseId } = BlockCourseRequestSchema.parse({
-        courseId: req.params.courseId,
-      });
-      const data = await this.adminService.blockOrUnblockCourse(courseId);
-      const response = BlockResponseSchema.parse({
-        status: "success",
-        code: StatusCode.OK,
-        message: "success",
-        data: null,
-      });
-      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }
@@ -217,68 +173,6 @@ export class AdminController implements IAdminController {
         data: result,
       });
       res.status(StatusCode.OK).send(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async createCategory(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const category = CreateCategoryRequestSchema.parse(req.body);
-      const result = await this.adminService.createCategory(category);
-      const response = CategoryResponseSchema.parse({
-        status: "success",
-        code: StatusCode.OK,
-        message: "Category created successfully",
-        data: result,
-      });
-      res.status(StatusCode.OK).send(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async editCategory(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { categoryId, category } = EditCategoryRequestSchema.parse(
-        req.body
-      );
-      const result = await this.adminService.editCategory(category, categoryId);
-      const response = CategoryResponseSchema.parse({
-        status: "success",
-        code: StatusCode.OK,
-        message: "Category updated successfully",
-        data: result,
-      });
-      res.status(StatusCode.OK).send(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async blockCategory(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { categoryId } = BlockCategoryRequestSchema.parse(req.params);
-      const result = await this.adminService.blockCategory(categoryId);
-      const response = BlockCategoryResponseSchema.parse({
-        status: "success",
-        code: StatusCode.OK,
-        message: "Category blocked successfully",
-        data: null,
-      });
-      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -317,11 +211,8 @@ export class AdminController implements IAdminController {
       const { rejectReason, courseId } = RejectCourseReviewRequestSchema.parse(
         req.body
       );
-      const result = await this.adminService.rejectCourseReviewRequest(
-        rejectReason,
-        courseId
-      );
-      const response = CourseReviewRequestResponseSchema.parse({
+      await this.adminService.rejectCourseReviewRequest(rejectReason, courseId);
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Course review request processed",
@@ -340,10 +231,8 @@ export class AdminController implements IAdminController {
   ): Promise<void> {
     try {
       const { courseId } = ApproveCourseReviewRequestSchema.parse(req.body);
-      const result = await this.adminService.approveCourseReviewRequest(
-        courseId
-      );
-      const response = CourseReviewRequestResponseSchema.parse({
+      await this.adminService.approveCourseReviewRequest(courseId);
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Course review request processed",

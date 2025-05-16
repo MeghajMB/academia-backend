@@ -1,26 +1,33 @@
 import { StatusCode } from "../../enums/status-code.enum";
 import { AppError } from "../../util/errors/app-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-import { ReviewRepository } from "../../repositories/review/review.repository";
 import { ICourseRepository } from "../../repositories/course/course.interface";
 import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.interface";
 import { IReviewService } from "./review.interface";
-import { AddReviewResponse, RatingBreakDown, ReviewsWithStats } from "./review.types";
-import { ReviewDocument } from "../../models/review.model";
+import {
+  AddReviewResponse,
+  ReviewsWithStats,
+} from "./review.types";
 import { ReviewWithPopulatedStudentId } from "../../repositories/review/review.types";
 import { IReviewRepository } from "../../repositories/review/review.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class ReviewService implements IReviewService {
   constructor(
+    @inject(Types.ReviewRepository)
     private readonly reviewRepository: IReviewRepository,
+    @inject(Types.EnrollmentRepository)
     private readonly enrollmentRepository: IEnrollmentRepository,
+    @inject(Types.CourseRepository)
     private readonly courseRepository: ICourseRepository
   ) {}
 
   async addReview(
     reviewData: { courseId: string; rating: number; comment: string },
     studentId: string
-  ):Promise<AddReviewResponse> {
+  ): Promise<AddReviewResponse> {
     // Check if student has already reviewed the course
     const existingReview = await this.reviewRepository.findByCourseAndStudent(
       reviewData.courseId,
@@ -99,7 +106,7 @@ export class ReviewService implements IReviewService {
 
       let updatedReviewStats;
       const total = reviewStats[0]?.totalReviews;
-      let initialRating = {
+      const initialRating = {
         "1star": 0,
         "2star": 0,
         "3star": 0,

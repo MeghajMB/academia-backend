@@ -2,20 +2,21 @@ import { Kafka } from "kafkajs";
 import { BidService } from "../../services/bid/bid.service";
 import { redis } from "../../lib/redis";
 import { BidRepository } from "../../repositories/bid/bid.repository";
-import { UserRepository } from "../../repositories/user/user.repository";
 import { GigRepository } from "../../repositories/gig/gig.repository";
+import { WalletRepository } from "../../repositories/wallet/wallet.repository";
+import config from "../../config/configuration";
 
 const kafka = new Kafka({
-  clientId: process.env.KAFKA_CLIENT_ID,
-  brokers: [process.env.KAFKA_BROKER!],
+  clientId: config.kafka.clientId,
+  brokers: [config.kafka.broker],
 });
 
 const consumer = kafka.consumer({ groupId: "bid-group" });
 
 const bidService = new BidService(
   new BidRepository(),
-  new UserRepository(),
-  new GigRepository()
+  new GigRepository(),
+  new WalletRepository()
 );
 export async function bidConsumer() {
   await consumer.connect();

@@ -1,8 +1,9 @@
 import { Kafka, Producer } from "kafkajs";
+import config from "../../config/configuration";
 
 const kafka = new Kafka({
-  clientId: process.env.KAFKA_CLIENT_ID,
-  brokers: [process.env.KAFKA_BROKER!],
+  clientId: config.kafka.clientId,
+  brokers: [config.kafka.broker],
 });
 
 let Kafkaproducer: Producer | null = null;

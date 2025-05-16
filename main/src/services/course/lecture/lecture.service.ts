@@ -1,7 +1,5 @@
 import { BadRequestError } from "../../../util/errors/bad-request-error";
 import { ICourseRepository } from "../../../repositories/course/course.interface";
-import { Types } from "mongoose";
-import { FileService } from "../../file/file.service";
 import { AppError } from "../../../util/errors/app-error";
 import { StatusCode } from "../../../enums/status-code.enum";
 import { CloudfrontSignedCookiesOutput } from "@aws-sdk/cloudfront-signer";
@@ -11,15 +9,27 @@ import { IUserRepository } from "../../../repositories/user/user.interface";
 import moment from "moment";
 import { AddLectureResponse } from ".././course.types";
 import { publishLectureToTranscode } from "../../../kafka/producers/producer";
-import { ILectureService } from "./lecture.interface"; 
+import { ILectureService } from "./lecture.interface";
+import { IWalletRepository } from "../../../repositories/wallet/wallet.interface";
+import { IFileService } from "../../file/file.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../../container/types";
+import mongoose from "mongoose";
 
+@injectable()
 export class LectureService implements ILectureService {
   constructor(
+    @inject(Types.CourseRepository)
     private readonly courseRepository: ICourseRepository,
+    @inject(Types.LectureRepository)
     private readonly lectureRepository: ILectureRepository,
+    @inject(Types.EnrollmentRepository)
     private readonly enrollmentRepository: IEnrollmentRepository,
+    @inject(Types.userRepository)
     private readonly userRepository: IUserRepository,
-    private readonly fileService: FileService
+    @inject(Types.FileService) private readonly fileService: IFileService,
+    @inject(Types.WalletRepository)
+    private readonly walletRepository: IWalletRepository
   ) {}
 
   async changeOrderOfLecture(
@@ -52,13 +62,13 @@ export class LectureService implements ILectureService {
       ) {
         await this.lectureRepository.updateOrderOfLectureInSameSection(
           draggedLecture.sectionId,
-          draggedLecture._id as Types.ObjectId,
+          draggedLecture._id as mongoose.Types.ObjectId,
           draggedLecture.order,
           targetLecture.order
         );
       } else {
         await this.lectureRepository.updateOrderOfLectureInDifferentSection(
-          draggedLecture._id as Types.ObjectId,
+          draggedLecture._id as mongoose.Types.ObjectId,
           draggedLecture.sectionId,
           targetLecture.sectionId,
           draggedLecture.order,
@@ -90,8 +100,9 @@ export class LectureService implements ILectureService {
       throw error;
     }
   }
-
-  //write code for generating certificate and updating the status to completed
+  /* To-Do */
+  // write code for generating certificate,
+  // Award redeem points based on the user purchase amount of course
   async markLectureAsCompleted(
     id: string,
     courseId: string,
@@ -109,7 +120,7 @@ export class LectureService implements ILectureService {
 
       if (
         !enrollment.progress.completedLectures.includes(
-          new Types.ObjectId(lectureId)
+          new mongoose.Types.ObjectId(lectureId)
         )
       ) {
         const totalLectures =
@@ -120,7 +131,7 @@ export class LectureService implements ILectureService {
           (completedLecturesCount / totalLectures) * 100
         );
 
-        // Fetch course once to get instructor (avoid redundant DB calls)
+        // Fetch course once to get instructor
         const course = await this.courseRepository.findByIdWithPopulatedData(
           String(enrollment.courseId)
         );
@@ -131,17 +142,17 @@ export class LectureService implements ILectureService {
         let awarded50Percent = enrollment.progress.awarded50Percent;
         let awarded100Percent = enrollment.progress.awarded100Percent;
         let coinsToAward = 0,
-          redeemCoinsToAward = 0;
+          redeemPointsToAward = 0;
 
         // Award coins only if they haven't been awarded before
         if (progressPercentage >= 50 && !awarded50Percent) {
           coinsToAward += 1;
-          redeemCoinsToAward += 50;
+          redeemPointsToAward += 10;
           awarded50Percent = true;
         }
         if (progressPercentage === 100 && !awarded100Percent) {
           coinsToAward += 2;
-          redeemCoinsToAward += 100;
+          redeemPointsToAward += 20;
           awarded100Percent = true;
           await this.enrollmentRepository.update(
             enrollment._id.toString(),
@@ -151,8 +162,8 @@ export class LectureService implements ILectureService {
             {}
           );
         }
-        if (redeemCoinsToAward) {
-          await this.userRepository.addRedeemableCoins(id, redeemCoinsToAward);
+        if (redeemPointsToAward) {
+          await this.walletRepository.addRedeemPoints(id, redeemPointsToAward);
         }
         // Update enrollment progress and award status in a single call
         await this.enrollmentRepository.updateEnrollmentProgress(
@@ -231,8 +242,8 @@ export class LectureService implements ILectureService {
 
     const updatedLectureData = {
       ...lectureData,
-      sectionId: new Types.ObjectId(sectionId),
-      courseId: new Types.ObjectId(courseId),
+      sectionId: new mongoose.Types.ObjectId(sectionId),
+      courseId: new mongoose.Types.ObjectId(courseId),
       duration: Math.ceil(lectureData.duration / 60),
       order: lectureCount,
     };
@@ -298,7 +309,7 @@ export class LectureService implements ILectureService {
     sectionId: string,
     lectureId: string,
     key: string
-  ): Promise<Boolean | void> {
+  ): Promise<boolean> {
     try {
       const newLecture =
         await this.lectureRepository.updateLectureWithProcessedKey(

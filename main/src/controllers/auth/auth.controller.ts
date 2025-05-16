@@ -14,32 +14,30 @@ import {
   VerifyResetOtpRequestSchema,
 } from "./request.dto";
 import {
-  ForgotPasswordResponseSchema,
   RefreshTokenResponseSchema,
-  RegisterInstructorResponseSchema,
-  ResendOtpResponseSchema,
-  ResetPasswordResponseSchema,
   SignInResponseSchema,
-  SignOutResponseSchema,
-  SignUpResponseSchema,
-  VerifyOtpResponseSchema,
   VerifyResetOtpResponseSchema,
-} from "./response.dto";
+  NullResponseSchema,
+} from "@academia-dev/common";
 import { IAuthController } from "./auth.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class AuthController implements IAuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    @inject(Types.AuthService) private readonly authService: AuthService
+  ) {}
 
-  // Sign Up and OTP Verification
   async signUp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = SignUpRequestSchema.parse(req.body);
       const user = await this.authService.signUp(data);
-      const response = SignUpResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.CREATED,
         message: "User signed up successfully, OTP sent",
-        data: user,
+        data: null,
       });
       res.status(response.code).json(response);
     } catch (error) {
@@ -47,15 +45,19 @@ export class AuthController implements IAuthController {
     }
   }
 
-  async verifyOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async verifyOtp(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const data = VerifyOtpRequestSchema.parse(req.body);
       const user = await this.authService.saveUser(data);
-      const response = VerifyOtpResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK, // 200 since it's a verification, not creation
         message: "OTP verified successfully",
-        data: user,
+        data: null,
       });
       res.status(response.code).json(response);
     } catch (error) {
@@ -63,15 +65,19 @@ export class AuthController implements IAuthController {
     }
   }
 
-  async resendOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async resendOtp(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const data = ResendOtpRequestSchema.parse(req.body);
       const user = await this.authService.sendOtp(data);
-      const response = ResendOtpResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "OTP resent successfully",
-        data: user,
+        data: null,
       });
       res.status(response.code).json(response);
     } catch (error) {
@@ -80,15 +86,19 @@ export class AuthController implements IAuthController {
   }
 
   // Password Reset Flow
-  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async forgotPassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const data = ForgotPasswordRequestSchema.parse(req.body);
       const result = await this.authService.forgotUserPassword(data);
-      const response = ForgotPasswordResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Password reset OTP sent",
-        data: result,
+        data: null,
       });
       res.status(response.code).json(response);
     } catch (error) {
@@ -96,7 +106,11 @@ export class AuthController implements IAuthController {
     }
   }
 
-  async verifyResetOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async verifyResetOtp(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const data = VerifyResetOtpRequestSchema.parse(req.body);
       const result = await this.authService.verifyResetOtp(data);
@@ -112,15 +126,19 @@ export class AuthController implements IAuthController {
     }
   }
 
-  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async resetPassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const data = ResetPasswordRequestSchema.parse(req.body);
       const result = await this.authService.resetPassword(data);
-      const response = ResetPasswordResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Password reset successfully",
-        data: result,
+        data: null,
       });
       res.status(response.code).json(response); // Fixed typo: "resonse" -> "response"
     } catch (error) {
@@ -129,7 +147,11 @@ export class AuthController implements IAuthController {
   }
 
   // Token Refresh
-  async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async refreshToken(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const refreshToken = RefreshTokenRequestSchema.parse(req.cookies);
       const result = await this.authService.refreshToken(refreshToken);
@@ -173,11 +195,15 @@ export class AuthController implements IAuthController {
     }
   }
 
-  async signOut(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async signOut(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const data = SignOutRequestSchema.parse(req.cookies);
       const result = await this.authService.signOut(data);
-      const response = SignOutResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK, // 200 since it's a logout, not creation
         message: "Signed out successfully",
@@ -195,12 +221,19 @@ export class AuthController implements IAuthController {
   }
 
   // Instructor Registration
-  async registerInstructor(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async registerInstructor(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const data = RegisterInstructorRequestSchema.parse(req.body);
       const currentUser = req.verifiedUser!;
-      const result = await this.authService.registerInstructor(data, currentUser);
-      const response = RegisterInstructorResponseSchema.parse({
+      const result = await this.authService.registerInstructor(
+        data,
+        currentUser
+      );
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Instructor registered successfully",

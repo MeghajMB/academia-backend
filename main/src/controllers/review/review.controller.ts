@@ -10,15 +10,19 @@ import {
 } from "./request.dto";
 import {
   AddReviewResponseSchema,
-  DeleteReviewResponseSchema,
-  EditReviewResponseSchema,
   GetReviewsByStudentResponseSchema,
   GetReviewsOfCourseResponseSchema,
-} from "./response.dto";
+  NullResponseSchema,
+} from "@academia-dev/common";
 import { IReviewController } from "./review.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class ReviewController implements IReviewController {
-  constructor(private readonly reviewService: ReviewService) {}
+  constructor(
+    @inject(Types.ReviewService) private readonly reviewService: ReviewService
+  ) {}
 
   async addReview(req: Request, res: Response, next: NextFunction) {
     try {
@@ -44,9 +48,14 @@ export class ReviewController implements IReviewController {
 
   async getReviewsOfCourse(req: Request, res: Response, next: NextFunction) {
     try {
-      const { courseId,userId } = GetReviewsOfCourseRequestSchema.parse(req.params);
-     
-      const reviews = await this.reviewService.getReviewsByCourse(courseId,userId);
+      const { courseId, userId } = GetReviewsOfCourseRequestSchema.parse(
+        req.params
+      );
+
+      const reviews = await this.reviewService.getReviewsByCourse(
+        courseId,
+        userId
+      );
       const response = GetReviewsOfCourseResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
@@ -77,10 +86,13 @@ export class ReviewController implements IReviewController {
 
   async editReview(req: Request, res: Response, next: NextFunction) {
     try {
-      const payload = EditReviewRequestSchema.parse({...req.body,...req.params});
+      const payload = EditReviewRequestSchema.parse({
+        ...req.body,
+        ...req.params,
+      });
       const user = req.verifiedUser!;
       await this.reviewService.editReview(payload, user.id);
-      const response = EditReviewResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Review Edited successfully",
@@ -96,7 +108,7 @@ export class ReviewController implements IReviewController {
       const { reviewId } = DeleteReviewRequestSchema.parse(req.params);
       const user = req.verifiedUser!;
       await this.reviewService.deleteReview(reviewId, user.id);
-      const response = DeleteReviewResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Review deleted successfully",

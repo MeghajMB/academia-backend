@@ -3,7 +3,9 @@ import { DatabaseError } from "../../util/errors/database-error";
 import { CategoryDocument, CategoryModel } from "../../models/categoy.model";
 import { ICategoryRepository } from "./category.interface";
 import { BaseRepository } from "../base/base.repository";
+import { injectable } from "inversify";
 
+@injectable()
 export class CategoryRepository
   extends BaseRepository<CategoryDocument>
   implements ICategoryRepository
@@ -31,14 +33,13 @@ export class CategoryRepository
   async fetchCategoryWithPagination(
     skip: number,
     limit: number
-  ): Promise<CategoryDocument[] | null> {
+  ): Promise<CategoryDocument[]> {
     try {
       const category = await CategoryModel.find()
         .skip(skip)
         .limit(limit)
         .sort({ name: 1 })
         .lean();
-      if (!category) return null;
 
       return category;
     } catch (error: unknown) {

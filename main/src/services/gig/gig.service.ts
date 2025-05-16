@@ -6,11 +6,20 @@ import moment from "moment-timezone";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { scheduleAuctionClose } from "../../queues/auction.queue";
 import { GigRepository } from "../../repositories/gig/gig.repository";
-import { CreateGigParams, CreateGigServiceResponse, GetActiveGigsResponse } from "./gig.types";
+import {
+  CreateGigParams,
+  CreateGigServiceResponse,
+  GetActiveGigsResponse,
+} from "./gig.types";
 import { IGigService } from "./gig.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class GigService implements IGigService {
-  constructor(private readonly gigRepository: GigRepository) {}
+  constructor(
+    @inject(Types.GigRepository) private readonly gigRepository: GigRepository
+  ) {}
 
   async createGig(
     gigData: CreateGigParams,

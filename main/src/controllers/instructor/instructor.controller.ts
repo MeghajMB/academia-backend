@@ -1,13 +1,17 @@
-// src/interfaces/controllers/AuthController.ts
 import { NextFunction, Request, Response } from "express";
 import { InstructorService } from "../../services/instructor/instructor.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { IInstructorController } from "./instructor.interface";
 import { GetAnalyticsRequestSchema } from "./request.dto";
-//external dependencies
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class InstructorController implements IInstructorController {
-  constructor(private readonly instructorService: InstructorService) {}
+  constructor(
+    @inject(Types.InstructorService)
+    private readonly instructorService: InstructorService
+  ) {}
 
   async getProfile(
     req: Request,
@@ -45,9 +49,10 @@ export class InstructorController implements IInstructorController {
   ): Promise<void> {
     try {
       const user = req.verifiedUser;
-      const {filter} = GetAnalyticsRequestSchema.parse(req.query);
+      const { filter } = GetAnalyticsRequestSchema.parse(req.query);
       const result = await this.instructorService.getAnalytics(
-        user?.id!,filter
+        user?.id!,
+        filter
       );
       res.status(StatusCode.OK).send(result);
     } catch (error) {

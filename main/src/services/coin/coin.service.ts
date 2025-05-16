@@ -1,3 +1,4 @@
+import { inject, injectable } from "inversify";
 import {
   createCoinPackageRequestDTO,
   deleteCoinPackageRequestDTO,
@@ -5,17 +6,21 @@ import {
   updateCoinRatioRequestDTO,
 } from "../../controllers/coin/request.dto";
 import { ICoinRepository } from "../../repositories/coin/coin.interface";
-import { CreateCoinPackageRepository } from "../../repositories/coin/types";
 import { ICoinService } from "./coin.interface";
 import { CreatePackageServiceResponse } from "./coin.types";
+import { Types } from "../../container/types";
 
+@injectable()
 export class CoinService implements ICoinService {
-  constructor(private readonly coinRepository: ICoinRepository) {}
+  constructor(
+    @inject(Types.CoinRepository)
+    private readonly coinRepository: ICoinRepository
+  ) {}
   async updatePackage(
     payload: updateCoinPackageRequestDTO
   ): Promise<{ message: "success" }> {
     try {
-      const response=await this.coinRepository.updateCoinPackage(payload);
+      const response = await this.coinRepository.updateCoinPackage(payload);
       return { message: "success" };
     } catch (error) {
       throw error;
@@ -62,7 +67,7 @@ export class CoinService implements ICoinService {
           };
         }),
         goldToINRRatio: coinConfig[0].goldToINRRatio,
-        redeemCoinToGoldRatio: coinConfig[0].redeemCoinToGoldRatio,
+        redeemPointsToGoldRatio: coinConfig[0].redeemPointsToGoldRatio,
         isActive: coinConfig[0].isActive,
       };
       return updatedcoinConfig;

@@ -8,7 +8,9 @@ import {
 } from "./session.types";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
+import { injectable } from "inversify";
 
+@injectable()
 export class SessionRepository
   extends BaseRepository<SessionDocument>
   implements ISessionRepository

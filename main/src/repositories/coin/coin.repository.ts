@@ -10,7 +10,9 @@ import {
 } from "../../controllers/coin/request.dto";
 import { Types, UpdateWriteOpResult } from "mongoose";
 import { CreateCoinPackageRepository } from "./types";
+import { injectable } from "inversify";
 
+@injectable()
 export class CoinRepository
   extends BaseRepository<CoinDocument>
   implements ICoinRepository
@@ -97,8 +99,8 @@ export class CoinRepository
       if (payload.goldToINRRatio !== undefined) {
         updateFields.goldToINRRatio = payload.goldToINRRatio;
       }
-      if (payload.redeemCoinToGoldRatio !== undefined) {
-        updateFields.redeemCoinToGoldRatio = payload.redeemCoinToGoldRatio;
+      if (payload.redeemPointsToGoldRatio !== undefined) {
+        updateFields.redeemPointsToGoldRatio = payload.redeemPointsToGoldRatio;
       }
 
       const result = await CoinModel.updateOne(
