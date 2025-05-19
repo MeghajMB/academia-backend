@@ -1,16 +1,60 @@
 import { NextFunction, Request, Response } from "express";
-import { PaymentService } from "../../services/payment/payment.service";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { IPaymentController } from "./payment.interface";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { StatusCode } from "../../enums/status-code.enum";
+import { IPaymentService } from "../../services/payment/payment.interface";
+import {
+  GetUserWalletResponseSchema,
+  GetTransactionHistoryResponseSchema,
+} from "@academia-dev/common";
+import { GetTransactionHistoryRequestSchema } from "./request.dto";
 
 @injectable()
 export class PaymentController implements IPaymentController {
+  private readonly pageLimit=10;
   constructor(
     @inject(Types.PaymentService)
-    private readonly paymentService: PaymentService
+    private readonly paymentService: IPaymentService
   ) {}
+
+  async getUserWallet(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.verifiedUser!;
+      const review = await this.paymentService.getWallet(user.id);
+      const response = GetUserWalletResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Successfully fetched wallet",
+        data: review,
+      });
+      res.status(response.code).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getTransactionHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = req.verifiedUser!;
+      const data=GetTransactionHistoryRequestSchema.parse({...req.query,userId:user.id,limit:this.pageLimit});
+      const review = await this.paymentService.getTransactionHistory(data);
+      const response = GetTransactionHistoryResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Successfully fetched transaction history",
+        data: review,
+      });
+      res.status(response.code).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async createOrder(req: Request, res: Response, next: NextFunction) {
     try {

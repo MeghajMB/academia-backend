@@ -8,8 +8,10 @@ import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   AggregatedEarnings,
+  getPaginatedTransactionsOfUserRepositoryParams,
+  TransactionBase,
 } from "./transaction.types";
-import { Types } from "mongoose";
+import { ClientSession, Types } from "mongoose";
 import { injectable } from "inversify";
 
 @injectable()
@@ -19,6 +21,48 @@ export class TransactionRepository
 {
   constructor() {
     super(TransactionModel);
+  }
+  async getPaginatedTransactionsOfUser(
+    payload: getPaginatedTransactionsOfUserRepositoryParams
+  ): Promise<{
+    transactions: TransactionBase[];
+    totalCount: [{ count: number }];
+  }> {
+    try {
+      const matchCriteria: any = {
+        userId: payload.userId,
+      };
+
+      if (payload.purchaseType !== "all") {
+        matchCriteria.purchaseType = payload.purchaseType;
+      }
+
+      if (payload.type !== "all") {
+        matchCriteria.type = payload.type;
+      }
+      const transactions = await TransactionModel.aggregate([
+        {
+          $match: matchCriteria,
+        },
+        {
+          $facet: {
+            transactions: [{ $skip: payload.skip }, { $limit: payload.limit }],
+            totalCount: [{ $count: "count" }],
+          },
+        },
+      ]);
+      if (!transactions[0].totalCount[0]?.count) {
+        transactions[0].totalCount[0] = { count: 0 };
+      }
+
+      return transactions[0];
+    } catch (error) {
+      console.log(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
   async getCourseEarnings(
     userId: string,
@@ -99,22 +143,29 @@ export class TransactionRepository
     amount: number,
     purchaseType: "course" | "service" | "coins",
     purchaseId: string,
-    paymentId: string
+    paymentId: string,
+    type: "credit" | "debit",
+    session: ClientSession
   ): Promise<TransactionDocument> {
-    const transaction = new TransactionModel({
-      userId,
-      amount,
-      purchaseType,
-      purchaseId,
-      status: "success",
-      paymentId,
-    });
+    try {
+      const transaction = new TransactionModel({
+        userId,
+        amount,
+        purchaseType,
+        purchaseId,
+        status: "success",
+        paymentId,
+        type,
+      });
 
-    await transaction.save();
-    return transaction;
-  }
-
-  async getUserTransactions(userId: string) {
-    return await TransactionModel.find({ userId }).sort({ createdAt: -1 });
+      await transaction.save();
+      return transaction;
+    } catch (error) {
+      console.log(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }

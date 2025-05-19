@@ -3,7 +3,7 @@ import { redisPubSub } from "../lib/redisPubSub";
 import { IncomingMessage, ServerResponse, Server as HttpServer } from "http";
 import { BidModel } from "../models/bid.model";
 import { NotificationModel } from "../models/notification.model";
-import {mediasoupManager} from "../lib/mediaSoup";
+import { mediasoupManager } from "../lib/mediaSoup";
 import jwt from "jsonwebtoken";
 import { CustomJwtPayload } from "../types/jwt";
 import { UserRepository } from "../repositories/user/user.repository";
@@ -35,7 +35,7 @@ class SocketService {
         credentials: true,
       },
     });
-    this._mediasoupManager = mediasoupManager
+    this._mediasoupManager = mediasoupManager;
     this.listenForConnections();
     this.listenForRedisMessages();
   }
@@ -168,7 +168,9 @@ class SocketService {
           socket.sessionId = sessionId;
           socket.profilePicture = user.profilePicture;
           /* Validation End */
-          const router = await mediasoupManager.getOrCreateRoomRouter(sessionId);
+          const router = await mediasoupManager.getOrCreateRoomRouter(
+            sessionId
+          );
           socket.join(sessionId);
           socket.emit("routerCapabilities", {
             routerRtpCapabilities: router.rtpCapabilities,

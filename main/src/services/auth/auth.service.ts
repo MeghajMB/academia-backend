@@ -367,10 +367,9 @@ export class AuthService implements IAuthService {
         throw new NotFoundError("User Not Found");
       }
       const { headline, biography, ...links } = data;
-      Object.assign(user, { verified: "pending", headline, biography, links });
       const updatedUser = await this.userRepository.update(
         currentUser.id,
-        { verified: "verified", headline, biography, links },
+        { verified: "pending", headline, biography, links },
         {}
       );
       return { message: "Success" };

@@ -3,6 +3,7 @@ import {
   CreateGigParams,
   CreateGigServiceResponse,
   GetActiveGigsResponse,
+  UpdateGigServiceParams,
 } from "./gig.types";
 
 export interface IGigService {
@@ -19,7 +20,7 @@ export interface IGigService {
     sessionDuration: number;
     minBid: number;
     currentBid: number;
-    currentBidder: string|null;
+    currentBidder: string | null;
     status: "active" | "missed" | "expired" | "completed" | "no-bids";
     biddingExpiresAt: string;
     sessionDate: string;
@@ -28,9 +29,18 @@ export interface IGigService {
 
   updateGig(
     id: string,
-    updateData: Partial<GigDocument>
+    updateData: UpdateGigServiceParams
   ): Promise<GigDocument | null>;
-
+  getAllGigsOfInstructor(
+    payload: {
+      limit: number;
+      status?: "active" | "expired" | "completed" | "no-bids" | "missed";
+      sort?: string;
+      page?: string;
+      search?: string;
+    },
+    userId: string
+  ): Promise<any>;
   deleteGig(id: string): Promise<void>;
 
   getActiveGigs(): Promise<GetActiveGigsResponse[]>;

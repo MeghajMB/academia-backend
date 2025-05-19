@@ -357,12 +357,20 @@ export class CourseController implements ICourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      const { courseId } = ListCourseRequestSchema.parse(req.params);
-      await this.courseService.listCourse(id, courseId);
+      console.log(req.body);
+      const { courseId, scheduleDate } = ListCourseRequestSchema.parse({
+        ...req.params,
+        ...req.body,
+      });
+      await this.courseService.scheduleCourseForListingCourse(
+        id,
+        courseId,
+        scheduleDate
+      );
       const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
-        message: "Course listed successfully",
+        message: "Course Scheduled successfully",
         data: null,
       });
       res.status(response.code).json(response);
@@ -370,7 +378,7 @@ export class CourseController implements ICourseController {
       next(error);
     }
   }
-  
+
   async blockCourse(
     req: Request,
     res: Response,

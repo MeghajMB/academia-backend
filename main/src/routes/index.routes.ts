@@ -26,7 +26,7 @@ router.use("/courses/lectures", lectureRoutes);
 router.use("/courses/sections", sectionRoutes);
 router.use("/courses", courseRoutes);
 router.use("/files", fileRoutes);
-router.use("/payment", paymentRoutes);
+router.use("/payments", paymentRoutes);
 router.use("/reviews", reviewRoutes);
 router.use("/gig", gigRoutes);
 router.use("/bid", bidRoutes);

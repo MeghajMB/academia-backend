@@ -15,23 +15,27 @@ export class WalletRepository
     super(WalletModel);
   }
 
-    async addRedeemPoints(userId: string, pointsToAdd: number, session?: ClientSession): Promise<WalletDocument | null> {
-      try {
-        const updatedUser = await WalletModel.findByIdAndUpdate(
-          userId,
-          { $inc: { redeemPoints: pointsToAdd } },
-          { session, new: true }
-        );
-  
-        return updatedUser;
-      } catch (error: unknown) {
-        console.error(error);
-        throw new DatabaseError(
-          "An unexpected database error occurred",
-          StatusCode.INTERNAL_SERVER_ERROR
-        );
-      }
+  async addRedeemPoints(
+    userId: string,
+    pointsToAdd: number,
+    session?: ClientSession
+  ): Promise<WalletDocument | null> {
+    try {
+      const updatedUser = await WalletModel.findByIdAndUpdate(
+        userId,
+        { $inc: { redeemPoints: pointsToAdd } },
+        { session, new: true }
+      );
+
+      return updatedUser;
+    } catch (error: unknown) {
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
     }
+  }
 
   async createWallet(
     userId: Types.ObjectId,
@@ -49,7 +53,7 @@ export class WalletRepository
       );
     }
   }
-  
+
   async findWalletWithUserId(
     userId: Types.ObjectId
   ): Promise<WalletDocument | null> {
@@ -93,13 +97,15 @@ export class WalletRepository
     session?: ClientSession
   ): Promise<WalletDocument | null> {
     try {
-      const updatedUser = await WalletModel.findOneAndUpdate(
-        { userId },
+      const wallet = await WalletModel.findOneAndUpdate(
+        { userId, goldCoins: { $gte: coinsToDeduct } },
         { $inc: { goldCoin: -coinsToDeduct } },
         { session, new: true }
       );
-
-      return updatedUser;
+      if (!wallet) {
+        throw new Error("Insufficient gold coins or wallet not found");
+      }
+      return wallet;
     } catch (error: unknown) {
       console.error(error);
       throw new DatabaseError(
@@ -108,5 +114,4 @@ export class WalletRepository
       );
     }
   }
-
 }

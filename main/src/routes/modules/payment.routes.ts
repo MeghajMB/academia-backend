@@ -8,7 +8,6 @@ import { Types } from "../../container/types";
 const router = Router();
 
 const paymentController = container.get<IPaymentController>(Types.PaymentController);
-// Dependency injection End
 
 router.post(
   "/order",
@@ -22,6 +21,20 @@ router.post(
   verifyToken,
   verifyUser("instructor", "student", "admin"),
   paymentController.paymentSuccess.bind(paymentController)
+);
+
+router.get(
+  "/wallet",
+  verifyToken,
+  verifyUser("instructor", "student"),
+  paymentController.getUserWallet.bind(paymentController)
+);
+
+router.get(
+  "/transaction",
+  verifyToken,
+  verifyUser("instructor", "student"),
+  paymentController.getTransactionHistory.bind(paymentController)
 );
 
 export default router;

@@ -237,7 +237,7 @@ export class AuthController implements IAuthController {
         status: "success",
         code: StatusCode.OK,
         message: "Instructor registered successfully",
-        data: result,
+        data: null,
       });
       res.status(response.code).json(response); // Changed .send to .json for consistency
     } catch (error) {

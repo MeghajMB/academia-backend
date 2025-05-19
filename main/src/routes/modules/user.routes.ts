@@ -32,11 +32,4 @@ router.put(
   userController.blockUser.bind(userController)
 );
 
-/* router.get(
-  "/wallet",
-  verifyToken,
-  verifyUser("instructor", "student"),
-  userController.getInstructorProfile.bind(userController)
-); */
-
 export default router;

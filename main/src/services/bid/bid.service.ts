@@ -3,7 +3,6 @@ import { StatusCode } from "../../enums/status-code.enum";
 import { redisPubSub } from "../../lib/redisPubSub";
 import { redis } from "../../lib/redis";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-
 import mongoose from "mongoose";
 import { publishNewBids } from "../../kafka/producers/producer";
 import { GigRepository } from "../../repositories/gig/gig.repository";
@@ -19,7 +18,8 @@ export class BidService implements IBidService {
   constructor(
     @inject(Types.BidRepository) private readonly bidRepository: BidRepository,
     @inject(Types.GigRepository) private readonly gigRepository: GigRepository,
-    @inject(Types.WalletRepository) private readonly walletRepository: IWalletRepository
+    @inject(Types.WalletRepository)
+    private readonly walletRepository: IWalletRepository
   ) {}
 
   async placeBid(
@@ -39,9 +39,17 @@ export class BidService implements IBidService {
       if (!gig) {
         throw new BadRequestError("Gig not found");
       }
-
       if (new Date(gig.biddingExpiresAt).getTime() < Date.now()) {
         throw new BadRequestError("Bidding time has ended");
+      }
+      const wallet = await this.walletRepository.findWalletWithUserId(
+        new mongoose.Types.ObjectId(userId)
+      );
+      if (!wallet) throw new BadRequestError("something happened");
+      if (wallet.goldCoins < bidData.bidAmt) {
+        throw new BadRequestError(
+          `You only have ${wallet.goldCoins} coins.Purchse more to continue`
+        );
       }
       await publishNewBids({ data: bidData, id: userId });
       return { message: "success" };
@@ -55,15 +63,6 @@ export class BidService implements IBidService {
     session.startTransaction();
     try {
       const highestBidKey = `topBid:${bidData.gigId}`;
-      // **Check if user has enough gold coins**
-      const wallet = await this.walletRepository.findWalletWithUserId(
-        new mongoose.Types.ObjectId(userId)
-      );
-      if (!wallet) throw Error("User not found");
-
-      if (Number(wallet.goldCoins) < bidData.bidAmt!) {
-        throw Error("Insufficient gold coins for bidding");
-      }
 
       const dbHighestBid = await this.bidRepository.getHighestBid(
         bidData.gigId
@@ -75,7 +74,7 @@ export class BidService implements IBidService {
 
       // **Create new bid**
       const existingGig = await this.gigRepository.findById(bidData.gigId);
-      if (!existingGig || existingGig.instructorId == wallet.userId) {
+      if (!existingGig || existingGig.instructorId == new mongoose.Types.ObjectId(userId)) {
         throw Error("You cant bid");
       }
       const newBid = await this.bidRepository.createOrUpdateBid(
@@ -87,18 +86,19 @@ export class BidService implements IBidService {
         session
       );
 
+      await this.walletRepository.deductGoldCoins(
+        new mongoose.Types.ObjectId(userId),
+        bidData.bidAmt,
+        session
+      );
+
       if (existingGig.currentBidder) {
         await this.walletRepository.addGoldCoins(
-          wallet.userId,
+          existingGig.currentBidder,
           existingGig?.currentBid,
           session
         );
       }
-      await this.walletRepository.deductGoldCoins(
-        wallet.userId,
-        bidData.bidAmt,
-        session
-      );
       const updatedGig =
         await this.gigRepository.updateCurrentBidderWithSession(
           bidData.gigId,

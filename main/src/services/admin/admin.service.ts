@@ -19,10 +19,14 @@ import { Types } from "../../container/types";
 @injectable()
 export class AdminService implements IAdminService {
   constructor(
-    @inject(Types.userRepository) private readonly userRepository: IUserRepository,
-    @inject(Types.CategoryRepository) private readonly categoryRepository: ICategoryRepository,
-    @inject(Types.CourseRepository) private readonly courseRepository: ICourseRepository,
-    @inject(Types.NotificationService) private readonly notificationService: INotificationService
+    @inject(Types.userRepository)
+    private readonly userRepository: IUserRepository,
+    @inject(Types.CategoryRepository)
+    private readonly categoryRepository: ICategoryRepository,
+    @inject(Types.CourseRepository)
+    private readonly courseRepository: ICourseRepository,
+    @inject(Types.NotificationService)
+    private readonly notificationService: INotificationService
   ) {}
 
   async getUsers({ role, page, limit, search }: GetUsersParams) {
@@ -38,6 +42,15 @@ export class AdminService implements IAdminService {
         role,
         search
       );
+      const updatedUsers = users.map((user) => {
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          profilePicture: user.profilePicture,
+          isBlocked: user.isBlocked,
+        };
+      });
       const pagination = {
         totalDocuments,
         totalPages: Math.ceil(totalDocuments / limit),
@@ -45,7 +58,7 @@ export class AdminService implements IAdminService {
         limit,
       };
 
-      return { users, pagination };
+      return { users: updatedUsers, pagination };
     } catch (error) {
       throw error;
     }
@@ -139,10 +152,15 @@ export class AdminService implements IAdminService {
 
     await this.userRepository.update(
       userId,
-      { verified: "rejected", rejectedReason: rejectReason },
+      { verified: "rejected" },
       {}
     );
-
+    await this.notificationService.sendNotification(
+      userId,
+      "system",
+      "Instructor Request Rejected",
+      rejectReason
+    );
     return { message: "Verification request rejected" };
   }
 

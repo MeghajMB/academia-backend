@@ -10,6 +10,7 @@ import {
   CreateGigParams,
   CreateGigServiceResponse,
   GetActiveGigsResponse,
+  UpdateGigServiceParams,
 } from "./gig.types";
 import { IGigService } from "./gig.interface";
 import { inject, injectable } from "inversify";
@@ -26,15 +27,16 @@ export class GigService implements IGigService {
     instructorId: string
   ): Promise<CreateGigServiceResponse> {
     try {
-      const cleanedDate = gigData.sessionDate.split("[")[0];
-      const momentSessionDate = moment(cleanedDate);
+      console.log(gigData);
+      const momentSessionDate = moment(gigData.sessionDate);
 
       if (!momentSessionDate.isValid()) {
         throw new BadRequestError("Invalid service date format.");
       }
       const sessionDate = momentSessionDate.toDate();
       //uncomment in production
-      /*       const currentDate = moment.utc(); // Always use UTC inside backend
+
+      const currentDate = moment.utc();
 
       // Calculate bidding expiration (24 hours before sessionDate)
       const biddingExpiresAt = moment.utc(sessionDate).subtract(24, "hours");
@@ -43,7 +45,8 @@ export class GigService implements IGigService {
         throw new BadRequestError(
           "Bidding cannot start because there is less than 24 hours before the service date."
         );
-      } */
+      }
+
       // Check for conflicting gigs
       const existingGig = await this.gigRepository.findConflictingGig(
         instructorId,
@@ -64,16 +67,19 @@ export class GigService implements IGigService {
         sessionDuration: gigData.sessionDuration,
         minBid: Math.ceil(Number(gigData.minBid)),
         sessionDate: sessionDate, // Convert to Date object
-        //biddingExpiresAt: biddingExpiresAt.toDate(), // 24 hrs before sessionDate
-        biddingExpiresAt: new Date(Date.now() + 120000), //development
+        biddingExpiresAt: biddingExpiresAt.toDate(), // 24 hrs before sessionDate
+        /* development code */
+        //biddingExpiresAt: new Date(Date.now() + 120000), //development
       };
 
       const newGig = await this.gigRepository.create(updatedGigData);
-      //await scheduleAuctionClose(newGig.id, biddingExpiresAt.toDate());
-      await scheduleAuctionClose(
+      await scheduleAuctionClose(newGig.id, biddingExpiresAt.toDate());
+      /* development Code Begin */
+      /* await scheduleAuctionClose(
         newGig._id.toString(),
         new Date(Date.now() + 120000)
-      ); //development
+      ); */
+      /* development Code End */
       const updatedGig = {
         id: newGig._id.toString(),
         sessionDate: newGig.sessionDate.toISOString(),
@@ -188,7 +194,10 @@ export class GigService implements IGigService {
     }
   }
 
-  async updateGig(id: string, updateData: any): Promise<GigDocument | null> {
+  async updateGig(
+    id: string,
+    updateData: UpdateGigServiceParams
+  ): Promise<GigDocument | null> {
     try {
       const updatedGig = await this.gigRepository.update(id, updateData, {});
       if (!updatedGig) {

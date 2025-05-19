@@ -14,12 +14,12 @@ export interface IUserRepository extends IRepository<UserDocument> {
     limit: number,
     role: string,
     search: string
-  ): Promise<UserDocument[] | null>;
+  ): Promise<UserDocument[]>;
   fetchUsersWithFilters(
     filters: Record<string, any>,
     skip: number,
     limit: number
-  ): Promise<UserDocument[] | null>;
+  ): Promise<UserDocument[]>;
   countDocuments(key: string, value: any): Promise<number>;
   awardPurpleCoins(userId: string, coins: number): Promise<UserDocument | null>;
 }

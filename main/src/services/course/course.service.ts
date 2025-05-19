@@ -26,6 +26,8 @@ import { GetCoursesRequestDTO } from "../../controllers/course/request.dto";
 import { IReviewRepository } from "../../repositories/review/review.interface";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { scheduleCourseList } from "../../queues/course-list.queue";
+import moment from "moment";
 
 @injectable()
 export class CourseService implements ICourseService {
@@ -377,7 +379,7 @@ export class CourseService implements ICourseService {
         updatedData.imageThumbnail = courseData.imageThumbnail;
       }
       if (courseData.promotionalVideo) {
-        updatedData.imageThumbnail = courseData.promotionalVideo;
+        updatedData.promotionalVideo = courseData.promotionalVideo;
       }
       const updatedCourse = await this.courseRepository.update(
         courseId,
@@ -412,10 +414,10 @@ export class CourseService implements ICourseService {
       courseId
     );
     const image = await this.fileService.generateGetSignedUrl(
-      course.imageThumbnail
+      course.imageThumbnail,true
     );
     const video = await this.fileService.generateGetSignedUrl(
-      course.promotionalVideo
+      course.promotionalVideo,true
     );
 
     const courseDetails = {
@@ -707,8 +709,48 @@ export class CourseService implements ICourseService {
       throw error;
     }
   }
-  
-    async blockOrUnblockCourse(id: string) {
+
+  async scheduleCourseForListingCourse(
+    instructorId: string,
+    courseId: string,
+    scheduleDate: string
+  ): Promise<{ message: string }> {
+    try {
+      const listDate = moment(scheduleDate);
+
+      if (!listDate.isValid()) {
+        throw new BadRequestError("Invalid service date format.");
+      }
+      const courseListingDate = listDate.toDate();
+
+      const status = "scheduled";
+      const existingCourse = await this.courseRepository.findById(courseId);
+      if (existingCourse?.status !== "accepted") {
+        throw new BadRequestError("The course is not approved");
+      }
+      if (existingCourse?.userId.toString() !== instructorId) {
+        throw new AppError(
+          "You dont have access to this course",
+          StatusCode.FORBIDDEN
+        );
+      }
+      const course =
+        await this.courseRepository.changeCourseStatusWithInstructorIdAndCourseId(
+          instructorId,
+          courseId,
+          status
+        );
+      if (!course) {
+        throw new BadRequestError("No course");
+      }
+      await scheduleCourseList(instructorId, courseId, courseListingDate);
+      return { message: "success" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async blockOrUnblockCourse(id: string) {
     try {
       const course = await this.courseRepository.toggleCourseStatus(id);
       if (!course) {
@@ -721,5 +763,4 @@ export class CourseService implements ICourseService {
       throw error;
     }
   }
-
 }

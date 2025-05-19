@@ -30,7 +30,7 @@ export interface GetCoursesResponse {
       name: string;
       description: string;
     };
-    status: "listed" | "pending" | "accepted" | "rejected" | "draft";
+    status: "listed" | "pending" | "accepted" | "rejected" | "draft"|"scheduled";
   }[];
   pagination: Pagination;
 }

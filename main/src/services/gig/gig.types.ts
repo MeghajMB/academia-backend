@@ -8,30 +8,39 @@ export interface CreateGigParams {
   sessionDate: string;
 }
 export interface GetActiveGigsResponse {
-    id: string;
-    instructorId: string;
-    instructorName: string;
-    instructorProfilePicture: string;
-    title: string;
-    sessionDuration: number;
-    minBid: number;
-    biddingExpiresAt: string;
-    sessionDate: string;
-  }
+  id: string;
+  instructorId: string;
+  instructorName: string;
+  instructorProfilePicture: string;
+  title: string;
+  sessionDuration: number;
+  minBid: number;
+  biddingExpiresAt: string;
+  sessionDate: string;
+}
 
- export interface CreateGigServiceResponse {
-    id: string;
-    sessionDate: string; // ISO string
-    description: string;
-    biddingAllowed: boolean;
-    sessionDuration: number;
-    maxParticipants: number;
-    minBid: number;
-    status: "active" | "expired" | "completed" | "no-bids" | "missed";
-    currentBid: number;
-    title: string;
-    instructorId: string;
-    biddingExpiresAt: string; 
-    createdAt: string; 
-  };
-  
+export interface CreateGigServiceResponse {
+  id: string;
+  sessionDate: string; // ISO string
+  description: string;
+  biddingAllowed: boolean;
+  sessionDuration: number;
+  maxParticipants: number;
+  minBid: number;
+  status: "active" | "expired" | "completed" | "no-bids" | "missed";
+  currentBid: number;
+  title: string;
+  instructorId: string;
+  biddingExpiresAt: string;
+  createdAt: string;
+}
+
+export interface UpdateGigServiceParams {
+  sessionDate?: string | undefined;
+  description?: string | undefined;
+  biddingAllowed?: boolean | undefined;
+  sessionDuration?: number | undefined;
+  maxParticipants?: number | undefined;
+  minBid?: number | undefined;
+  title?: string | undefined;
+}

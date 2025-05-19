@@ -74,14 +74,12 @@ export class UserRepository
     filters: Record<string, any>,
     skip: number,
     limit: number
-  ): Promise<UserDocument[] | null> {
+  ): Promise<UserDocument[]> {
     try {
       const users = await UserModel.find(filters)
         .skip(skip)
         .limit(limit)
         .sort({ name: 1 });
-
-      if (!users) return null;
 
       return users;
     } catch (error: unknown) {
@@ -98,7 +96,7 @@ export class UserRepository
     limit: number,
     role: string,
     search: string
-  ): Promise<UserDocument[] | null> {
+  ): Promise<UserDocument[]> {
     try {
       const query: any = { role };
       if (search) {

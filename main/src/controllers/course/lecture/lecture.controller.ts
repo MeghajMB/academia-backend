@@ -12,7 +12,6 @@ import {
 } from "./request.dto";
 import {
   AddLectureResponseSchema,
-  EditLectureResponseSchema,
   GenerateLectureUrlResponseSchema,
   NullResponseSchema,
 } from "@academia-dev/common";
@@ -198,11 +197,11 @@ export class LectureController implements ILectureController {
         lectureData,
         id
       );
-      const response = EditLectureResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Lecture updated successfully",
-        data: updatedLecture,
+        data: null,
       });
       res.status(response.code).json(response);
     } catch (error) {

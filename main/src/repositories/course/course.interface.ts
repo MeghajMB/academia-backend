@@ -67,7 +67,7 @@ export interface ICourseRepository extends IRepository<CourseDocument> {
   changeCourseStatusWithInstructorIdAndCourseId(
     instructorId: string,
     courseId: string,
-    status: "pending" | "listed"
+    status: "pending" | "listed"|"scheduled"
   ): Promise<CourseDocument | null>;
   // Additional methods like getUser, updateUser, etc.
 }

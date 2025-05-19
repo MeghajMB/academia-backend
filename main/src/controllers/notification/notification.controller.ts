@@ -77,7 +77,7 @@ export class NotificationController implements INotificationController {
       );
       const updatedNotification =
         await this.notificationService.markNotificationAsRead(notificationId);
-      const response = MarkNotificationAsReadResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Notification marked as read",

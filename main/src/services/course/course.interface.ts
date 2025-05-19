@@ -95,5 +95,10 @@ export interface ICourseService {
     instructorId: string,
     courseId: string
   ): Promise<{ message: string }>;
+  scheduleCourseForListingCourse(
+    instructorId: string,
+    courseId: string,
+    scheduleDate: string
+  ): Promise<{ message: string }>;
   blockOrUnblockCourse(id: string): Promise<{ message: string }>;
 }

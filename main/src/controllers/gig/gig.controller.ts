@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import { GigService } from "../../services/gig/gig.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { AppError } from "../../util/errors/app-error";
 import {
@@ -12,22 +11,22 @@ import {
 } from "./request.dto";
 import {
   CreateGigResponseSchema,
-  DeleteGigResponseSchema,
   GetActiveGigsOfInstructorResponseSchema,
   GetActiveGigsResponseSchema,
   GetGigByIdResponseSchema,
   GetGigsOfInstructorResponseSchema,
-  UpdateGigResponseSchema,
+  NullResponseSchema,
 } from "@academia-dev/common";
 import { IGigController } from "./gig.interface";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { IGigService } from "../../services/gig/gig.interface";
 
 @injectable()
 export class GigController implements IGigController {
-  private pageLimit = 10;
+  private readonly pageLimit = 10;
   constructor(
-    @inject(Types.GigService) private readonly gigService: GigService
+    @inject(Types.GigService) private readonly gigService: IGigService
   ) {}
 
   async getGigsOfInstructor(req: Request, res: Response, next: NextFunction) {
@@ -138,11 +137,11 @@ export class GigController implements IGigController {
         ...req.body,
       });
       const updatedGig = await this.gigService.updateGig(id, updates);
-      const response = UpdateGigResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Gig updated successfully",
-        data: updatedGig,
+        data: null,
       });
       res.status(StatusCode.OK).json(response);
     } catch (error) {
@@ -154,7 +153,7 @@ export class GigController implements IGigController {
     try {
       const { id } = DeleteGigRequestSchema.parse({ id: req.params.gigId });
       await this.gigService.deleteGig(id);
-      const response = DeleteGigResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.NO_CONTENT,
         message: "Gig deleted successfully",

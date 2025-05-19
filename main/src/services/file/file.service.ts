@@ -38,15 +38,17 @@ export class FileService implements IFileService {
     }
   }
 
-  async generateGetSignedUrl(key: string) {
+  async generateGetSignedUrl(key: string,isTemp=false) {
+    const bucketName = isTemp ? this._tempBucketName : this._bucketName;
     const command = new GetObjectCommand({
-      Bucket: this._bucketName,
+      Bucket: bucketName,
       Key: key,
     });
 
     const signedUrl = await getSignedUrl(s3Client, command);
     return signedUrl;
   }
+
   async generateCloudFrontGetSignedCookies(
     videoPath: string
   ): Promise<CloudfrontSignedCookiesOutput> {

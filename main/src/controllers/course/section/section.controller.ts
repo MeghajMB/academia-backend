@@ -7,7 +7,6 @@ import {
 } from "./request.dto";
 import {
   AddSectionResponseSchema,
-  EditSectionResponseSchema,
   NullResponseSchema,
 } from "@academia-dev/common";
 import { ISectionController } from "./section.interface";
@@ -87,11 +86,11 @@ export class SectionController implements ISectionController {
         sectionData,
         id
       );
-      const response = EditSectionResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Section updated successfully",
-        data: updatedSection,
+        data: null,
       });
       res.status(response.code).json(response);
     } catch (error) {
