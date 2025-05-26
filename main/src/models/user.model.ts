@@ -14,7 +14,6 @@ export interface UserDocument extends Document {
   googleId: string;
   headline?: string;
   verified: "pending" | "rejected" | "notRequested" | "verified";
-  rejectedReason: string;
   biography?: string;
   links?: {
     facebook?: string;
@@ -45,9 +44,6 @@ const UserSchema: Schema<UserDocument> = new mongoose.Schema(
       required: true,
       enum: ["pending", "rejected", "notRequested", "verified"],
       default: "notRequested",
-    },
-    rejectedReason: {
-      type: String,
     },
     profilePicture: { type: String, default: "" },
     googleId: { type: String },

@@ -7,7 +7,9 @@ import { Types } from "../../container/types";
 
 const router = Router();
 
-const paymentController = container.get<IPaymentController>(Types.PaymentController);
+const paymentController = container.get<IPaymentController>(
+  Types.PaymentController
+);
 
 router.post(
   "/order",
@@ -22,6 +24,11 @@ router.post(
   verifyUser("instructor", "student", "admin"),
   paymentController.paymentSuccess.bind(paymentController)
 );
+/**
+ * POST /api/payments/verify
+ * Verifies the razorpay webhook and pushes the data to kafka for further processing.
+ */
+router.post("/verify", paymentController.verifyPayment.bind(paymentController));
 
 router.get(
   "/wallet",

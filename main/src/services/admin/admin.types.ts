@@ -1,12 +1,6 @@
 import { CourseDocument } from "../../models/course.model";
 import { CourseWithPopulatedCategory } from "../../repositories/course/course.types";
-
-interface Pagination {
-  totalDocuments: number;
-  totalPages: number;
-  currentPage: number;
-  limit: number;
-}
+import { Pagination } from "../../types";
 
 export interface GetUsersParams {
   role: string;
@@ -30,7 +24,13 @@ export interface GetCoursesResponse {
       name: string;
       description: string;
     };
-    status: "listed" | "pending" | "accepted" | "rejected" | "draft"|"scheduled";
+    status:
+      | "listed"
+      | "pending"
+      | "accepted"
+      | "rejected"
+      | "draft"
+      | "scheduled";
   }[];
   pagination: Pagination;
 }
@@ -41,4 +41,15 @@ export interface GetInstructorVerificationRequestsParams {
 export interface RejectVerificationRequestParams {
   rejectReason: string;
   userId: string;
+}
+
+export interface GetUsersResponse {
+  users: {
+    id: string;
+    name: string;
+    email: string;
+    profilePicture: string;
+    isBlocked: boolean;
+  }[];
+  pagination: Pagination;
 }

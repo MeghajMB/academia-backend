@@ -3,11 +3,12 @@ import {
   GetCoursesResponse,
   GetInstructorVerificationRequestsParams,
   GetUsersParams,
+  GetUsersResponse,
   RejectVerificationRequestParams,
 } from "./admin.types";
 
 export interface IAdminService {
-  getUsers({ role, page, limit, search }: GetUsersParams): Promise<any>;
+  getUsers({ role, page, limit, search }: GetUsersParams): Promise<GetUsersResponse>;
   getCourses({
     page,
     limit,
@@ -20,13 +21,13 @@ export interface IAdminService {
   rejectVerificationRequest({
     rejectReason,
     userId,
-  }: RejectVerificationRequestParams): Promise<any>;
-  approveVerificationRequest(userId: string): Promise<any>;
+  }: RejectVerificationRequestParams): Promise<{message:string}>;
+  approveVerificationRequest(userId: string): Promise<{message:string}>;
   getPaginatedCategories(page: number, limit: number): Promise<any>;
   getCourseReviewRequests(page: number, limit: number): Promise<any>;
   rejectCourseReviewRequest(
     rejectReason: string,
     courseId: string
-  ): Promise<any>;
-  approveCourseReviewRequest(courseId: string): Promise<any>;
+  ): Promise<{message:string}>;
+  approveCourseReviewRequest(courseId: string): Promise<{message:string}>;
 }

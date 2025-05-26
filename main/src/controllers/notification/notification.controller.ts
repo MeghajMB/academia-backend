@@ -103,7 +103,6 @@ export class NotificationController implements INotificationController {
         message: "All notification marked as read",
         data: null,
       });
-      console.log(response);
       res.status(response.code).json(response);
     } catch (error) {
       next(error);

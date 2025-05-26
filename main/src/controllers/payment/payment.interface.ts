@@ -5,4 +5,5 @@ export interface IPaymentController {
   paymentSuccess(req: Request, res: Response, next: NextFunction): Promise<void>;
   getUserWallet(req: Request, res: Response, next: NextFunction): Promise<void>;
   getTransactionHistory(req: Request, res: Response, next: NextFunction): Promise<void>;
+  verifyPayment(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

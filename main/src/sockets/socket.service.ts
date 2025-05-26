@@ -93,7 +93,6 @@ class SocketService {
       /* Notification Events */
       socket.on("registerUser", async (userId, callback) => {
         try {
-          console.log(userId);
           socket.join(userId);
           await this.subscribeToChannel(socket, `notifications:${userId}`);
           const notifications = await NotificationModel.find({
@@ -409,8 +408,6 @@ class SocketService {
     redisPubSub.sub.on("message", async (channel, message) => {
       try {
         const data = JSON.parse(message);
-        console.log(data);
-        console.log(channel);
         if (channel.startsWith("bids:")) {
           const gigId = channel.split(":")[1];
           const topBids = await BidModel.find({ gigId })
@@ -420,7 +417,6 @@ class SocketService {
           io.to(gigId).emit(`topBids${gigId}`, topBids);
         } else if (channel.startsWith("notifications:")) {
           const userId = channel.split(":")[1];
-          console.log(data);
           io.to(userId).emit("notifications", data);
         }
       } catch (error) {

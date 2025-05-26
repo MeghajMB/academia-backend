@@ -18,7 +18,7 @@ const lectureController = container.get<ILectureController>(Types.LectureControl
 router.get(
   "/url/:courseId/:lectureId",
   verifyToken,
-  verifyUser("instructor", "admin"),
+  verifyUser("instructor", "admin","student"),
   lectureController.generateLectureUrl.bind(lectureController)
 );
 
@@ -45,7 +45,7 @@ router.post(
 router.post(
   "/:lectureId/complete",
   verifyToken,
-  verifyUser("instructor"),
+  verifyUser("instructor","student"),
   lectureController.markLectureAsCompleted.bind(lectureController)
 );
 

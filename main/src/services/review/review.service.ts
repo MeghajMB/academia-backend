@@ -4,10 +4,7 @@ import { BadRequestError } from "../../util/errors/bad-request-error";
 import { ICourseRepository } from "../../repositories/course/course.interface";
 import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.interface";
 import { IReviewService } from "./review.interface";
-import {
-  AddReviewResponse,
-  ReviewsWithStats,
-} from "./review.types";
+import { AddReviewResponse, ReviewsWithStats } from "./review.types";
 import { ReviewWithPopulatedStudentId } from "../../repositories/review/review.types";
 import { IReviewRepository } from "../../repositories/review/review.interface";
 import { inject, injectable } from "inversify";
@@ -176,7 +173,20 @@ export class ReviewService implements IReviewService {
 
   async getReviewsByStudent(studentId: string) {
     try {
-      return this.reviewRepository.findReviewsByStudent(studentId);
+      const reviews = await this.reviewRepository.findReviewsByStudent(
+        studentId
+      );
+      const updatedReviews = reviews.map((review) => {
+        return {
+          id: review._id.toString(),
+          courseId: review.courseId._id.toString(),
+          rating: review.rating,
+          studentId: review.studentId.toString(),
+          comment: review.comment,
+          createdAt: review.createdAt.toISOString(),
+        };
+      });
+      return updatedReviews;
     } catch (error) {
       throw error;
     }

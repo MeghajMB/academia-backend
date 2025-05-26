@@ -1,4 +1,4 @@
-import { Types, ClientSession } from "mongoose";
+import mongoose, { Types, ClientSession } from "mongoose";
 import { WalletDocument, WalletModel } from "../../models/wallet.model";
 import { BaseRepository } from "../base/base.repository";
 import { IWalletRepository } from "./wallet.interface";
@@ -16,17 +16,16 @@ export class WalletRepository
   }
 
   async addRedeemPoints(
-    userId: string,
+    userId: mongoose.Types.ObjectId,
     pointsToAdd: number,
     session?: ClientSession
   ): Promise<WalletDocument | null> {
     try {
-      const updatedUser = await WalletModel.findByIdAndUpdate(
-        userId,
+      const updatedUser = await WalletModel.findOneAndUpdate(
+        { userId },
         { $inc: { redeemPoints: pointsToAdd } },
         { session, new: true }
       );
-
       return updatedUser;
     } catch (error: unknown) {
       console.error(error);

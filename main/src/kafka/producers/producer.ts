@@ -1,10 +1,6 @@
-import { Kafka, Producer } from "kafkajs";
-import config from "../../config/configuration";
-
-const kafka = new Kafka({
-  clientId: config.kafka.clientId,
-  brokers: [config.kafka.broker],
-});
+import { Producer } from "kafkajs";
+import { kafka } from "../../lib/kafka";
+import { RazorpayPaymentCapturedWebhook } from "../../types/razorpay";
 
 let Kafkaproducer: Producer | null = null;
 
@@ -55,5 +51,21 @@ export async function publishLectureToTranscode(message: {
   await producer.send({
     topic: "lecture-uploaded",
     messages: [{ key: message.data.lectureId, value: JSON.stringify(message) }],
+  });
+}
+
+export async function publishRazorPaySuccessPayment(message: {
+  event: "payment-success";
+  data: RazorpayPaymentCapturedWebhook;
+}) {
+  const producer = await runProducer();
+  await producer.send({
+    topic: "payment-razorpay-success",
+    messages: [
+      {
+        key: message.data.payload.payment.entity.order_id,
+        value: JSON.stringify(message),
+      },
+    ],
   });
 }

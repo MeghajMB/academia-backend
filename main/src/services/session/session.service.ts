@@ -45,7 +45,6 @@ export class SessionService implements ISessionService {
         currentPage: 1,
         limit: payload.limit,
       };
-      console.log(response);
       return { sessionDetails: updatedSessionDetails, pagination };
     } catch (error) {
       throw error;

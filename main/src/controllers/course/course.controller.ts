@@ -357,7 +357,6 @@ export class CourseController implements ICourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      console.log(req.body);
       const { courseId, scheduleDate } = ListCourseRequestSchema.parse({
         ...req.params,
         ...req.body,

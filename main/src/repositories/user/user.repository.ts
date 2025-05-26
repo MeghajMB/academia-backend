@@ -98,7 +98,7 @@ export class UserRepository
     search: string
   ): Promise<UserDocument[]> {
     try {
-      const query: any = { role };
+      const query: Record<string,any> = { role };
       if (search) {
         query.name = { $regex: search, $options: "i" };
       }
@@ -120,7 +120,7 @@ export class UserRepository
     }
   }
 
-  async countDocuments(key: string, value: any): Promise<number> {
+  async countDocuments(key: string, value: string): Promise<number> {
     try {
       const count = await UserModel.countDocuments({ [key]: value });
       return count;

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { BadRequestError } from "../../util/errors/bad-request-error";
+import crypto from "crypto";
 import { IPaymentController } from "./payment.interface";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
@@ -10,10 +11,17 @@ import {
   GetTransactionHistoryResponseSchema,
 } from "@academia-dev/common";
 import { GetTransactionHistoryRequestSchema } from "./request.dto";
+import config from "../../config/configuration";
+import { redis } from "../../lib/redis";
+import {
+  publishRazorPaySuccessPayment,
+  runProducer,
+} from "../../kafka/producers/producer";
+import { RazorpayPaymentCapturedWebhook } from "../../types/razorpay";
 
 @injectable()
 export class PaymentController implements IPaymentController {
-  private readonly pageLimit=10;
+  private readonly pageLimit = 10;
   constructor(
     @inject(Types.PaymentService)
     private readonly paymentService: IPaymentService
@@ -42,7 +50,11 @@ export class PaymentController implements IPaymentController {
   async getTransactionHistory(req: Request, res: Response, next: NextFunction) {
     try {
       const user = req.verifiedUser!;
-      const data=GetTransactionHistoryRequestSchema.parse({...req.query,userId:user.id,limit:this.pageLimit});
+      const data = GetTransactionHistoryRequestSchema.parse({
+        ...req.query,
+        userId: user.id,
+        limit: this.pageLimit,
+      });
       const review = await this.paymentService.getTransactionHistory(data);
       const response = GetTransactionHistoryResponseSchema.parse({
         status: "success",
@@ -74,6 +86,45 @@ export class PaymentController implements IPaymentController {
         currency: order.currency,
         amount: order.amount,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+  /* Code when using razorpay webhooks */
+  async verifyPayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const razorPayBody = req.body as RazorpayPaymentCapturedWebhook;
+      const payload = JSON.stringify(razorPayBody);
+      const signature = req.headers["x-razorpay-signature"];
+
+      const generatedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_WEB_HOOK_SECRET!)
+        .update(payload)
+        .digest("hex");
+
+      if (generatedSignature !== signature) {
+        throw new BadRequestError("Invalid Signature");
+      }
+
+      const processing = await redis.getex(
+        `event:${razorPayBody.payload.payment.entity.order_id}`
+      );
+
+      if (processing) {
+        res.status(StatusCode.OK).send({ status: "ok" });
+        return;
+      }
+      await redis.setex(
+        `event:${razorPayBody.payload.payment.entity.order_id}`,
+        60 * 60,
+        "processing"
+      );
+      publishRazorPaySuccessPayment({
+        event: "payment-success",
+        data: req.body,
+      });
+
+      res.status(StatusCode.OK).send({ status: "ok" });
     } catch (error) {
       next(error);
     }

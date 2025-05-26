@@ -3,6 +3,7 @@ import {
   GetTransactionHistoryParams,
   getWalletServiceResponse,
 } from "./payment.types";
+import { RazorpayPaymentCapturedWebhook } from "../../types/razorpay";
 
 export interface IPaymentService {
   createRazorPayOrder(
@@ -28,4 +29,7 @@ export interface IPaymentService {
   ): Promise<{ message: string }>;
   getWallet(userId: string): Promise<getWalletServiceResponse>;
   getTransactionHistory(payload: GetTransactionHistoryParams): Promise<any>;
+  handlePaymentSuccessWithRazorpayWebhook(
+    payload: RazorpayPaymentCapturedWebhook
+  ): Promise<{ message: string }>;
 }

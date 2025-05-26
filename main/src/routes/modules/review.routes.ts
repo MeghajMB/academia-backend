@@ -10,10 +10,6 @@ const router = Router();
 const reviewController = container.get<IReviewController>(Types.ReviewController);
 
 /**
- * Routes for managing reviews in the Reviews bounded context.
- */
-
-/**
  * GET /reviews/course/:courseId
  * Fetches all reviews for a specific course.
  */

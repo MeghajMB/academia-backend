@@ -2,10 +2,7 @@ import { Types } from "mongoose";
 import { SessionDocument, SessionModel } from "../../models/session.model";
 import { BaseRepository } from "../base/base.repository";
 import { ISessionRepository } from "./session.interface";
-import {
-  GetUsersSessionsInput,
-  GetUsersSessionsResult,
-} from "./session.types";
+import { GetUsersSessionsInput, GetUsersSessionsResult } from "./session.types";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { injectable } from "inversify";
@@ -26,7 +23,7 @@ export class SessionRepository
     try {
       const { limit, status, search, page = 1, userId } = input;
 
-      const filter: any = {
+      const filter: Record<string,any> = {
         participants: { $elemMatch: { userId: new Types.ObjectId(userId) } },
       };
 
@@ -36,7 +33,11 @@ export class SessionRepository
 
       // Build aggregation pipeline
       const pipeline: any[] = [
-        { $match: filter },
+        {
+          $match: {
+            $or: [{ instructorId: new Types.ObjectId(userId) }, filter],
+          },
+        },
         {
           $lookup: {
             from: "gigs",
@@ -85,7 +86,7 @@ export class SessionRepository
             name: "$instructor.name", // Make sure User has a name field
           },
           title: "$gig.title",
-          description:"$gig.description",
+          description: "$gig.description",
           sessionDate: 1,
           sessionDuration: 1,
           status: 1,

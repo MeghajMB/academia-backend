@@ -154,8 +154,8 @@ export class CourseService implements ICourseService {
       const pageNum = parseInt(page) || 1;
       const skip = (pageNum - 1) * limit;
 
-      const query: Record<any, any> = { status: "listed" };
-      const sortQuery: Record<any, any> = {};
+      const query: Record<string, any> = { status: "listed" };
+      const sortQuery: Record<string, any> = {};
       if (category) {
         query.category = category;
       }
@@ -193,7 +193,8 @@ export class CourseService implements ICourseService {
       await Promise.all(
         courses.map(async (course) => {
           course.imageThumbnail = await this.fileService.generateGetSignedUrl(
-            course.imageThumbnail
+            course.imageThumbnail,
+            true
           );
         })
       );
@@ -284,10 +285,12 @@ export class CourseService implements ICourseService {
       }
 
       const image = await this.fileService.generateGetSignedUrl(
-        course.imageThumbnail
+        course.imageThumbnail,
+        true
       );
       const video = await this.fileService.generateGetSignedUrl(
-        course.promotionalVideo
+        course.promotionalVideo,
+        true
       );
       const sections = await this.sectionRepository.getSectionsWithCourseId(
         course._id.toString()
@@ -414,10 +417,12 @@ export class CourseService implements ICourseService {
       courseId
     );
     const image = await this.fileService.generateGetSignedUrl(
-      course.imageThumbnail,true
+      course.imageThumbnail,
+      true
     );
     const video = await this.fileService.generateGetSignedUrl(
-      course.promotionalVideo,true
+      course.promotionalVideo,
+      true
     );
 
     const courseDetails = {
@@ -513,7 +518,8 @@ export class CourseService implements ICourseService {
       const updatedEnrolledCourses = await Promise.all(
         enrolledCourses.map(async (enrolledCourse) => {
           const imageUrl = await this.fileService.generateGetSignedUrl(
-            enrolledCourse.courseId.imageThumbnail
+            enrolledCourse.courseId.imageThumbnail,
+            true
           );
           return {
             id: enrolledCourse.courseId._id.toString(),
@@ -581,24 +587,28 @@ export class CourseService implements ICourseService {
           .filter(
             (lecture) => lecture.sectionId.toString() === section._id.toString()
           )
-          .map((lecture) => ({
-            id: lecture._id.toString(),
-            sectionId: lecture.sectionId.toString(),
-            courseId: lecture.courseId.toString(),
-            title: lecture.title,
-            videoUrl: lecture.videoUrl,
-            duration: lecture.duration,
-            order: lecture.order,
-            status: lecture.status,
-            progress:
-              status == "instructor"
-                ? "instructor"
-                : enrolledCourse?.progress.completedLectures.includes(
-                    lecture._id as mongoose.Types.ObjectId
-                  )
-                ? "completed"
-                : "not completed",
-          })),
+          .map((lecture) => {
+            let checkProgress = enrolledCourse?.progress.completedLectures.find(
+              (completedLecture) =>
+                completedLecture.toString() == lecture._id.toString()
+            );
+            return {
+              id: lecture._id.toString(),
+              sectionId: lecture.sectionId.toString(),
+              courseId: lecture.courseId.toString(),
+              title: lecture.title,
+              videoUrl: lecture.videoUrl,
+              duration: lecture.duration,
+              order: lecture.order,
+              status: lecture.status,
+              progress:
+                status == "instructor"
+                  ? "instructor"
+                  : checkProgress
+                  ? "completed"
+                  : "not completed",
+            };
+          }),
       }));
 
       return curriculum;
@@ -686,7 +696,7 @@ export class CourseService implements ICourseService {
     try {
       const status = "listed";
       const existingCourse = await this.courseRepository.findById(courseId);
-      if (existingCourse?.status !== "accepted") {
+      if (existingCourse?.status !== "scheduled") {
         throw new BadRequestError("The course is not approved");
       }
       if (existingCourse?.userId.toString() !== instructorId) {

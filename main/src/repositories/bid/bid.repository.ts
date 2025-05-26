@@ -1,4 +1,4 @@
-import { ClientSession } from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 import { BidModel, BidDocument } from "../../models/bid.model";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
@@ -42,7 +42,7 @@ export class BidRepository
   }
   async getHighestBid(
     gigId: string
-  ): Promise<{ gigId: string; amount: any; userId: any } | null> {
+  ): Promise<{ gigId: string; amount: number; userId: mongoose.Types.ObjectId } | null> {
     try {
       const result = await BidModel.aggregate([
         { $match: { gigId } },

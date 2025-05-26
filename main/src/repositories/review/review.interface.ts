@@ -1,12 +1,12 @@
 import { ReviewDocument } from "../../models/review.model";
 import { IRepository } from "../base/base.interface";
-import { ReviewWithPopulatedStudentId } from "./review.types";
+import { ReviewWithPopulatedCourseId, ReviewWithPopulatedStudentId } from "./review.types";
 
 export interface IReviewRepository extends IRepository<ReviewDocument> {
   findReviewsByCourse(
     courseId: string
   ): Promise<ReviewWithPopulatedStudentId[]>;
-  findReviewsByStudent(studentId: string): Promise<any>; // You can define a proper return type here
+  findReviewsByStudent(studentId: string): Promise<ReviewWithPopulatedCourseId[]>;
   findByCourseAndStudent(
     courseId: string,
     studentId: string

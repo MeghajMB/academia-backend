@@ -29,7 +29,7 @@ export class TransactionRepository
     totalCount: [{ count: number }];
   }> {
     try {
-      const matchCriteria: any = {
+      const matchCriteria: Record<string,any> = {
         userId: payload.userId,
       };
 

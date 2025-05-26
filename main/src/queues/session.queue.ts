@@ -9,12 +9,12 @@ const sessionQueue = new Queue("sessionQueue", { connection: redis });
 
 export async function scheduleSessionCompletion(
   sessionId: string,
-  sessionDuration: number
+  sessionEndTime: Date
 ) {
   await sessionQueue.add(
     "finalizeSession",
     { sessionId },
-    { delay: sessionDuration * 60 * 1000 } // Convert minutes to milliseconds
+    { delay: Math.max(sessionEndTime.getTime() - Date.now(), 0) }
   );
 }
 
@@ -25,9 +25,9 @@ const notificationService = new NotificationService(
 const sessionWorker = new Worker(
   "sessionQueue",
   async (job) => {
+    try {
     const { sessionId } = job.data;
     console.log(`Finalizing session: ${sessionId}`);
-    try {
       const users = await sessionService.finalizeSession(sessionId);
       await Promise.all(
         users.map((user) =>
@@ -35,7 +35,7 @@ const sessionWorker = new Worker(
             user,
             "system",
             "Session Over",
-            "The session has concluded.Go To Your Bids for more details"
+            "The session has concluded.Go To Your Session for more details"
           )
         )
       );

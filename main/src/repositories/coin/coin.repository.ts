@@ -95,7 +95,7 @@ export class CoinRepository
     payload: updateCoinRatioRequestDTO
   ): Promise<UpdateWriteOpResult> {
     try {
-      const updateFields: any = {};
+      const updateFields: Record<string,any> = {};
       if (payload.goldToINRRatio !== undefined) {
         updateFields.goldToINRRatio = payload.goldToINRRatio;
       }

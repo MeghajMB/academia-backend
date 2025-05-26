@@ -4,9 +4,10 @@ import { BaseRepository } from "../base/base.repository";
 import { IReviewRepository } from "./review.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-import { ReviewWithPopulatedStudentId } from "./review.types";
+import { ReviewWithPopulatedCourseId, ReviewWithPopulatedStudentId } from "./review.types";
 import { UserDocument } from "../../models/user.model";
 import { injectable } from "inversify";
+import { CourseDocument } from "../../models/course.model";
 
 @injectable()
 export class ReviewRepository
@@ -33,9 +34,12 @@ export class ReviewRepository
     }
   }
 
-  async findReviewsByStudent(studentId: string) {
+  async findReviewsByStudent(studentId: string):Promise<ReviewWithPopulatedCourseId[]> {
     try {
-      return ReviewModel.find({ studentId }).populate("courseId").lean();
+      const review =await  ReviewModel.find({ studentId })
+        .populate<{ courseId: CourseDocument }>("courseId")
+        .lean();
+      return review;
     } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -53,7 +57,7 @@ export class ReviewRepository
         .populate<{ studentId: UserDocument }>("studentId")
         .lean();
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR
@@ -103,7 +107,7 @@ export class ReviewRepository
         },
       ]);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new DatabaseError(
         "An unexpected database error occurred",
         StatusCode.INTERNAL_SERVER_ERROR

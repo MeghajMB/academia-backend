@@ -39,7 +39,7 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms', 
 app.use(passport.initialize());
 
 app.get("/healthz", (req: Request, res: Response) => {
-  res.status(200).send("OK");
+  res.status(StatusCode.OK).send("OK");
 });
 
 app.use("/api", routes);

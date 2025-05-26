@@ -17,6 +17,7 @@ import {
 import { IWalletRepository } from "../../repositories/wallet/wallet.interface";
 import { ICoinRepository } from "../../repositories/coin/coin.interface";
 import { ITransactionRepository } from "../../repositories/transaction/transaction.interface";
+import { RazorpayPaymentCapturedWebhook } from "../../types/razorpay";
 
 @injectable()
 export class PaymentService implements IPaymentService {
@@ -55,20 +56,22 @@ export class PaymentService implements IPaymentService {
           type,
           userId: new mongoose.Types.ObjectId(userId),
         });
-      const updatedTransactions = transactionsWithCount.transactions.map((transaction) => {
-        return {
-          id: transaction._id.toString(),
-          amount: transaction.amount,
-          purchaseType: transaction.purchaseType,
-          status: transaction.status,
-          type: transaction.type,
-          date: transaction.createdAt.toISOString(),
-        };
-      });
-      const totalDocuments=transactionsWithCount.totalCount[0].count
-      console.log(totalDocuments)
+      const updatedTransactions = transactionsWithCount.transactions.map(
+        (transaction) => {
+          return {
+            id: transaction._id.toString(),
+            amount: transaction.amount,
+            purchaseType: transaction.purchaseType,
+            status: transaction.status,
+            type: transaction.type,
+            date: transaction.createdAt.toISOString(),
+          };
+        }
+      );
+      const totalDocuments = transactionsWithCount.totalCount[0].count;
+      console.log(totalDocuments);
       const pagination = {
-        totalDocuments:totalDocuments,
+        totalDocuments: totalDocuments,
         totalPages: Math.ceil(totalDocuments / limit),
         currentPage: page,
         limit,
@@ -76,12 +79,12 @@ export class PaymentService implements IPaymentService {
 
       return { transactions: updatedTransactions, pagination };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw error;
     }
   }
 
-  verifyPaymentSignature(paymentData: any, secret: string): boolean {
+  private verifyPaymentSignature(paymentData: any, secret: string): boolean {
     const generatedSignature = crypto
       .createHmac("sha256", secret)
       .update(paymentData.order_id + "|" + paymentData.payment_id)
@@ -264,6 +267,23 @@ export class PaymentService implements IPaymentService {
       } else {
         throw new BadRequestError("Payment verification failed");
       }
+      await session.commitTransaction();
+
+      return { message: "success" };
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+  async handlePaymentSuccessWithRazorpayWebhook(
+    payload: RazorpayPaymentCapturedWebhook
+  ): Promise<{ message: string }> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      //handle the payment success details
       await session.commitTransaction();
 
       return { message: "success" };

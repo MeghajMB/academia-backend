@@ -8,7 +8,6 @@ import { Types } from "../../container/types";
 const router = Router();
 
 const userController = container.get<IUserController>(Types.UserController);
-// Dependency injection End
 
 router.get(
   "/profile/:userId",

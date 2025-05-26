@@ -1,7 +1,7 @@
 import { Queue, Worker } from "bullmq";
 import { redis } from "../lib/redis";
 
-import { areBidsStillProcessing } from "../kafka/consumers/bid.consumer";
+import { areBidsStillProcessing } from "../kafka/consumers/modules/bid.consumer";
 import { scheduleSessionCompletion } from "./session.queue";
 
 import { NotificationService } from "../services/notification/notification.service";
@@ -57,7 +57,7 @@ const auctionWorker = new Worker(
       } else {
         status = "no-bids";
       }
-      await gigRepository.update(gigId, { status: status },{});
+      await gigRepository.update(gigId, { status: status }, {});
       if (gig.currentBidder) {
         //do the necessary updates
         const participants = [
@@ -68,7 +68,7 @@ const auctionWorker = new Worker(
             totalTimeSpent: 0,
           },
         ];
-        
+
         const session = await sessionRepository.create({
           gigId: gigId,
           instructorId: gig.instructorId,
@@ -76,7 +76,11 @@ const auctionWorker = new Worker(
           sessionDuration: gig.sessionDuration,
           participants: participants,
         });
-        await scheduleSessionCompletion(session.id, gig.sessionDuration);
+        //calculete the session ending time for finalizing the session
+        const sessionEndTime = new Date(
+          gig.sessionDate.getTime() + gig.sessionDuration * 60_000
+        );
+        await scheduleSessionCompletion(session.id, sessionEndTime);
         await Promise.all(
           participants.map((participant) =>
             notificationService.sendNotification(
@@ -88,8 +92,11 @@ const auctionWorker = new Worker(
             )
           )
         );
-        const users=participants.map((user)=>user.userId.toString())
-        scheduleSessionNotification(users, new Date(new Date(gig.sessionDate).getTime() - 1 * 1 * 1000));
+        const users = participants.map((user) => user.userId.toString());
+        scheduleSessionNotification(
+          users,
+          new Date(new Date(gig.sessionDate).getTime() - 1 * 1 * 1000)
+        );
       }
 
       await redis.del(`pendingBids:${gigId}`);

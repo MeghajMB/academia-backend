@@ -2,15 +2,14 @@ import { IUserRepository } from "../../repositories/user/user.interface";
 import { ICategoryRepository } from "../../repositories/category/category.interface";
 import { ICourseRepository } from "../../repositories/course/course.interface";
 import { IAdminService } from "./admin.interface";
-import { AppError } from "../../util/errors/app-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-import { StatusCode } from "../../enums/status-code.enum";
 import { INotificationService } from "../notification/notification.interface";
 import {
   GetCoursesParams,
   GetCoursesResponse,
   GetInstructorVerificationRequestsParams,
   GetUsersParams,
+  GetUsersResponse,
   RejectVerificationRequestParams,
 } from "./admin.types";
 import { inject, injectable } from "inversify";
@@ -29,7 +28,7 @@ export class AdminService implements IAdminService {
     private readonly notificationService: INotificationService
   ) {}
 
-  async getUsers({ role, page, limit, search }: GetUsersParams) {
+  async getUsers({ role, page, limit, search }: GetUsersParams):Promise<GetUsersResponse> {
     try {
       const skip = (page - 1) * limit;
       const totalDocuments = await this.userRepository.countDocuments(

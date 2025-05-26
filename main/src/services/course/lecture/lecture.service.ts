@@ -104,25 +104,28 @@ export class LectureService implements ILectureService {
   // write code for generating certificate,
   // Award redeem points based on the user purchase amount of course
   async markLectureAsCompleted(
-    id: string,
+    userId: string,
     courseId: string,
     lectureId: string
   ): Promise<{ message: "Enrollment Updated" }> {
     try {
       const enrollment = await this.enrollmentRepository.findOneByFilter({
-        studentId: id,
+        studentId: userId,
         courseId,
       });
 
       if (!enrollment) {
         throw new AppError("Enrollment not found", StatusCode.NOT_FOUND);
       }
-
-      if (
-        !enrollment.progress.completedLectures.includes(
-          new mongoose.Types.ObjectId(lectureId)
-        )
-      ) {
+      let checkVal = enrollment.progress.completedLectures.find(
+        (completedLecture) => completedLecture.toString() == lectureId
+      );
+      //dev
+      await this.walletRepository.addRedeemPoints(
+        new mongoose.Types.ObjectId(userId),
+        10
+      );
+      if (!checkVal) {
         const totalLectures =
           await this.lectureRepository.getTotalLecturesOfCourse(courseId);
         const completedLecturesCount =
@@ -133,7 +136,7 @@ export class LectureService implements ILectureService {
 
         // Fetch course once to get instructor
         const course = await this.courseRepository.findByIdWithPopulatedData(
-          String(enrollment.courseId)
+          enrollment.courseId.toString()
         );
         if (!course) {
           throw new BadRequestError("Not Found");
@@ -163,9 +166,12 @@ export class LectureService implements ILectureService {
           );
         }
         if (redeemPointsToAward) {
-          await this.walletRepository.addRedeemPoints(id, redeemPointsToAward);
+          await this.walletRepository.addRedeemPoints(
+            new mongoose.Types.ObjectId(userId),
+            redeemPointsToAward
+          );
         }
-        // Update enrollment progress and award status in a single call
+        // Update enrollment progress and award status
         await this.enrollmentRepository.updateEnrollmentProgress(
           enrollment._id.toString(),
           lectureId,
@@ -177,7 +183,7 @@ export class LectureService implements ILectureService {
         // Award purple coins if applicable
         if (coinsToAward > 0) {
           await this.userRepository.awardPurpleCoins(
-            String(course.userId),
+            course.userId._id.toString(),
             coinsToAward
           );
         }

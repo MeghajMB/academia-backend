@@ -1,30 +1,19 @@
-import { Kafka } from "kafkajs";
-import { BidService } from "../../services/bid/bid.service";
-import { redis } from "../../lib/redis";
-import { BidRepository } from "../../repositories/bid/bid.repository";
-import { GigRepository } from "../../repositories/gig/gig.repository";
-import { WalletRepository } from "../../repositories/wallet/wallet.repository";
-import config from "../../config/configuration";
-
-const kafka = new Kafka({
-  clientId: config.kafka.clientId,
-  brokers: [config.kafka.broker],
-});
+import { redis } from "../../../lib/redis";
+import { container } from "../../../container";
+import { IBidService } from "../../../services/bid/bid.interface";
+import { Types } from "../../../container/types";
+import { kafka } from "../../../lib/kafka";
 
 const consumer = kafka.consumer({ groupId: "bid-group" });
 
-const bidService = new BidService(
-  new BidRepository(),
-  new GigRepository(),
-  new WalletRepository()
-);
 export async function bidConsumer() {
   await consumer.connect();
   console.log("Consumer connected");
 
   // Subscribe to the topic
   await consumer.subscribe({ topics: ["bids"], fromBeginning: true });
-
+  //intialize the service
+  const bidService = container.get<IBidService>(Types.BidService);
   // Consume messages
   await consumer.run({
     eachMessage: async ({ topic, partition, message, heartbeat, pause }) => {

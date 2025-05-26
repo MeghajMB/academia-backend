@@ -7,10 +7,8 @@ export type UserProfileResponse = {
   isBlocked: boolean;
   purpleCoin: number;
   profilePicture: string;
-  googleId?: string | null;
   headline?: string | null;
   verified: "pending" | "rejected" | "notRequested" | "verified";
-  rejectedReason?: string | null;
   biography?: string | null;
   links?: {
     facebook?: string;

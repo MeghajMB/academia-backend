@@ -47,7 +47,6 @@ export class CoinService implements ICoinService {
           };
         }),
       };
-      console.log(coinPackages);
       return updatedCoinPackages;
     } catch (error) {
       throw error;

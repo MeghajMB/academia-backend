@@ -19,7 +19,7 @@ export interface IWalletRepository extends IRepository<WalletDocument> {
     session?: ClientSession
   ): Promise<WalletDocument | null>;
     addRedeemPoints(
-    userId: string,
+    userId: Types.ObjectId,
     pointsToAdd: number,
     session?: ClientSession
   ): Promise<WalletDocument | null>;

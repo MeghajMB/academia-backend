@@ -31,9 +31,9 @@ export interface ICourseRepository extends IRepository<CourseDocument> {
     sort,
     limit,
   }: {
-    query: Record<any, any>;
+    query: Record<string, any>;
     skip: number;
-    sort: Record<any, any>;
+    sort: Record<string, any>;
     limit: number;
   }): Promise<FetchAllPaginatedCoursesResult[]>;
   createCourseWithSession(
