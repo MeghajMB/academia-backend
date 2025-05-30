@@ -158,7 +158,8 @@ class SocketService {
           }
           const sessionEndTime =
             session.sessionDate.getTime() + session.sessionDuration * 60 * 1000;
-          if (session.status !== "in-progress" // || sessionEndTime < Date.now()
+          if (
+            session.status !== "in-progress" // || sessionEndTime < Date.now()
           ) {
             throw new Error("Session is over");
           }
@@ -370,6 +371,7 @@ class SocketService {
         const sessionId = socket.sessionId;
         const userId = socket.userId;
         if (!sessionId || !userId) return;
+        console.log("disconnect triggered leavegig event is triggered");
         const deletedProducers = await this._mediasoupManager.disconnectUser(
           sessionId,
           userId
@@ -394,6 +396,7 @@ class SocketService {
         const sessionId = socket.sessionId;
         const userId = socket.userId;
         if (sessionId && userId) {
+          console.log("websocket disconnected so closing producers");
           const deletedProducerIds =
             await this._mediasoupManager.disconnectUser(sessionId, userId);
           deletedProducerIds.forEach((producerId) => {
