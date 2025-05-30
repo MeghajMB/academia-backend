@@ -1,12 +1,18 @@
-import { Types } from "mongoose";
 import { redisPubSub } from "../../lib/redisPubSub";
 import { INotificationService } from "./notification.interface";
 import { NotificationRepository } from "../../repositories/notification/notification.repository";
 import { NotificationDocument } from "../../models/notification.model";
 import { GetUserNotificationResponse } from "./notification.types";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+import mongoose from "mongoose";
 
+@injectable()
 export class NotificationService implements INotificationService {
-  constructor(private readonly notificationRepository: NotificationRepository) {}
+  constructor(
+    @inject(Types.NotificationRepository)
+    private readonly notificationRepository: NotificationRepository
+  ) {}
 
   async sendNotification(
     userId: string,
@@ -17,11 +23,11 @@ export class NotificationService implements INotificationService {
   ): Promise<NotificationDocument> {
     try {
       const notification = await this.notificationRepository.create({
-        userId: new Types.ObjectId(userId),
+        userId: new mongoose.Types.ObjectId(userId),
         type,
         title,
         message,
-        entityId: new Types.ObjectId(entityId),
+        entityId: new mongoose.Types.ObjectId(entityId),
         isRead: false,
       });
 

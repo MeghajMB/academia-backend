@@ -4,6 +4,7 @@ export interface PaymentDocument extends Document {
    _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   amount: number;
+  coinAmt:number;
   currency: string;
   status: 'created' | 'attempted' | 'paid' | 'failed';
   razorpayOrderId: string;
@@ -32,6 +33,7 @@ const PaymentSchema = new Schema<PaymentDocument>(
       required: true,
     },
     purchaseId: { type: String, required: true },
+    coinAmt:{ type: Number },
   },
   {
     timestamps: true,

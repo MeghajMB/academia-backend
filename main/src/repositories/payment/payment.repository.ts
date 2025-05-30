@@ -1,11 +1,11 @@
-import { ClientSession } from "mongoose";
-import { BidModel, BidDocument } from "../../models/bid.model";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { BaseRepository } from "../base/base.repository";
 import { PaymentDocument, PaymentModel } from "../../models/payment.model";
 import { IPaymentRepository } from "./payment.interface";
+import { injectable } from "inversify";
 
+@injectable()
 export class PaymentRepository
   extends BaseRepository<PaymentDocument>
   implements IPaymentRepository

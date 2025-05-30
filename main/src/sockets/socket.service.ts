@@ -3,13 +3,12 @@ import { redisPubSub } from "../lib/redisPubSub";
 import { IncomingMessage, ServerResponse, Server as HttpServer } from "http";
 import { BidModel } from "../models/bid.model";
 import { NotificationModel } from "../models/notification.model";
-import MediasoupManager from "../lib/mediaSoup";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import { mediasoupManager } from "../lib/mediaSoup";
+import jwt from "jsonwebtoken";
 import { CustomJwtPayload } from "../types/jwt";
 import { UserRepository } from "../repositories/user/user.repository";
-import { GigRepository } from "../repositories/gig/gig.repository";
 import { SessionRepository } from "../repositories/session/session.repository";
-//intialize the class
+import config from "../config/configuration";
 
 const userRepository = new UserRepository();
 const sessionRepository = new SessionRepository();
@@ -23,20 +22,20 @@ export interface CustomSocket extends Socket {
 
 class SocketService {
   private _io: Server;
-  private _socketSubscriptionMap: Map<string, Set<string>> = new Map();
-  private _mediasoupManager: MediasoupManager;
+  private _socketSubscriptionMap = new Map<string, Set<string>>();
+  private _mediasoupManager: typeof mediasoupManager;
 
   constructor(
     server: HttpServer<typeof IncomingMessage, typeof ServerResponse>
   ) {
     this._io = new Server(server, {
       cors: {
-        origin: process.env.CLIENT_URL,
+        origin: config.app.clientUrl,
         methods: ["GET", "POST"],
         credentials: true,
       },
     });
-    this._mediasoupManager = new MediasoupManager();
+    this._mediasoupManager = mediasoupManager;
     this.listenForConnections();
     this.listenForRedisMessages();
   }
@@ -94,7 +93,6 @@ class SocketService {
       /* Notification Events */
       socket.on("registerUser", async (userId, callback) => {
         try {
-          console.log(userId);
           socket.join(userId);
           await this.subscribeToChannel(socket, `notifications:${userId}`);
           const notifications = await NotificationModel.find({
@@ -134,7 +132,7 @@ class SocketService {
 
           if (socket.sessionId == sessionId) return;
 
-          let decoded = jwt.verify(
+          const decoded = jwt.verify(
             accessToken,
             process.env.JWT_ACCESS_TOKEN_SECRET!
           ) as CustomJwtPayload;
@@ -160,7 +158,8 @@ class SocketService {
           }
           const sessionEndTime =
             session.sessionDate.getTime() + session.sessionDuration * 60 * 1000;
-          if (session.status !== "in-progress" || sessionEndTime < Date.now()) {
+          if (session.status !== "in-progress" // || sessionEndTime < Date.now()
+          ) {
             throw new Error("Session is over");
           }
 
@@ -169,7 +168,9 @@ class SocketService {
           socket.sessionId = sessionId;
           socket.profilePicture = user.profilePicture;
           /* Validation End */
-          const router = await mediasoupManager.getOrCreateRoomRouter(sessionId);
+          const router = await mediasoupManager.getOrCreateRoomRouter(
+            sessionId
+          );
           socket.join(sessionId);
           socket.emit("routerCapabilities", {
             routerRtpCapabilities: router.rtpCapabilities,
@@ -408,8 +409,6 @@ class SocketService {
     redisPubSub.sub.on("message", async (channel, message) => {
       try {
         const data = JSON.parse(message);
-        console.log(data);
-        console.log(channel);
         if (channel.startsWith("bids:")) {
           const gigId = channel.split(":")[1];
           const topBids = await BidModel.find({ gigId })
@@ -419,7 +418,6 @@ class SocketService {
           io.to(gigId).emit(`topBids${gigId}`, topBids);
         } else if (channel.startsWith("notifications:")) {
           const userId = channel.split(":")[1];
-          console.log(data);
           io.to(userId).emit("notifications", data);
         }
       } catch (error) {

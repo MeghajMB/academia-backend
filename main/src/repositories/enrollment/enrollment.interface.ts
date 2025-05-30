@@ -1,15 +1,29 @@
 import { EnrollmentDocument } from "../../models/enrollment.model";
 import { IRepository } from "../base/base.interface";
 import { ClientSession, RootFilterQuery } from "mongoose";
-import { AggregatedStudentGrowth, Enrollment, EnrollmentWithCourse } from "./enrollment.types";
+import {
+  AggregatedStudentGrowth,
+  Enrollment,
+  EnrollmentAnalyticsResult,
+  EnrollmentWithCourse,
+} from "./enrollment.types";
 
 export interface IEnrollmentRepository extends IRepository<EnrollmentDocument> {
+  fetchAdminEnrollmentAnalytics(
+    matchStage: Record<string, any>,
+    dateGroup: "daily" | "monthly" | "yearly"
+  ): Promise<{
+    metrics: EnrollmentAnalyticsResult[];
+    summary: {
+      enrollmentCount: number;
+    };
+  }>;
   getStudentGrowth(
     userId: string,
     filter: "quarter" | "month" | "year",
     start: Date,
     end: Date
-  ): Promise<AggregatedStudentGrowth[]|[]>;
+  ): Promise<AggregatedStudentGrowth[] | []>;
   getEnrollmentMetrics(courseId: string): Promise<EnrollmentDocument[]>;
   countWithFilter(
     filter: RootFilterQuery<EnrollmentDocument> | undefined

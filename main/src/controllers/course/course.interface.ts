@@ -41,4 +41,7 @@ export interface ICourseController {
     next: NextFunction
   ): Promise<void>;
   listCourse(req: Request, res: Response, next: NextFunction): Promise<void>;
+  blockCourse(req: Request, res: Response, next: NextFunction): Promise<void>;
+  getCourseAnalytics(req: Request, res: Response, next: NextFunction): Promise<void>;
+  getCourses(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

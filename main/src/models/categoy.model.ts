@@ -9,7 +9,7 @@ export interface CategoryDocument extends Document {
   updatedAt: Date;
 }
 
-const CategorySchema: Schema<CategoryDocument> = new Schema(
+const CategorySchema: Schema<CategoryDocument> = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true, trim: true },
     description: { type: String, required: true },

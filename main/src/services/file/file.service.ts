@@ -6,19 +6,22 @@ import {
   getSignedCookies,
 } from "@aws-sdk/cloudfront-signer";
 import { IFileService } from "./file.interface";
+import config from "../../config/configuration";
+import { injectable } from "inversify";
 
+@injectable()
 export class FileService implements IFileService {
-  private readonly bucketName = process.env.AWS_BUCKET_NAME!;
-  private readonly tempBucketName = process.env.AWS_TEMP_BUCKET_NAME;
+  private readonly _bucketName = config.aws.bucketName;
+  private readonly _tempBucketName = config.aws.tempBucketName;
 
   async generatePutSignedUrl(
     key: string,
     contentType: string,
-    isPublic: boolean = false,
-    isTemp: boolean = false
+    isPublic = false,
+    isTemp = false
   ): Promise<string> {
     try {
-      const bucketName = isTemp ? this.tempBucketName : this.bucketName;
+      const bucketName = isTemp ? this._tempBucketName : this._bucketName;
       const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: key,
@@ -35,15 +38,17 @@ export class FileService implements IFileService {
     }
   }
 
-  async generateGetSignedUrl(key: string) {
+  async generateGetSignedUrl(key: string,isTemp=false) {
+    const bucketName = isTemp ? this._tempBucketName : this._bucketName;
     const command = new GetObjectCommand({
-      Bucket: this.bucketName,
+      Bucket: bucketName,
       Key: key,
     });
 
     const signedUrl = await getSignedUrl(s3Client, command);
     return signedUrl;
   }
+
   async generateCloudFrontGetSignedCookies(
     videoPath: string
   ): Promise<CloudfrontSignedCookiesOutput> {

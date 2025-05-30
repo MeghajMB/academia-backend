@@ -31,9 +31,9 @@ export interface ICourseRepository extends IRepository<CourseDocument> {
     sort,
     limit,
   }: {
-    query: Record<any, any>;
+    query: Record<string, any>;
     skip: number;
-    sort: Record<any, any>;
+    sort: Record<string, any>;
     limit: number;
   }): Promise<FetchAllPaginatedCoursesResult[]>;
   createCourseWithSession(
@@ -55,7 +55,7 @@ export interface ICourseRepository extends IRepository<CourseDocument> {
   ): Promise<CourseWithPopulatedFields | null>;
   countDocuments(key: string, value: string): Promise<number>;
   fetchPaginatedCoursesWithFilters(
-    filters: { [key: string]: any },
+    filters: Record<string, any>,
     skip: number,
     limit: number
   ): Promise<CourseWithPopulatedCategory[]>;
@@ -67,7 +67,7 @@ export interface ICourseRepository extends IRepository<CourseDocument> {
   changeCourseStatusWithInstructorIdAndCourseId(
     instructorId: string,
     courseId: string,
-    status: "pending" | "listed"
+    status: "pending" | "listed"|"scheduled"
   ): Promise<CourseDocument | null>;
   // Additional methods like getUser, updateUser, etc.
 }

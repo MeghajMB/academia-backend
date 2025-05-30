@@ -3,11 +3,22 @@ import {
   GetCoursesResponse,
   GetInstructorVerificationRequestsParams,
   GetUsersParams,
+  GetUsersResponse,
   RejectVerificationRequestParams,
 } from "./admin.types";
 
 export interface IAdminService {
-  getUsers({ role, page, limit, search }: GetUsersParams): Promise<any>;
+  fetchAnalytics(
+    filter: "month" | "quarter" | "year" | "custom",
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): Promise<any>;
+  getUsers({
+    role,
+    page,
+    limit,
+    search,
+  }: GetUsersParams): Promise<GetUsersResponse>;
   getCourses({
     page,
     limit,
@@ -20,21 +31,13 @@ export interface IAdminService {
   rejectVerificationRequest({
     rejectReason,
     userId,
-  }: RejectVerificationRequestParams): Promise<any>;
-  approveVerificationRequest(userId: string): Promise<any>;
+  }: RejectVerificationRequestParams): Promise<{ message: string }>;
+  approveVerificationRequest(userId: string): Promise<{ message: string }>;
   getPaginatedCategories(page: number, limit: number): Promise<any>;
-  blockUser(id: string): Promise<any>;
-  blockOrUnblockCourse(id: string): Promise<any>;
-  blockCategory(id: string): Promise<any>;
-  createCategory(category: { name: string; description: string }): Promise<any>;
-  editCategory(
-    category: { name: string; description: string },
-    categoryId: string
-  ): Promise<any>;
   getCourseReviewRequests(page: number, limit: number): Promise<any>;
   rejectCourseReviewRequest(
     rejectReason: string,
     courseId: string
-  ): Promise<any>;
-  approveCourseReviewRequest(courseId: string): Promise<any>;
+  ): Promise<{ message: string }>;
+  approveCourseReviewRequest(courseId: string): Promise<{ message: string }>;
 }

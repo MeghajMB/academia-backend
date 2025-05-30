@@ -18,7 +18,6 @@ import {
 } from "./request.dto";
 import {
   CreateCourseResponseSchema,
-  EditCourseCreationDetailsResponseSchema,
   GetCourseAnalyticsResponseSchema,
   GetCourseCreationDetailsResponseSchema,
   GetCourseDetailsResponseSchema,
@@ -27,14 +26,19 @@ import {
   GetCurriculumResponseSchema,
   GetEnrolledCoursesOfUserResponseSchema,
   GetNewCoursesResponseSchema,
-  ListCourseResponseSchema,
-} from "./response.dto";
+  NullResponseSchema,
+} from "@academia-dev/common";
 import { ICourseController } from "./course.interface";
-import { NullResponseSchema } from "../shared-response.dto";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+import { BlockCourseRequestSchema } from "../admin/request.dto";
 
+@injectable()
 export class CourseController implements ICourseController {
   private pageLimit = 10;
-  constructor(private readonly courseService: ICourseService) {}
+  constructor(
+    @inject(Types.CourseService) private readonly courseService: ICourseService
+  ) {}
 
   async createCourse(
     req: Request,
@@ -98,6 +102,7 @@ export class CourseController implements ICourseController {
       next(error);
     }
   }
+
   async getCourseAnalytics(
     req: Request,
     res: Response,
@@ -253,7 +258,7 @@ export class CourseController implements ICourseController {
         userId,
         courseDetails
       );
-      const response = EditCourseCreationDetailsResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Course creation details updated successfully",
@@ -319,6 +324,7 @@ export class CourseController implements ICourseController {
       next(error);
     }
   }
+
   async submitCourseForReview(
     req: Request,
     res: Response,
@@ -351,15 +357,44 @@ export class CourseController implements ICourseController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      const { courseId } = ListCourseRequestSchema.parse(req.params);
-      await this.courseService.listCourse(id, courseId);
-      const response = ListCourseResponseSchema.parse({
+      const { courseId, scheduleDate } = ListCourseRequestSchema.parse({
+        ...req.params,
+        ...req.body,
+      });
+      await this.courseService.scheduleCourseForListingCourse(
+        id,
+        courseId,
+        scheduleDate
+      );
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
-        message: "Course listed successfully",
+        message: "Course Scheduled successfully",
         data: null,
       });
       res.status(response.code).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async blockCourse(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { courseId } = BlockCourseRequestSchema.parse({
+        courseId: req.params.courseId,
+      });
+      await this.courseService.blockOrUnblockCourse(courseId);
+      const response = NullResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "success",
+        data: null,
+      });
+      res.status(StatusCode.OK).send(response);
     } catch (error) {
       next(error);
     }

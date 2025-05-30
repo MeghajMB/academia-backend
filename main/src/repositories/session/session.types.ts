@@ -18,3 +18,8 @@ export interface GetUsersSessionsResult {
   sessionDuration: number;
   status: "scheduled" | "in-progress" | "completed" | "missed";
 }
+
+export interface SessionAnalyticsResult {
+  date: string;
+  sessionCount: number;
+}

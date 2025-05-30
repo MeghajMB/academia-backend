@@ -14,12 +14,13 @@ import { StatusCode } from "./enums/status-code.enum";
 
 //jobs
 import "./jobs/delete-expired-lectures";
+import config from "./config/configuration";
 
 const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: config.app.clientUrl,
     credentials: true,
     methods: ["POST","PATCH", "PUT", "GET", "OPTIONS", "HEAD", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -38,7 +39,7 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms', 
 app.use(passport.initialize());
 
 app.get("/healthz", (req: Request, res: Response) => {
-  res.status(200).send("OK");
+  res.status(StatusCode.OK).send("OK");
 });
 
 app.use("/api", routes);

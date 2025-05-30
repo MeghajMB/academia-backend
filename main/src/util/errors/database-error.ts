@@ -4,7 +4,7 @@ export class DatabaseError extends CustomError {
   statusCode: number;
   reason: string;
 
-  constructor(reason: string, statusCode: number = 500) {
+  constructor(reason: string, statusCode = 500) {
     super(reason);
     this.reason = reason;
     this.statusCode = statusCode;

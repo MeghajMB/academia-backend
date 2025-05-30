@@ -1,12 +1,16 @@
 import { ReviewDocument } from "../../models/review.model";
 import { IRepository } from "../base/base.interface";
-import { ReviewWithPopulatedStudentId } from "./review.types";
+import { ReviewAnalyticsResult, ReviewWithPopulatedCourseId, ReviewWithPopulatedStudentId } from "./review.types";
 
 export interface IReviewRepository extends IRepository<ReviewDocument> {
+  fetchAdminReviewAnalytics(
+  matchStage: Record<string, any>,
+  dateGroup: "daily" | "monthly" | "yearly"
+): Promise<ReviewAnalyticsResult[]>
   findReviewsByCourse(
     courseId: string
   ): Promise<ReviewWithPopulatedStudentId[]>;
-  findReviewsByStudent(studentId: string): Promise<any>; // You can define a proper return type here
+  findReviewsByStudent(studentId: string): Promise<ReviewWithPopulatedCourseId[]>;
   findByCourseAndStudent(
     courseId: string,
     studentId: string

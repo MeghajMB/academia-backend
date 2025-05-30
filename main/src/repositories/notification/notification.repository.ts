@@ -1,3 +1,4 @@
+import { injectable } from "inversify";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   NotificationDocument,
@@ -7,6 +8,7 @@ import { DatabaseError } from "../../util/errors/database-error";
 import { BaseRepository } from "../base/base.repository";
 import { INotificationRepository } from "./notification.interface";
 
+@injectable()
 export class NotificationRepository
   extends BaseRepository<NotificationDocument>
   implements INotificationRepository

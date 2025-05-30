@@ -6,9 +6,8 @@ import mongoose from "mongoose";
 import { createServer } from "http";
 import { app } from "./app";
 import SocketService from "./sockets/socket.service";
-import { bidConsumer } from "./kafka/consumers/bid.consumer";
-import { lectureUploadedConsumer } from "./kafka/consumers/lecture-upload.consumer";
 import config from "./config/configuration";
+import { runConsumers } from "./kafka/consumers";
 
 let socketService: SocketService;
 const start = async () => {
@@ -17,8 +16,7 @@ const start = async () => {
     console.log("Connected to MongoDB");
     const server = createServer(app);
     socketService = new SocketService(server);
-    await bidConsumer();
-    await lectureUploadedConsumer();
+    await runConsumers()
 
     const port = config.env.port || 3001;
     server.listen(port, () => console.log(`Server running on port ${port}`));

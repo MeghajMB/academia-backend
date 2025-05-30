@@ -12,13 +12,13 @@ const deleteExpiredLectures = async () => {
     });
     console.log(`successfully deleted ${deletedLectureCount} lectures`)
   } catch (error) {
-    console.error("❌ Error deleting expired lectures:", error);
+    console.error(" Error deleting expired lectures:", error);
   }
 };
 
 // ✅ Schedule the cron job to run every midnight
 cron.schedule("0 0 * * *", async () => {
-  console.log("⏳ Running expired lecture deletion job...");
+  console.log(" Running expired lecture deletion job...");
   await deleteExpiredLectures();
 });
 

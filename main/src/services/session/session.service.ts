@@ -1,9 +1,15 @@
+import { inject, injectable } from "inversify";
 import { ISessionRepository } from "../../repositories/session/session.interface";
 import { ISessionService } from "./session.interface";
 import { GetSessionsOfUserParams, SessionDetails } from "./session.types";
+import { Types } from "../../container/types";
 
+@injectable()
 export class SessionService implements ISessionService {
-  constructor(private readonly sessionRepository: ISessionRepository) {}
+  constructor(
+    @inject(Types.SessionRepository)
+    private readonly sessionRepository: ISessionRepository
+  ) {}
   async getSessionsOfUser(
     payload: GetSessionsOfUserParams,
     userId: string
@@ -22,7 +28,7 @@ export class SessionService implements ISessionService {
             sessionDate: session.sessionDate.toISOString(),
             sessionDuration: session.sessionDuration,
             status: session.status,
-            description:session.description,
+            description: session.description,
             instructor: {
               id: session.instructor.id.toString(),
               name: session.instructor.name,
@@ -39,7 +45,6 @@ export class SessionService implements ISessionService {
         currentPage: 1,
         limit: payload.limit,
       };
-      console.log(response);
       return { sessionDetails: updatedSessionDetails, pagination };
     } catch (error) {
       throw error;

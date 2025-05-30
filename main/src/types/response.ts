@@ -1,4 +1,3 @@
-// src/types/index.ts
 export interface SuccessResponse<T = any> {
     status: 'success';
     code: number;

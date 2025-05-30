@@ -5,18 +5,15 @@ export interface UserDocument extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   email: string;
-  role: "student" | "instructor";
+  role: "student" | "instructor"|"admin";
   password: string;
   phoneNo: number;
   isBlocked: boolean;
-  purpleCoin: Number;
-  goldCoin: Number;
-  redeemableCoins: number;
+  purpleCoin: number;
   profilePicture: string;
   googleId: string;
   headline?: string;
   verified: "pending" | "rejected" | "notRequested" | "verified";
-  rejectedReason: string;
   biography?: string;
   links?: {
     facebook?: string;
@@ -28,19 +25,17 @@ export interface UserDocument extends Document {
   updatedAt: Date;
 }
 
-const UserSchema: Schema<UserDocument> = new Schema(
+const UserSchema: Schema<UserDocument> = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     role: {
       type: String,
       required: true,
-      enum: ["student", "instructor"],
+      enum: ["student", "instructor","admin"],
       default: "student",
     },
     purpleCoin: { type: Number, default: 0, required: true },
-    goldCoin: { type: Number, default: 0, required: true },
-    redeemableCoins: { type: Number, default: 0, required: true },
     password: { type: String },
     phoneNo: { type: Number },
     isBlocked: { type: Boolean, required: true, default: false },
@@ -50,18 +45,15 @@ const UserSchema: Schema<UserDocument> = new Schema(
       enum: ["pending", "rejected", "notRequested", "verified"],
       default: "notRequested",
     },
-    rejectedReason: {
-      type: String,
-    },
     profilePicture: { type: String, default: "" },
     googleId: { type: String },
     headline: { type: String, default: "student", trim: true },
-    biography: { type: String, default: "", trim: true },
+    biography: { type: String, trim: true },
     links: {
-      facebook: { type: String, default: "", trim: true },
-      linkedin: { type: String, default: "", trim: true },
-      twitter: { type: String, default: "", trim: true },
-      website: { type: String, default: "", trim: true },
+      facebook: { type: String, trim: true },
+      linkedin: { type: String, trim: true },
+      twitter: { type: String, trim: true },
+      website: { type: String, trim: true },
     },
   },
   {

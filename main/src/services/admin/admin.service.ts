@@ -2,29 +2,177 @@ import { IUserRepository } from "../../repositories/user/user.interface";
 import { ICategoryRepository } from "../../repositories/category/category.interface";
 import { ICourseRepository } from "../../repositories/course/course.interface";
 import { IAdminService } from "./admin.interface";
-import { AppError } from "../../util/errors/app-error";
-import { NotFoundError } from "../../util/errors/not-found-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-import { redis } from "../../lib/redis";
-import { StatusCode } from "../../enums/status-code.enum";
 import { INotificationService } from "../notification/notification.interface";
 import {
   GetCoursesParams,
   GetCoursesResponse,
   GetInstructorVerificationRequestsParams,
   GetUsersParams,
+  GetUsersResponse,
   RejectVerificationRequestParams,
 } from "./admin.types";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+import moment from "moment";
+import { ITransactionRepository } from "../../repositories/transaction/transaction.interface";
+import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.interface";
+import { ISessionRepository } from "../../repositories/session/session.interface";
+import { IReviewRepository } from "../../repositories/review/review.interface";
 
+@injectable()
 export class AdminService implements IAdminService {
   constructor(
+    @inject(Types.userRepository)
     private readonly userRepository: IUserRepository,
+    @inject(Types.CategoryRepository)
     private readonly categoryRepository: ICategoryRepository,
+    @inject(Types.CourseRepository)
     private readonly courseRepository: ICourseRepository,
-    private readonly notificationService: INotificationService
+    @inject(Types.NotificationService)
+    private readonly notificationService: INotificationService,
+    @inject(Types.TransactionRepository)
+    private readonly transactionRepository: ITransactionRepository,
+    @inject(Types.EnrollmentRepository)
+    private readonly enrollmentRepository: IEnrollmentRepository,
+    @inject(Types.SessionRepository)
+    private readonly sessionRepository: ISessionRepository,
+    @inject(Types.ReviewRepository)
+    private readonly reviewRepository: IReviewRepository
   ) {}
 
-  async getUsers({ role, page, limit, search }: GetUsersParams) {
+  async fetchAnalytics(
+    filter: "month" | "quarter" | "year" | "custom",
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): Promise<any> {
+    let matchStage: Record<string, any>;
+    let dateGroup: "daily" | "monthly" | "yearly" = "daily";
+    switch (filter) {
+
+      case "month":
+        matchStage = {
+          createdAt: {
+            $gte: moment().startOf("year").toDate(),
+            $lt: moment().endOf("year").toDate(),
+          },
+        };
+        dateGroup = "daily";
+        break;
+
+      case "quarter":
+        matchStage = {
+          createdAt: {
+            $gte: moment().startOf("year").toDate(),
+            $lt: moment().endOf("year").toDate(),
+          },
+        };
+        dateGroup = "monthly";
+        break;
+
+      case "year":
+        matchStage = {
+          createdAt: {
+            $gte: moment().startOf("year").toDate(),
+            $lt: moment().endOf("year").toDate(),
+          },
+        };
+        dateGroup = "monthly";
+        break;
+
+      case "custom":
+        if (!startDate || !endDate) {
+          throw new Error(
+            "startDate and endDate are required for custom filter"
+          );
+        }
+        const start = moment(startDate);
+        const end = moment(endDate);
+        if (!start.isValid() || !end.isValid()) {
+          throw new Error(
+            "Invalid startDate or endDate"
+          );
+        }
+        matchStage = {
+          createdAt: {
+            $gte: start.startOf("day").toDate(),
+            $lt: end.endOf("day").toDate(),
+          },
+        };
+        const rangeDays = end.diff(start, "days");
+        if (rangeDays > 365) {
+          dateGroup = "monthly";
+        } else {
+          dateGroup = "daily";
+        }
+        break;
+
+      default:
+        matchStage = {};
+    }
+    const [transactionData, enrollmentData, sessionData, reviewData] =
+      await Promise.all([
+        this.transactionRepository.fetchAdminTransactionAnalytics(
+          matchStage,
+          dateGroup
+        ),
+        this.enrollmentRepository.fetchAdminEnrollmentAnalytics(
+          matchStage,
+          dateGroup
+        ),
+        this.sessionRepository.fetchAdminSessionAnalytics(
+          matchStage,
+          dateGroup
+        ),
+        this.reviewRepository.fetchAdminReviewAnalytics(matchStage, dateGroup),
+      ]);
+
+    const reviewSummary = {
+      averageRating: reviewData[0]?.averageRating || 0,
+      totalReviews: reviewData[0]?.totalReviews || 0,
+    };
+    const defaultDistribution: Record<1 | 2 | 3 | 4 | 5, number> = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    };
+
+    const reviewDistribution: Record<1 | 2 | 3 | 4 | 5, number> =
+      reviewData?.[0]?.ratings.reduce(
+        (acc, review) => {
+          acc[review.rating] = review.count;
+          return acc;
+        },
+        { ...defaultDistribution }
+      ) ?? defaultDistribution;
+
+    const finalResult = {
+      transaction: {
+        summary: transactionData.summary,
+        metrics: transactionData.metrics,
+      },
+      enrollment: {
+        summary: enrollmentData.summary,
+        metrics: enrollmentData.metrics,
+      },
+      session: { summary: sessionData.summary, metrics: sessionData.metrics },
+      review: {
+        summary: reviewSummary,
+        distribution: reviewDistribution,
+      },
+    };
+
+    return finalResult;
+  }
+
+  async getUsers({
+    role,
+    page,
+    limit,
+    search,
+  }: GetUsersParams): Promise<GetUsersResponse> {
     try {
       const skip = (page - 1) * limit;
       const totalDocuments = await this.userRepository.countDocuments(
@@ -37,6 +185,15 @@ export class AdminService implements IAdminService {
         role,
         search
       );
+      const updatedUsers = users.map((user) => {
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          profilePicture: user.profilePicture,
+          isBlocked: user.isBlocked,
+        };
+      });
       const pagination = {
         totalDocuments,
         totalPages: Math.ceil(totalDocuments / limit),
@@ -44,12 +201,12 @@ export class AdminService implements IAdminService {
         limit,
       };
 
-      return { users, pagination };
+      return { users: updatedUsers, pagination };
     } catch (error) {
       throw error;
     }
   }
-  
+
   async getCourses({
     page,
     limit,
@@ -136,12 +293,13 @@ export class AdminService implements IAdminService {
       throw new BadRequestError("User Not Found");
     }
 
-    await this.userRepository.update(
+    await this.userRepository.update(userId, { verified: "rejected" }, {});
+    await this.notificationService.sendNotification(
       userId,
-      { verified: "rejected", rejectedReason: rejectReason },
-      {}
+      "system",
+      "Instructor Request Rejected",
+      rejectReason
     );
-
     return { message: "Verification request rejected" };
   }
 
@@ -164,6 +322,14 @@ export class AdminService implements IAdminService {
     const totalDocuments = await this.categoryRepository.countAll();
     const categories =
       await this.categoryRepository.fetchCategoryWithPagination(skip, limit);
+    const updatedCategories = categories.map((category) => {
+      return {
+        id: category._id.toString(),
+        name: category.name,
+        description: category.description,
+        isBlocked: category.isBlocked,
+      };
+    });
     const pagination = {
       totalDocuments,
       totalPages: Math.ceil(totalDocuments / limit),
@@ -171,120 +337,9 @@ export class AdminService implements IAdminService {
       limit,
     };
 
-    return { categories, pagination };
+    return { categories: updatedCategories, pagination };
   }
 
-  async blockUser(userId: string) {
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new NotFoundError();
-    }
-    await this.userRepository.update(
-      userId,
-      { isBlocked: !user.isBlocked },
-      {}
-    );
-    if (user.isBlocked) {
-      await redis.del(`refreshToken:${user.id}`);
-    }
-    return { message: user.isBlocked ? "User blocked" : "User unblocked" };
-  }
-  
-  async blockOrUnblockCourse(id: string) {
-    try {
-      const course = await this.courseRepository.toggleCourseStatus(id);
-      if (!course) {
-        throw new AppError("Course not found", StatusCode.NOT_FOUND);
-      }
-      return {
-        message: course.isBlocked ? "Course blocked" : "Course unblocked",
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async blockCategory(categoryId: string) {
-    try {
-      const category = await this.categoryRepository.findById(categoryId);
-      if (!category) {
-        throw new NotFoundError("Category Not Found");
-      }
-      category.isBlocked = !category.isBlocked;
-      await this.categoryRepository.update(
-        categoryId,
-        { isBlocked: !category.isBlocked },
-        {}
-      );
-      return {
-        message: category.isBlocked ? "Category blocked" : "Category unblocked",
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async createCategory(category: { name: string; description: string }) {
-    try {
-      const existingCategory = await this.categoryRepository.findByName(
-        category.name
-      );
-      if (existingCategory) {
-        throw new AppError("Category already exists", StatusCode.CONFLICT);
-      }
-      const newCategory = await this.categoryRepository.createCategory(
-        category
-      );
-      return newCategory;
-    } catch (error) {
-      throw error;
-    }
-  }
-  
-  async editCategory(
-    category: { name: string; description: string },
-    categoryId: string
-  ) {
-    try {
-      const existingCategory = await this.categoryRepository.findById(
-        categoryId
-      );
-
-      if (!existingCategory) {
-        throw new AppError("Category doesn't exist", StatusCode.NOT_FOUND);
-      }
-
-      // Check if another category already exists with the same name
-      const duplicateCategory = await this.categoryRepository.findByName(
-        category.name
-      );
-
-      if (duplicateCategory && duplicateCategory.id !== categoryId) {
-        throw new AppError(
-          "Category with this name already exists",
-          StatusCode.CONFLICT
-        );
-      }
-      // Update the category
-      const updatedCategory = await this.categoryRepository.update(
-        categoryId,
-        category,
-        {}
-      );
-      if (!updatedCategory) {
-        throw new AppError("Category not found", StatusCode.NOT_FOUND);
-      }
-      return {
-        id: updatedCategory._id.toString(),
-        name: updatedCategory.name,
-        description: updatedCategory.description,
-        isBlocked: updatedCategory.isBlocked,
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-  
   async getCourseReviewRequests(page: number, limit: number) {
     try {
       const skip = (page - 1) * limit;
@@ -323,7 +378,7 @@ export class AdminService implements IAdminService {
       throw error;
     }
   }
-  
+
   async rejectCourseReviewRequest(rejectReason: string, courseId: string) {
     try {
       const course = await this.courseRepository.rejectCourseReviewRequest(
