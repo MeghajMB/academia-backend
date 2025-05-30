@@ -34,6 +34,12 @@ class SocketService {
         methods: ["GET", "POST"],
         credentials: true,
       },
+      pingTimeout: 60000, // 60s
+      pingInterval: 25000, // 25s
+      connectionStateRecovery: {
+        maxDisconnectionDuration: 5 * 60 * 1000, // 5 minutes
+        skipMiddlewares: true,
+      },
     });
     this._mediasoupManager = mediasoupManager;
     this.listenForConnections();
