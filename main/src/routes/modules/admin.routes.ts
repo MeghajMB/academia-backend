@@ -46,6 +46,13 @@ router.get(
   verifyUser("admin"),
   adminController.getAdminCourses.bind(adminController)
 );
+//fetch admin dashboard
+router.get(
+  "/analytics",
+  verifyToken,
+  verifyUser("admin"),
+  adminController.getAnalytics.bind(adminController)
+);
 
 /* POST Routes */
 

@@ -14,6 +14,11 @@ import {
 } from "./admin.types";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import moment from "moment";
+import { ITransactionRepository } from "../../repositories/transaction/transaction.interface";
+import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.interface";
+import { ISessionRepository } from "../../repositories/session/session.interface";
+import { IReviewRepository } from "../../repositories/review/review.interface";
 
 @injectable()
 export class AdminService implements IAdminService {
@@ -25,10 +30,149 @@ export class AdminService implements IAdminService {
     @inject(Types.CourseRepository)
     private readonly courseRepository: ICourseRepository,
     @inject(Types.NotificationService)
-    private readonly notificationService: INotificationService
+    private readonly notificationService: INotificationService,
+    @inject(Types.TransactionRepository)
+    private readonly transactionRepository: ITransactionRepository,
+    @inject(Types.EnrollmentRepository)
+    private readonly enrollmentRepository: IEnrollmentRepository,
+    @inject(Types.SessionRepository)
+    private readonly sessionRepository: ISessionRepository,
+    @inject(Types.ReviewRepository)
+    private readonly reviewRepository: IReviewRepository
   ) {}
 
-  async getUsers({ role, page, limit, search }: GetUsersParams):Promise<GetUsersResponse> {
+  async fetchAnalytics(
+    filter: "month" | "quarter" | "year" | "custom",
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): Promise<any> {
+    let matchStage: Record<string, any>;
+    let dateGroup: "daily" | "monthly" | "yearly" = "daily";
+    switch (filter) {
+
+      case "month":
+        matchStage = {
+          createdAt: {
+            $gte: moment().startOf("year").toDate(),
+            $lt: moment().endOf("year").toDate(),
+          },
+        };
+        dateGroup = "daily";
+        break;
+
+      case "quarter":
+        matchStage = {
+          createdAt: {
+            $gte: moment().startOf("year").toDate(),
+            $lt: moment().endOf("year").toDate(),
+          },
+        };
+        dateGroup = "monthly";
+        break;
+
+      case "year":
+        matchStage = {
+          createdAt: {
+            $gte: moment().startOf("year").toDate(),
+            $lt: moment().endOf("year").toDate(),
+          },
+        };
+        dateGroup = "monthly";
+        break;
+
+      case "custom":
+        if (!startDate || !endDate) {
+          throw new Error(
+            "startDate and endDate are required for custom filter"
+          );
+        }
+        const start = moment(startDate);
+        const end = moment(endDate);
+        if (!start.isValid() || !end.isValid()) {
+          throw new Error(
+            "Invalid startDate or endDate"
+          );
+        }
+        matchStage = {
+          createdAt: {
+            $gte: start.startOf("day").toDate(),
+            $lt: end.endOf("day").toDate(),
+          },
+        };
+        const rangeDays = end.diff(start, "days");
+        if (rangeDays > 365) {
+          dateGroup = "monthly";
+        } else {
+          dateGroup = "daily";
+        }
+        break;
+
+      default:
+        matchStage = {};
+    }
+    const [transactionData, enrollmentData, sessionData, reviewData] =
+      await Promise.all([
+        this.transactionRepository.fetchAdminTransactionAnalytics(
+          matchStage,
+          dateGroup
+        ),
+        this.enrollmentRepository.fetchAdminEnrollmentAnalytics(
+          matchStage,
+          dateGroup
+        ),
+        this.sessionRepository.fetchAdminSessionAnalytics(
+          matchStage,
+          dateGroup
+        ),
+        this.reviewRepository.fetchAdminReviewAnalytics(matchStage, dateGroup),
+      ]);
+
+    const reviewSummary = {
+      averageRating: reviewData[0]?.averageRating || 0,
+      totalReviews: reviewData[0]?.totalReviews || 0,
+    };
+    const defaultDistribution: Record<1 | 2 | 3 | 4 | 5, number> = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    };
+
+    const reviewDistribution: Record<1 | 2 | 3 | 4 | 5, number> =
+      reviewData?.[0]?.ratings.reduce(
+        (acc, review) => {
+          acc[review.rating] = review.count;
+          return acc;
+        },
+        { ...defaultDistribution }
+      ) ?? defaultDistribution;
+
+    const finalResult = {
+      transaction: {
+        summary: transactionData.summary,
+        metrics: transactionData.metrics,
+      },
+      enrollment: {
+        summary: enrollmentData.summary,
+        metrics: enrollmentData.metrics,
+      },
+      session: { summary: sessionData.summary, metrics: sessionData.metrics },
+      review: {
+        summary: reviewSummary,
+        distribution: reviewDistribution,
+      },
+    };
+
+    return finalResult;
+  }
+
+  async getUsers({
+    role,
+    page,
+    limit,
+    search,
+  }: GetUsersParams): Promise<GetUsersResponse> {
     try {
       const skip = (page - 1) * limit;
       const totalDocuments = await this.userRepository.countDocuments(
@@ -149,11 +293,7 @@ export class AdminService implements IAdminService {
       throw new BadRequestError("User Not Found");
     }
 
-    await this.userRepository.update(
-      userId,
-      { verified: "rejected" },
-      {}
-    );
+    await this.userRepository.update(userId, { verified: "rejected" }, {});
     await this.notificationService.sendNotification(
       userId,
       "system",

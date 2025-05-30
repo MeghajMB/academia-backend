@@ -48,12 +48,12 @@ const UserSchema: Schema<UserDocument> = new mongoose.Schema(
     profilePicture: { type: String, default: "" },
     googleId: { type: String },
     headline: { type: String, default: "student", trim: true },
-    biography: { type: String, default: "", trim: true },
+    biography: { type: String, trim: true },
     links: {
-      facebook: { type: String, default: "", trim: true },
-      linkedin: { type: String, default: "", trim: true },
-      twitter: { type: String, default: "", trim: true },
-      website: { type: String, default: "", trim: true },
+      facebook: { type: String, trim: true },
+      linkedin: { type: String, trim: true },
+      twitter: { type: String, trim: true },
+      website: { type: String, trim: true },
     },
   },
   {

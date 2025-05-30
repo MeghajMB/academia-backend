@@ -158,7 +158,8 @@ class SocketService {
           }
           const sessionEndTime =
             session.sessionDate.getTime() + session.sessionDuration * 60 * 1000;
-          if (session.status !== "in-progress" || sessionEndTime < Date.now()) {
+          if (session.status !== "in-progress" // || sessionEndTime < Date.now()
+          ) {
             throw new Error("Session is over");
           }
 

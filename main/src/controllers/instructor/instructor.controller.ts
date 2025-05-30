@@ -1,16 +1,16 @@
 import { NextFunction, Request, Response } from "express";
-import { InstructorService } from "../../services/instructor/instructor.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { IInstructorController } from "./instructor.interface";
 import { GetAnalyticsRequestSchema } from "./request.dto";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { IInstructorService } from "../../services/instructor/instructor.interface";
 
 @injectable()
 export class InstructorController implements IInstructorController {
   constructor(
     @inject(Types.InstructorService)
-    private readonly instructorService: InstructorService
+    private readonly instructorService: IInstructorService
   ) {}
 
   async getProfile(

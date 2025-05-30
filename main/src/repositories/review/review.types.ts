@@ -11,3 +11,9 @@ export interface ReviewWithPopulatedCourseId
   extends Omit<ReviewDocument, "courseId"> {
   courseId: CourseDocument;
 }
+
+export interface ReviewAnalyticsResult {
+  totalReviews: number;
+  averageRating: number;
+  ratings: { rating: 1 | 2 | 3 | 4 | 5; count: number }[];
+}[]

@@ -8,7 +8,17 @@ import {
 } from "./admin.types";
 
 export interface IAdminService {
-  getUsers({ role, page, limit, search }: GetUsersParams): Promise<GetUsersResponse>;
+  fetchAnalytics(
+    filter: "month" | "quarter" | "year" | "custom",
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): Promise<any>;
+  getUsers({
+    role,
+    page,
+    limit,
+    search,
+  }: GetUsersParams): Promise<GetUsersResponse>;
   getCourses({
     page,
     limit,
@@ -21,13 +31,13 @@ export interface IAdminService {
   rejectVerificationRequest({
     rejectReason,
     userId,
-  }: RejectVerificationRequestParams): Promise<{message:string}>;
-  approveVerificationRequest(userId: string): Promise<{message:string}>;
+  }: RejectVerificationRequestParams): Promise<{ message: string }>;
+  approveVerificationRequest(userId: string): Promise<{ message: string }>;
   getPaginatedCategories(page: number, limit: number): Promise<any>;
   getCourseReviewRequests(page: number, limit: number): Promise<any>;
   rejectCourseReviewRequest(
     rejectReason: string,
     courseId: string
-  ): Promise<{message:string}>;
-  approveCourseReviewRequest(courseId: string): Promise<{message:string}>;
+  ): Promise<{ message: string }>;
+  approveCourseReviewRequest(courseId: string): Promise<{ message: string }>;
 }

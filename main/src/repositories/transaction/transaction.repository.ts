@@ -9,9 +9,10 @@ import { StatusCode } from "../../enums/status-code.enum";
 import {
   AggregatedEarnings,
   getPaginatedTransactionsOfUserRepositoryParams,
+  TransactionAnalyticsResult,
   TransactionBase,
 } from "./transaction.types";
-import { ClientSession, Types } from "mongoose";
+import { ClientSession, PipelineStage, Types } from "mongoose";
 import { injectable } from "inversify";
 
 @injectable()
@@ -22,6 +23,108 @@ export class TransactionRepository
   constructor() {
     super(TransactionModel);
   }
+
+  async fetchAdminTransactionAnalytics(
+    matchStage: Record<string, any>,
+    dateGroup: "daily" | "monthly" | "yearly"
+  ): Promise<{
+    metrics: TransactionAnalyticsResult[];
+    summary: {
+      totalRevenue: number;
+      platformShare: number;
+      instructorShare: number;
+      count: number;
+    };
+  }> {
+    try {
+      let dateFormat: string;
+
+      switch (dateGroup) {
+        case "daily":
+          dateFormat = "%Y-%m-%d";
+          break;
+        case "monthly":
+          dateFormat = "%Y-%m";
+          break;
+        case "yearly":
+          dateFormat = "%Y";
+          break;
+        default:
+          dateFormat = "%Y-%m-%d";
+      }
+
+      const pipeline: PipelineStage[] = [
+        {
+          $match: {
+            ...matchStage,
+            status: "success",
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: dateFormat,
+                date: "$createdAt",
+              },
+            },
+            totalRevenue: { $sum: "$amount" },
+            platformShare: { $sum: "$platformShare" },
+            instructorShare: { $sum: "$instructorShare" },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $sort: {
+            _id: 1,
+          },
+        },
+      ];
+
+      const transactionStats = await TransactionModel.aggregate(
+        pipeline
+      ).exec();
+
+      const updatedTransactionStats = transactionStats.map((item) => ({
+        date: item._id,
+        totalRevenue: item.totalRevenue,
+        platformShare: item.platformShare,
+        instructorShare: item.instructorShare,
+        count: item.count,
+      }));
+
+      const summaryResult = await TransactionModel.aggregate([
+        {
+          $match: { ...matchStage },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$amount" },
+            platformShare: { $sum: "$platformShare" },
+            instructorShare: { $sum: "$instructorShare" },
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+
+      const summary = summaryResult[0] || {
+        totalRevenue: 0,
+        platformShare: 0,
+        instructorShare: 0,
+        count: 0,
+      };
+
+      return { metrics: updatedTransactionStats, summary };
+    } catch (error) {
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   async getPaginatedTransactionsOfUser(
     payload: getPaginatedTransactionsOfUserRepositoryParams
   ): Promise<{
@@ -29,7 +132,7 @@ export class TransactionRepository
     totalCount: [{ count: number }];
   }> {
     try {
-      const matchCriteria: Record<string,any> = {
+      const matchCriteria: Record<string, any> = {
         userId: payload.userId,
       };
 

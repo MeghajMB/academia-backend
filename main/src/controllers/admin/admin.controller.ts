@@ -1,12 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import { AdminService } from "../../services/admin/admin.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import { IAdminController } from "./admin.interface";
 import {
   ApproveCourseReviewRequestSchema,
   ApproveVerificationRequestSchema,
-  BlockCourseRequestSchema,
-  BlockUserRequestSchema,
+  GetAdminAnalyticsRequestSchema,
   getAdminCoursesRequestSchema,
   GetCategoriesRequestSchema,
   GetCourseReviewRequestsRequestSchema,
@@ -16,6 +14,7 @@ import {
   RejectVerificationRequestSchema,
 } from "./request.dto";
 import {
+  GetAdminAnalyticsResponseSchema,
   GetAdminCoursesResponseSchema,
   GetCategoriesResponseSchema,
   GetCourseReviewRequestsResponseSchema,
@@ -33,6 +32,31 @@ export class AdminController implements IAdminController {
   constructor(
     @inject(Types.AdminService) private readonly adminService: IAdminService
   ) {}
+
+  async getAnalytics(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { filter, endDate, startDate } =
+        GetAdminAnalyticsRequestSchema.parse(req.query);
+      const result = await this.adminService.fetchAnalytics(
+        filter,
+        startDate,
+        endDate
+      );
+      const response = GetAdminAnalyticsResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "Analytics Fetched Successfully",
+        data: result,
+      });
+      res.status(response.code).send(response);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async getUsers(
     req: Request,
@@ -54,7 +78,7 @@ export class AdminController implements IAdminController {
         message: "Users retrieved successfully",
         data: result,
       });
-      res.status(StatusCode.OK).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -78,7 +102,7 @@ export class AdminController implements IAdminController {
         message: "Courses retrieved successfully",
         data: result,
       });
-      res.status(StatusCode.OK).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -103,7 +127,7 @@ export class AdminController implements IAdminController {
         message: "Instructor verification requests retrieved successfully",
         data: result,
       });
-      res.status(StatusCode.OK).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -129,7 +153,7 @@ export class AdminController implements IAdminController {
         message: "Verification request processed",
         data: null,
       });
-      res.status(StatusCode.OK).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -149,7 +173,7 @@ export class AdminController implements IAdminController {
         message: "Verification request processed",
         data: null,
       });
-      res.status(200).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
@@ -172,7 +196,7 @@ export class AdminController implements IAdminController {
         message: "Categories retrieved successfully",
         data: result,
       });
-      res.status(StatusCode.OK).send(response);
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }

@@ -1,8 +1,12 @@
-import { Types } from "mongoose";
+import { PipelineStage, Types } from "mongoose";
 import { SessionDocument, SessionModel } from "../../models/session.model";
 import { BaseRepository } from "../base/base.repository";
 import { ISessionRepository } from "./session.interface";
-import { GetUsersSessionsInput, GetUsersSessionsResult } from "./session.types";
+import {
+  GetUsersSessionsInput,
+  GetUsersSessionsResult,
+  SessionAnalyticsResult,
+} from "./session.types";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { injectable } from "inversify";
@@ -17,13 +21,96 @@ export class SessionRepository
     super(SessionModel);
   }
 
+  async fetchAdminSessionAnalytics(
+    matchStage: Record<string, any>,
+    dateGroup: "daily" | "monthly" | "yearly"
+  ): Promise<{
+    metrics: SessionAnalyticsResult[];
+    summary: {
+      sessionCount: number;
+    };
+  }> {
+    try {
+      let dateFormat: string;
+
+      switch (dateGroup) {
+        case "daily":
+          dateFormat = "%Y-%m-%d";
+          break;
+        case "monthly":
+          dateFormat = "%Y-%m";
+          break;
+        case "yearly":
+          dateFormat = "%Y";
+          break;
+        default:
+          throw new Error("Invalid date group specified");
+      }
+
+      const pipeline: PipelineStage[] = [
+        {
+          $match: {
+            ...matchStage,
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: dateFormat,
+                date: "$sessionDate", // sessionDate is the key date here
+              },
+            },
+            sessionCount: { $sum: 1 },
+          },
+        },
+        {
+          $sort: { _id: 1 },
+        },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id",
+            sessionCount: 1,
+          },
+        },
+      ];
+
+      const sessionStats = await SessionModel.aggregate(pipeline).exec();
+
+      const summaryResult = await SessionModel.aggregate([
+        {
+          $match: {
+            ...matchStage,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            sessionCount: { $sum: 1 },
+          },
+        },
+      ]);
+
+      const summary = summaryResult[0] || { sessionCount: 0 };
+
+      return { metrics: sessionStats ?? [], summary };
+    } catch (error) {
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   async getUserSessions(
     input: GetUsersSessionsInput
   ): Promise<GetUsersSessionsResult[] | []> {
     try {
       const { limit, status, search, page = 1, userId } = input;
 
-      const filter: Record<string,any> = {
+      const filter: Record<string, any> = {
         participants: { $elemMatch: { userId: new Types.ObjectId(userId) } },
       };
 

@@ -15,6 +15,16 @@ router.get(
   verifyUser("instructor", "student", "admin"),
   userController.getProfile.bind(userController)
 );
+/**
+ * PUT /user/profile
+ * Updates the profile of the user
+ */
+router.put(
+  "/profile",
+  verifyToken,
+  verifyUser("instructor", "student"),
+  userController.putProfile.bind(userController)
+);
 
 router.get(
   "/instructor-profile/:instructorId",

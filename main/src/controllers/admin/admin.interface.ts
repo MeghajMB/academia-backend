@@ -34,4 +34,9 @@ export interface IAdminController {
     res: Response,
     next: NextFunction
   ): Promise<void>;
+  getAnalytics(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void>;
 }

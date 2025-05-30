@@ -4,7 +4,7 @@ import { ExistingUserError } from "../../util/errors/existing-user-error";
 import { AppError } from "../../util/errors/app-error";
 import bcrypt from "bcryptjs";
 import { authenticator } from "otplib";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JsonWebTokenError, JwtPayload } from "jsonwebtoken";
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { NotFoundError } from "../../util/errors/not-found-error";
@@ -41,8 +41,10 @@ import { Types } from "../../container/types";
 @injectable()
 export class AuthService implements IAuthService {
   constructor(
-    @inject(Types.userRepository) private readonly userRepository: IUserRepository,
-    @inject(Types.WalletRepository) private readonly walletRepository: IWalletRepository
+    @inject(Types.userRepository)
+    private readonly userRepository: IUserRepository,
+    @inject(Types.WalletRepository)
+    private readonly walletRepository: IWalletRepository
   ) {}
 
   async refreshToken({
@@ -83,6 +85,9 @@ export class AuthService implements IAuthService {
         profilePicture: user.profilePicture,
       };
     } catch (error) {
+      if (error instanceof JsonWebTokenError) {
+        throw new BadRequestError("Token has expired");
+      }
       throw error;
     }
   }
@@ -139,7 +144,7 @@ export class AuthService implements IAuthService {
   async saveUser({ email, otp }: SaveUserParams): Promise<SaveUserResponse> {
     const data = await redis.get(`tempUser:${email}`);
     const storedOtp = await redis.get(`otp:${email}`);
-    
+
     if (!data) {
       throw new AppError("SignIn Again", StatusCode.NOT_FOUND);
     }

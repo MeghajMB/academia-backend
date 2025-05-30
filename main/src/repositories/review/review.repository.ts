@@ -4,7 +4,11 @@ import { BaseRepository } from "../base/base.repository";
 import { IReviewRepository } from "./review.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-import { ReviewWithPopulatedCourseId, ReviewWithPopulatedStudentId } from "./review.types";
+import {
+  ReviewAnalyticsResult,
+  ReviewWithPopulatedCourseId,
+  ReviewWithPopulatedStudentId,
+} from "./review.types";
 import { UserDocument } from "../../models/user.model";
 import { injectable } from "inversify";
 import { CourseDocument } from "../../models/course.model";
@@ -16,6 +20,43 @@ export class ReviewRepository
 {
   constructor() {
     super(ReviewModel);
+  }
+
+  async fetchAdminReviewAnalytics(
+    matchStage: Record<string, any>,
+    dateGroup: "daily" | "monthly" | "yearly"
+  ): Promise<ReviewAnalyticsResult[]> {
+    try {
+      const result = await ReviewModel.aggregate([
+        { $match: { ...matchStage } },
+        {
+          $group: {
+            _id: "$rating",
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalReviews: { $sum: "$count" },
+            averageRating: { $avg: "$_id" },
+            ratings: {
+              $push: {
+                rating: "$_id",
+                count: "$count",
+              },
+            },
+          },
+        },
+      ]);
+      return result;
+    } catch (error) {
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async findReviewsByCourse(
@@ -34,9 +75,11 @@ export class ReviewRepository
     }
   }
 
-  async findReviewsByStudent(studentId: string):Promise<ReviewWithPopulatedCourseId[]> {
+  async findReviewsByStudent(
+    studentId: string
+  ): Promise<ReviewWithPopulatedCourseId[]> {
     try {
-      const review =await  ReviewModel.find({ studentId })
+      const review = await ReviewModel.find({ studentId })
         .populate<{ courseId: CourseDocument }>("courseId")
         .lean();
       return review;

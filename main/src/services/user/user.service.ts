@@ -9,6 +9,7 @@ import { NotFoundError } from "../../util/errors/not-found-error";
 import { UserProfileResponse } from "./user.types";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { PutUserProfileRequestSchemaRequestDTO } from "../../controllers/user/request.dto";
 
 @injectable()
 export class UserService implements IUserService {
@@ -16,6 +17,21 @@ export class UserService implements IUserService {
     @inject(Types.userRepository)
     private readonly userRepository: IUserRepository
   ) {}
+
+  async updateProfile(
+    updateprofileParams: PutUserProfileRequestSchemaRequestDTO
+  ):Promise<{ message: string }> {
+    await this.userRepository.update(
+      updateprofileParams.userId,
+      {
+        name: updateprofileParams.name,
+        headline: updateprofileParams.headLine,
+        profilePicture: updateprofileParams.imageUrl,
+      },
+      {}
+    );
+    return { message: "success" };
+  }
 
   async getProfile(userId: string): Promise<UserProfileResponse> {
     const userProfile = await this.userRepository.findById(userId);
@@ -67,20 +83,19 @@ export class UserService implements IUserService {
     }
   }
 
-    async blockUser(userId: string) {
-      const user = await this.userRepository.findById(userId);
-      if (!user) {
-        throw new NotFoundError();
-      }
-      await this.userRepository.update(
-        userId,
-        { isBlocked: !user.isBlocked },
-        {}
-      );
-      if (user.isBlocked) {
-        await redis.del(`refreshToken:${user.id}`);
-      }
-      return { message: user.isBlocked ? "User blocked" : "User unblocked" };
+  async blockUser(userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError();
     }
-
+    await this.userRepository.update(
+      userId,
+      { isBlocked: !user.isBlocked },
+      {}
+    );
+    if (user.isBlocked) {
+      await redis.del(`refreshToken:${user.id}`);
+    }
+    return { message: user.isBlocked ? "User blocked" : "User unblocked" };
+  }
 }

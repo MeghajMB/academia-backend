@@ -27,7 +27,6 @@ export class GigService implements IGigService {
     instructorId: string
   ): Promise<CreateGigServiceResponse> {
     try {
-      console.log(gigData);
       const momentSessionDate = moment(gigData.sessionDate);
 
       if (!momentSessionDate.isValid()) {

@@ -37,3 +37,11 @@ export interface getPaginatedTransactionsOfUserRepositoryParams {
   purchaseType: "course" | "conversion" | "coins" | "all";
   userId: mongoose.Types.ObjectId;
 }
+
+export interface TransactionAnalyticsResult {
+  date: string;
+  totalRevenue: number;
+  platformShare: number;
+  instructorShare: number;
+  count: number;
+}
