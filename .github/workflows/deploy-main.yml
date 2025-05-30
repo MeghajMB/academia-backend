@@ -10,8 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,12 +19,17 @@ jobs:
         run: docker login -u $DOCKER_USERNAME -p $DOCKERHUB_TOKEN
         env:  
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
       - name: Build Image
         run: cd main && docker build -t $DOCKER_USERNAME/academia-main:latest .
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
       - name: Push Image
         run: docker push $DOCKER_USERNAME/academia-main:latest
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
