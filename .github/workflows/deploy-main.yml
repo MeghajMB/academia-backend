@@ -10,35 +10,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Authenticate Docker Hub
-        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: Docker login
+        run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Image
-        run: cd main && docker build -t ${{ secrets.DOCKER_USERNAME }}/academia-main:latest .
+        run: cd main && docker build -t $DOCKERHUB_USERNAME/academia-main:latest .
 
       - name: Push Image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/academia-main:latest
+        run: docker push $DOCKERHUB_USERNAME/academia-main:latest
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up gcloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Get GKE credentials
-        run: |
-          gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME}} --region ${{ secrets.GCP_REGION }}
 
       - name: Rollout restart deployment
-        run: |
-          kubectl rollout restart deployment academia-main-depl -n default
-      
+        run: kubectl rollout restart deployment academia-main-depl -n default
