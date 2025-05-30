@@ -38,6 +38,11 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+          gcloud components update
+
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials $GCP_CLUSTER_NAME --region $GCP_REGION
