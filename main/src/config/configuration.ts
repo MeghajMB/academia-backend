@@ -29,7 +29,8 @@ const config = {
   app: {
     domainName: env.DOMAIN_NAME,
     clientUrl: env.CLIENT_URL,
-    backendUrl:env.BACKEND_URL
+    backendUrl:env.BACKEND_URL,
+    publicIp:env.PUBLIC_IP
   },
   jwt: {
     accessTokenSecret: env.JWT_ACCESS_TOKEN_SECRET,

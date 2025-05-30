@@ -133,7 +133,7 @@ export interface GetCoursesOfInstructorResponse {
   totalLectures: number;
   totalSections: number;
   isBlocked: boolean;
-  status: "pending" | "accepted" | "rejected" | "draft" | "listed";
+  status: "pending" | "accepted" | "rejected" | "draft" | "listed"|"scheduled";
   rejectedReason: string;
   imageThumbnail: string;
   promotionalVideo: string;
@@ -152,7 +152,7 @@ export interface AddLectureResponse {
   progress: string;
 }
 
-export type GetCourseAnalyticsResponse = {
+export interface GetCourseAnalyticsResponse {
   courseMetrics: {
     enrollments: { count: number; averageProgress: number; date: string }[];
     transactions: { totalAmount: number; date: string }[];
@@ -171,4 +171,4 @@ export type GetCourseAnalyticsResponse = {
       5: number;
     };
   };
-};
+}

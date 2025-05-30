@@ -10,9 +10,13 @@ import { StatusCode } from "../../enums/status-code.enum";
 import {
   AggregatedStudentGrowth,
   Enrollment,
+  EnrollmentAnalyticsResult,
   EnrollmentWithCourse,
 } from "./enrollment.types";
+import { injectable } from "inversify";
+import { PipelineStage } from "mongoose";
 
+@injectable()
 export class EnrollmentRepository
   extends BaseRepository<EnrollmentDocument>
   implements IEnrollmentRepository
@@ -20,6 +24,89 @@ export class EnrollmentRepository
   constructor() {
     super(EnrollmentModel);
   }
+
+  async fetchAdminEnrollmentAnalytics(
+    matchStage: Record<string, any>,
+    dateGroup: "daily" | "monthly" | "yearly"
+  ): Promise<{
+    metrics: EnrollmentAnalyticsResult[];
+    summary: {
+      enrollmentCount: number;
+    };
+  }> {
+    try {
+      let dateFormat: string;
+
+      switch (dateGroup) {
+        case "daily":
+          dateFormat = "%Y-%m-%d";
+          break;
+        case "monthly":
+          dateFormat = "%Y-%m";
+          break;
+        case "yearly":
+          dateFormat = "%Y";
+          break;
+        default:
+          throw new Error("Invalid date group specified");
+      }
+
+      const pipeline: PipelineStage[] = [
+        {
+          $match: {
+            ...matchStage,
+            status: "active",
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: dateFormat,
+                date: "$createdAt",
+              },
+            },
+            enrollmentCount: { $sum: 1 },
+          },
+        },
+        {
+          $sort: { _id: 1 },
+        },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id",
+            enrollmentCount: 1,
+          },
+        },
+      ];
+
+      const enrollmentStats = await EnrollmentModel.aggregate(pipeline).exec();
+
+      const summaryResult = await EnrollmentModel.aggregate([
+        {
+          $match: { ...matchStage },
+        },
+        {
+          $group: {
+            _id: null,
+            enrollmentCount: { $sum: 1 },
+          },
+        },
+      ]);
+
+      const summary = summaryResult[0] || { enrollmentCount: 0 };
+
+      return { metrics: enrollmentStats ?? [], summary };
+    } catch (error) {
+      console.error(error);
+      throw new DatabaseError(
+        "An unexpected database error occurred",
+        StatusCode.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   async getStudentGrowth(
     userId: string,
     filter: "quarter" | "month" | "year",

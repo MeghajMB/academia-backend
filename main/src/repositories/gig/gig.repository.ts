@@ -9,7 +9,9 @@ import {
   getGigMetricsRepositoryResponse,
   GigWithInstructorData,
 } from "./gig.types";
+import { injectable } from "inversify";
 
+@injectable()
 export class GigRepository
   extends BaseRepository<GigDocument>
   implements IGigRepository
@@ -66,7 +68,7 @@ export class GigRepository
           },
         },
       ]);
-  
+
       return result as AggregatedGigEarnings[];
     } catch (error: unknown) {
       console.log(error);
@@ -76,7 +78,7 @@ export class GigRepository
       );
     }
   }
-  
+
   async getGigMetrics(
     userId: string
   ): Promise<getGigMetricsRepositoryResponse[] | []> {
@@ -151,7 +153,7 @@ export class GigRepository
     userId: string;
   }) {
     try {
-      const query = { instructorId: userId } as Record<any, any>;
+      const query: Record<string, any> = { instructorId: userId };
       const sortQuery = {};
       if (search) {
         query.title = { $regex: search, $options: "i" };

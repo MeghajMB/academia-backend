@@ -34,13 +34,12 @@ const sessionNotificationWorker = new Worker(
     console.log(`Sendong notifications to users about session`);
     try {
       await Promise.all(
-        users.map((user: { id: Types.ObjectId; session: Types.ObjectId }) =>
+        users.map((user: string) =>
           notificationService.sendNotification(
-            user.id.toString(),
+            user,
             "system",
             "Session Starting",
-            "Your Session is about to start.Join fast.",
-            user.session.toString()
+            "Your Session is about to start.Join fast."
           )
         )
       );

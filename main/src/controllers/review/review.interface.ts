@@ -5,4 +5,5 @@ export interface IReviewController {
   getReviewsOfCourse(req: Request, res: Response, next: NextFunction): Promise<void>;
   getReviewsByStudent(req: Request, res: Response, next: NextFunction): Promise<void>;
   deleteReview(req: Request, res: Response, next: NextFunction): Promise<void>;
+  editReview(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

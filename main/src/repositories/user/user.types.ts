@@ -10,20 +10,20 @@ export interface IUser {
   profilePicture?: string;
   googleId?: string;
   id?: string;
-  goldCoin:number;
-  verified:string
+  goldCoin: number;
+  verified: string;
 }
 
 export interface IUserResult extends Document {
-  _id:Types.ObjectId
+  _id: Types.ObjectId;
   name: string;
   email: string;
   role: string;
   password: string;
   phoneNo: number;
   isBlocked: boolean;
-  purpleCoin: Number;
-  goldCoin: Number;
+  purpleCoin: number;
+  goldCoin: number;
   profilePicture: string;
   googleId: string;
   headline?: string;
@@ -38,4 +38,12 @@ export interface IUserResult extends Document {
   };
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface UserSignData {
+  name: string;
+  email: string;
+  password?: string;
+  googleId?: string;
+  profilePicture?:string;
 }

@@ -4,15 +4,20 @@ import { FileService } from "../../services/file/file.service";
 import {
   GenerateGetSignedUrlResponseSchema,
   GeneratePutSignedUrlResponseSchema,
-} from "./response.dto";
+} from "@academia-dev/common";
 import {
   GenerateGetSignedUrlRequestSchema,
   GeneratePutSignedUrlRequestSchema,
 } from "./request.dto";
 import { IFileController } from "./file.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class FileController implements IFileController {
-  constructor(private readonly fileService: FileService) {}
+  constructor(
+    @inject(Types.FileService) private readonly fileService: FileService
+  ) {}
 
   async generateGetSignedUrl(req: Request, res: Response, next: NextFunction) {
     try {
@@ -22,7 +27,7 @@ export class FileController implements IFileController {
         status: "success",
         code: StatusCode.OK,
         message: "Signed GET URL generated successfully",
-        data:{url},
+        data: { url },
       });
       res.status(response.code).json(response);
     } catch (error) {
@@ -43,7 +48,7 @@ export class FileController implements IFileController {
         status: "success",
         code: StatusCode.OK,
         message: "Signed PUT URL generated successfully",
-        data:{url},
+        data: { url },
       });
       res.status(response.code).json(response);
     } catch (error) {

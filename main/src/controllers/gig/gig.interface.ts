@@ -11,4 +11,5 @@ export interface IGigController {
   ): Promise<void>;
   updateGig(req: Request, res: Response, next: NextFunction): Promise<void>;
   deleteGig(req: Request, res: Response, next: NextFunction): Promise<void>;
+  getGigsOfInstructor(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

@@ -1,23 +1,47 @@
 import { z } from "zod";
 
+// Analytics
+export const GetAdminAnalyticsRequestSchema = z.object({
+  filter: z.enum(["month", "quarter", "year", "custom"]),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+export type getAdminAnalyticsRequestDTO = z.infer<
+  typeof GetAdminAnalyticsRequestSchema
+>;
+
 // Get Users Request
 export const GetUsersRequestSchema = z.object({
   role: z.string().nonempty("Role is required"),
-  page: z.coerce.number().int().transform((val) => (val < 1 ? 1 : val)).default(1),
+  page: z.coerce
+    .number()
+    .int()
+    .transform((val) => (val < 1 ? 1 : val))
+    .default(1),
   search: z.string().default(""),
 });
 export type GetUsersRequestDTO = z.infer<typeof GetUsersRequestSchema>;
 
 // Get Courses Request
 export const getAdminCoursesRequestSchema = z.object({
-  page: z.coerce.number().int().transform((val) => (val < 1 ? 1 : val)).default(1),
+  page: z.coerce
+    .number()
+    .int()
+    .transform((val) => (val < 1 ? 1 : val))
+    .default(1),
   search: z.string().default(""),
 });
-export type getAdminCoursesRequestDTO = z.infer<typeof getAdminCoursesRequestSchema>;
+export type getAdminCoursesRequestDTO = z.infer<
+  typeof getAdminCoursesRequestSchema
+>;
 
 // Get Instructor Verification Requests Request
 export const GetInstructorVerificationRequestsRequestSchema = z.object({
-  page: z.coerce.number().int().transform((val) => (val < 1 ? 1 : val)).default(1),
+  page: z.coerce
+    .number()
+    .int()
+    .transform((val) => (val < 1 ? 1 : val))
+    .default(1),
 });
 export type GetInstructorVerificationRequestsRequestDTO = z.infer<
   typeof GetInstructorVerificationRequestsRequestSchema
@@ -54,42 +78,23 @@ export type BlockCourseRequestDTO = z.infer<typeof BlockCourseRequestSchema>;
 
 // Get Categories Request
 export const GetCategoriesRequestSchema = z.object({
-  page: z.coerce.number().int().transform((val) => (val < 1 ? 1 : val)).default(1),
+  page: z.coerce
+    .number()
+    .int()
+    .transform((val) => (val < 1 ? 1 : val))
+    .default(1),
 });
 export type GetCategoriesRequestDTO = z.infer<
   typeof GetCategoriesRequestSchema
 >;
 
-// Create Category Request
-export const CreateCategoryRequestSchema = z.object({
-  name: z.string().nonempty("Category name is required"), 
-  description:z.string().nonempty("Category description is required")
-});
-export type CreateCategoryRequestDTO = z.infer<
-  typeof CreateCategoryRequestSchema
->;
-
-// Edit Category Request
-export const EditCategoryRequestSchema = z.object({
-  categoryId: z.string().nonempty("Category ID is required"),
-  category: z.object({
-    name:z.string().nonempty("Category name is required"),
-    description:z.string().nonempty("Category description is required")
-  })
-});
-export type EditCategoryRequestDTO = z.infer<typeof EditCategoryRequestSchema>;
-
-// Block Category Request
-export const BlockCategoryRequestSchema = z.object({
-  categoryId: z.string().nonempty("Category ID is required"),
-});
-export type BlockCategoryRequestDTO = z.infer<
-  typeof BlockCategoryRequestSchema
->;
-
 // Get Course Review Requests Request
 export const GetCourseReviewRequestsRequestSchema = z.object({
-  page: z.coerce.number().int().transform((val) => (val < 1 ? 1 : val)).default(1)
+  page: z.coerce
+    .number()
+    .int()
+    .transform((val) => (val < 1 ? 1 : val))
+    .default(1),
 });
 export type GetCourseReviewRequestsRequestDTO = z.infer<
   typeof GetCourseReviewRequestsRequestSchema

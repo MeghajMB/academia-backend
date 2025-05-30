@@ -4,6 +4,7 @@ import { AppError } from "../util/errors/app-error";
 import { redis } from "../lib/redis";
 import { StatusCode } from "../enums/status-code.enum";
 import { CustomJwtPayload } from "../types/jwt";
+import config from "../config/configuration";
 
 export const verifyToken = async (
   req: Request,
@@ -25,7 +26,7 @@ export const verifyToken = async (
 
     let decoded: JwtPayload | string;
     try {
-      decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET!);
+      decoded = jwt.verify(token, config.jwt.accessTokenSecret);
     } catch (err) {
       throw new AppError("TOKEN_EXPIRED", StatusCode.FORBIDDEN);
     }

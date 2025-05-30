@@ -6,15 +6,15 @@ import config from "../config/configuration";
 export const s3Client = new S3Client({
   region: config.aws.region,
   credentials: {
-    accessKeyId: config.aws.accessKeyId || "",
-    secretAccessKey: config.aws.secretAccessKey || "",
+    accessKeyId: config.aws.accessKeyId,
+    secretAccessKey: config.aws.secretAccessKey,
   },
 });
 // SQS client instance
 export const sqsClient = new SQSClient({
-  region: config.aws.region!, 
+  region: config.aws.region, 
   credentials: {
-    accessKeyId: config.aws.accessKeyId!, 
-    secretAccessKey: config.aws.secretAccessKey!,
+    accessKeyId: config.aws.accessKeyId, 
+    secretAccessKey: config.aws.secretAccessKey,
   },
 });

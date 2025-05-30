@@ -4,8 +4,9 @@ import { SectionDocument, SectionModel } from "../../../models/section.model";
 import { BaseRepository } from "../../base/base.repository";
 import { SectionResultWithCourse } from "./section.types";
 import { ISectionRepository } from "./section.interface";
+import { injectable } from "inversify";
 
-
+@injectable()
 export class SectionRepository
   extends BaseRepository<SectionDocument>
   implements ISectionRepository

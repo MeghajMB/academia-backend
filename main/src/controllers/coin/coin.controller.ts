@@ -6,17 +6,22 @@ import {
   CreateCoinPackageResponseSchema,
   GetCoinConfigResponseSchema,
   GetPackagesResponseSchema,
-} from "./response.dto";
+  NullResponseSchema,
+} from "@academia-dev/common";
 import {
   createCoinPackageRequestSchema,
   deleteCoinPackageRequestSchema,
   updateCoinPackageRequestSchema,
   updateCoinRatioRequestSchema,
 } from "./request.dto";
-import { NullResponseSchema } from "../shared-response.dto";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class CoinController implements ICoinController {
-  constructor(private readonly coinService: ICoinService) {}
+  constructor(
+    @inject(Types.CoinService) private readonly coinService: ICoinService
+  ) {}
 
   async getPackages(req: Request, res: Response, next: NextFunction) {
     try {
@@ -65,7 +70,10 @@ export class CoinController implements ICoinController {
 
   async updateCoinPackage(req: Request, res: Response, next: NextFunction) {
     try {
-      const payload = updateCoinPackageRequestSchema.parse({...req.body,...req.params});
+      const payload = updateCoinPackageRequestSchema.parse({
+        ...req.body,
+        ...req.params,
+      });
       const result = await this.coinService.updatePackage(payload);
       const response = NullResponseSchema.parse({
         status: "success",

@@ -5,7 +5,9 @@ import { LectureDocument, LectureModel } from "../../../models/lecture.model";
 import { DatabaseError } from "../../../util/errors/database-error";
 import { StatusCode } from "../../../enums/status-code.enum";
 import { LectureWithPopulatedData } from "./lecture.types";
+import { injectable } from "inversify";
 
+@injectable()
 export class LectureRepository
   extends BaseRepository<LectureDocument>
   implements ILectureRepository

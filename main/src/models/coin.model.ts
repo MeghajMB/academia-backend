@@ -3,7 +3,7 @@ import mongoose, { Schema, model, Document, Model } from "mongoose";
 export interface CoinDocument extends Document {
   _id: mongoose.Types.ObjectId;
   goldToINRRatio: number;
-  redeemCoinToGoldRatio: number;
+  redeemPointsToGoldRatio: number;
   purchasePackages: {
     _id: mongoose.Types.ObjectId;
     coinAmount: number;
@@ -20,7 +20,7 @@ const CoinSchema = new Schema<CoinDocument>(
       type: Number,
       required: true,
     },
-    redeemCoinToGoldRatio: {
+    redeemPointsToGoldRatio: {
       type: Number,
       required: true,
     },

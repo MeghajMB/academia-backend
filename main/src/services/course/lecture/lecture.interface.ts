@@ -34,7 +34,7 @@ export interface ILectureService {
     sectionId: string,
     lectureId: string,
     key: string
-  ): Promise<Boolean | void>;
+  ): Promise<boolean>;
   generateLectureUrl(
     courseId: string,
     lectureId: string,

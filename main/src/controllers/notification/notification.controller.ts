@@ -3,19 +3,25 @@ import { NotificationService } from "../../services/notification/notification.se
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   GetUserNotificationsResponseSchema,
-  MarkAllNotificationAsReadResponseSchema,
   MarkNotificationAsReadResponseSchema,
+  NullResponseSchema,
   SendNotificationResponseSchema,
-} from "./response.dto";
+} from "@academia-dev/common";
 import {
   GetUserNotificationsRequestSchema,
   MarkNotificationAsReadRequestSchema,
   SendNotificationRequestSchema,
 } from "./request.dto";
 import { INotificationController } from "./notification.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
+@injectable()
 export class NotificationController implements INotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    @inject(Types.NotificationService)
+    private readonly notificationService: NotificationService
+  ) {}
 
   async sendNotification(req: Request, res: Response, next: NextFunction) {
     try {
@@ -71,7 +77,7 @@ export class NotificationController implements INotificationController {
       );
       const updatedNotification =
         await this.notificationService.markNotificationAsRead(notificationId);
-      const response = MarkNotificationAsReadResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Notification marked as read",
@@ -91,13 +97,12 @@ export class NotificationController implements INotificationController {
       const userId = req.verifiedUser?.id;
       const updatedNotification =
         await this.notificationService.markAllNotificationAsRead(userId!);
-      const response = MarkAllNotificationAsReadResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "All notification marked as read",
         data: null,
       });
-      console.log(response);
       res.status(response.code).json(response);
     } catch (error) {
       next(error);

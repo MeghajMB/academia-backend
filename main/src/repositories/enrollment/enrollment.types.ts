@@ -35,3 +35,8 @@ export interface AggregatedStudentGrowth {
   date: string;
   count: number;
 }
+
+export interface EnrollmentAnalyticsResult {
+  date: string; 
+  enrollmentCount: number;
+}

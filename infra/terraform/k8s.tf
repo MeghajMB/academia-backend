@@ -1,29 +1,29 @@
 
 # kafka
-resource "kubectl_manifest" "zookeeper_depl" {
-  yaml_body  = file("../k8s/kafka/zookeeper-depl.yaml")
-  depends_on = [google_container_cluster.default]
-}
 resource "kubectl_manifest" "zookeeper_pvc" {
   yaml_body  = file("../k8s/kafka/zookeeper-pvc.yaml")
   depends_on = [google_container_cluster.default]
 }
+resource "kubectl_manifest" "zookeeper_depl" {
+  yaml_body  = file("../k8s/kafka/zookeeper-depl.yaml")
+  depends_on = [google_container_cluster.default,zookeeper_pvc]
+}
 resource "kubectl_manifest" "zookeeper_srv" {
   yaml_body  = file("../k8s/kafka/zookeeper-srv.yaml")
-  depends_on = [google_container_cluster.default]
+  depends_on = [google_container_cluster.default,zookeeper_pvc]
 }
 
-resource "kubectl_manifest" "kafka_depl" {
-  yaml_body  = file("../k8s/kafka/kafka-depl.yaml")
-  depends_on = [google_container_cluster.default,kubectl_manifest.zookeeper_depl]
-}
-resource "kubectl_manifest" "srv" {
-  yaml_body  = file("../k8s/kafka/kafka-srv.yaml")
-  depends_on = [google_container_cluster.default,kubectl_manifest.zookeeper_depl]
-}
 resource "kubectl_manifest" "kafka_pvc" {
   yaml_body  = file("../k8s/kafka/kafka-pvc.yaml")
   depends_on = [google_container_cluster.default,kubectl_manifest.zookeeper_depl]
+}
+resource "kubectl_manifest" "kafka_depl" {
+  yaml_body  = file("../k8s/kafka/kafka-depl.yaml")
+  depends_on = [google_container_cluster.default,kubectl_manifest.zookeeper_depl,kafka_pvc]
+}
+resource "kubectl_manifest" "srv" {
+  yaml_body  = file("../k8s/kafka/kafka-srv.yaml")
+  depends_on = [google_container_cluster.default,kubectl_manifest.zookeeper_depl,kafka_pvc]
 }
 
 # redis

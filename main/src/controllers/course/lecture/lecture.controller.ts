@@ -12,15 +12,18 @@ import {
 } from "./request.dto";
 import {
   AddLectureResponseSchema,
-  EditLectureResponseSchema,
   GenerateLectureUrlResponseSchema,
-  MarkLectureAsCompletedResponseSchema,
-} from "./response.dto";
-import { NullResponseSchema } from "../../shared-response.dto";
+  NullResponseSchema,
+} from "@academia-dev/common";
+import { inject, injectable } from "inversify";
+import { Types } from "../../../container/types";
 
-
+@injectable()
 export class LectureController implements ILectureController {
-  constructor(private readonly lectureService: ILectureService) {}
+  constructor(
+    @inject(Types.LectureService)
+    private readonly lectureService: ILectureService
+  ) {}
 
   async addLecture(
     req: Request,
@@ -108,7 +111,10 @@ export class LectureController implements ILectureController {
     try {
       const userId = req.verifiedUser!.id;
       const { lectureId } = DeleteLectureRequestSchema.parse(req.params);
-      const courses = await this.lectureService.deleteLecture(userId, lectureId);
+      const courses = await this.lectureService.deleteLecture(
+        userId,
+        lectureId
+      );
       const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
@@ -129,18 +135,18 @@ export class LectureController implements ILectureController {
     try {
       const { id } = req.verifiedUser!;
       const { courseId, lectureId } = MarkLectureAsCompletedRequestSchema.parse(
-        {...req.body,...req.params}
+        { ...req.body, ...req.params }
       );
       const result = await this.lectureService.markLectureAsCompleted(
         id,
         courseId,
         lectureId
       );
-      const response = MarkLectureAsCompletedResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Lecture marked as completed",
-        data: result,
+        data: null,
       });
       res.status(response.code).json(response);
     } catch (error) {
@@ -182,19 +188,20 @@ export class LectureController implements ILectureController {
   ): Promise<void> {
     try {
       const { id } = req.verifiedUser!;
-      const { lectureId, lectureData } = EditLectureRequestSchema.parse(
-        {lectureData:req.body.lectureData,lectureId:req.params.lectureId}
-      );
+      const { lectureId, lectureData } = EditLectureRequestSchema.parse({
+        lectureData: req.body.lectureData,
+        lectureId: req.params.lectureId,
+      });
       const updatedLecture = await this.lectureService.editLecture(
         lectureId,
         lectureData,
         id
       );
-      const response = EditLectureResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "Lecture updated successfully",
-        data: updatedLecture,
+        data: null,
       });
       res.status(response.code).json(response);
     } catch (error) {

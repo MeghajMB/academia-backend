@@ -1,6 +1,6 @@
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { ICourseRepository } from "../../repositories/course/course.interface";
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 import { FileService } from "../file/file.service";
 import { AppError } from "../../util/errors/app-error";
 import { StatusCode } from "../../enums/status-code.enum";
@@ -24,14 +24,24 @@ import {
 import { Enrollment } from "../../repositories/enrollment/enrollment.types";
 import { GetCoursesRequestDTO } from "../../controllers/course/request.dto";
 import { IReviewRepository } from "../../repositories/review/review.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+import { scheduleCourseList } from "../../queues/course-list.queue";
+import moment from "moment";
 
+@injectable()
 export class CourseService implements ICourseService {
   constructor(
+    @inject(Types.CourseRepository)
     private readonly courseRepository: ICourseRepository,
+    @inject(Types.LectureRepository)
     private readonly lectureRepository: ILectureRepository,
+    @inject(Types.SectionRepository)
     private readonly sectionRepository: ISectionRepository,
+    @inject(Types.EnrollmentRepository)
     private readonly enrollmentRepository: IEnrollmentRepository,
-    private readonly fileService: FileService,
+    @inject(Types.FileService) private readonly fileService: FileService,
+    @inject(Types.ReviewRepository)
     private readonly reviewRepository: IReviewRepository
   ) {}
   async getCourseAnalytics(
@@ -119,8 +129,8 @@ export class CourseService implements ICourseService {
       }
       const updatedCourseData = {
         ...courseData,
-        userId: new Types.ObjectId(userId),
-        category: new Types.ObjectId(courseData.category),
+        userId: new mongoose.Types.ObjectId(userId),
+        category: new mongoose.Types.ObjectId(courseData.category),
       };
       const newCourse = await this.courseRepository.create(updatedCourseData);
 
@@ -144,8 +154,8 @@ export class CourseService implements ICourseService {
       const pageNum = parseInt(page) || 1;
       const skip = (pageNum - 1) * limit;
 
-      const query: Record<any, any> = { status: "listed" };
-      const sortQuery: Record<any, any> = {};
+      const query: Record<string, any> = { status: "listed" };
+      const sortQuery: Record<string, any> = {};
       if (category) {
         query.category = category;
       }
@@ -183,7 +193,8 @@ export class CourseService implements ICourseService {
       await Promise.all(
         courses.map(async (course) => {
           course.imageThumbnail = await this.fileService.generateGetSignedUrl(
-            course.imageThumbnail
+            course.imageThumbnail,
+            true
           );
         })
       );
@@ -231,9 +242,9 @@ export class CourseService implements ICourseService {
   ): Promise<EnrollmentDocument> {
     try {
       const listedCourse = await this.enrollmentRepository.create({
-        courseId: new Types.ObjectId(courseId),
-        studentId: new Types.ObjectId(userId),
-        transactionId: new Types.ObjectId(transactionId),
+        courseId: new mongoose.Types.ObjectId(courseId),
+        studentId: new mongoose.Types.ObjectId(userId),
+        transactionId: new mongoose.Types.ObjectId(transactionId),
       });
       return listedCourse;
     } catch (error) {
@@ -274,10 +285,12 @@ export class CourseService implements ICourseService {
       }
 
       const image = await this.fileService.generateGetSignedUrl(
-        course.imageThumbnail
+        course.imageThumbnail,
+        true
       );
       const video = await this.fileService.generateGetSignedUrl(
-        course.promotionalVideo
+        course.promotionalVideo,
+        true
       );
       const sections = await this.sectionRepository.getSectionsWithCourseId(
         course._id.toString()
@@ -349,7 +362,7 @@ export class CourseService implements ICourseService {
           StatusCode.FORBIDDEN
         );
       }
-      let updatedData: {
+      const updatedData: {
         category: mongoose.Types.ObjectId;
         description: string;
         price: number;
@@ -369,7 +382,7 @@ export class CourseService implements ICourseService {
         updatedData.imageThumbnail = courseData.imageThumbnail;
       }
       if (courseData.promotionalVideo) {
-        updatedData.imageThumbnail = courseData.promotionalVideo;
+        updatedData.promotionalVideo = courseData.promotionalVideo;
       }
       const updatedCourse = await this.courseRepository.update(
         courseId,
@@ -404,10 +417,12 @@ export class CourseService implements ICourseService {
       courseId
     );
     const image = await this.fileService.generateGetSignedUrl(
-      course.imageThumbnail
+      course.imageThumbnail,
+      true
     );
     const video = await this.fileService.generateGetSignedUrl(
-      course.promotionalVideo
+      course.promotionalVideo,
+      true
     );
 
     const courseDetails = {
@@ -500,10 +515,11 @@ export class CourseService implements ICourseService {
       const enrolledCourses = await this.enrollmentRepository.findByStudentId(
         studentId
       );
-      let updatedEnrolledCourses = await Promise.all(
+      const updatedEnrolledCourses = await Promise.all(
         enrolledCourses.map(async (enrolledCourse) => {
-          let imageUrl = await this.fileService.generateGetSignedUrl(
-            enrolledCourse.courseId.imageThumbnail
+          const imageUrl = await this.fileService.generateGetSignedUrl(
+            enrolledCourse.courseId.imageThumbnail,
+            true
           );
           return {
             id: enrolledCourse.courseId._id.toString(),
@@ -571,24 +587,28 @@ export class CourseService implements ICourseService {
           .filter(
             (lecture) => lecture.sectionId.toString() === section._id.toString()
           )
-          .map((lecture) => ({
-            id: lecture._id.toString(),
-            sectionId: lecture.sectionId.toString(),
-            courseId: lecture.courseId.toString(),
-            title: lecture.title,
-            videoUrl: lecture.videoUrl,
-            duration: lecture.duration,
-            order: lecture.order,
-            status: lecture.status,
-            progress:
-              status == "instructor"
-                ? "instructor"
-                : enrolledCourse?.progress.completedLectures.includes(
-                    lecture._id as Types.ObjectId
-                  )
-                ? "completed"
-                : "not completed",
-          })),
+          .map((lecture) => {
+            let checkProgress = enrolledCourse?.progress.completedLectures.find(
+              (completedLecture) =>
+                completedLecture.toString() == lecture._id.toString()
+            );
+            return {
+              id: lecture._id.toString(),
+              sectionId: lecture.sectionId.toString(),
+              courseId: lecture.courseId.toString(),
+              title: lecture.title,
+              videoUrl: lecture.videoUrl,
+              duration: lecture.duration,
+              order: lecture.order,
+              status: lecture.status,
+              progress:
+                status == "instructor"
+                  ? "instructor"
+                  : checkProgress
+                  ? "completed"
+                  : "not completed",
+            };
+          }),
       }));
 
       return curriculum;
@@ -610,7 +630,9 @@ export class CourseService implements ICourseService {
     ) {
       throw new BadRequestError("enter a valid status");
     }
-    let filter: { userId: string; status?: string } = { userId: instructorId };
+    const filter: { userId: string; status?: string } = {
+      userId: instructorId,
+    };
 
     if (status !== "all") {
       filter.status = status;
@@ -674,7 +696,7 @@ export class CourseService implements ICourseService {
     try {
       const status = "listed";
       const existingCourse = await this.courseRepository.findById(courseId);
-      if (existingCourse?.status !== "accepted") {
+      if (existingCourse?.status !== "scheduled") {
         throw new BadRequestError("The course is not approved");
       }
       if (existingCourse?.userId.toString() !== instructorId) {
@@ -693,6 +715,60 @@ export class CourseService implements ICourseService {
         throw new BadRequestError("No course");
       }
       return { message: "success" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async scheduleCourseForListingCourse(
+    instructorId: string,
+    courseId: string,
+    scheduleDate: string
+  ): Promise<{ message: string }> {
+    try {
+      const listDate = moment(scheduleDate);
+
+      if (!listDate.isValid()) {
+        throw new BadRequestError("Invalid service date format.");
+      }
+      const courseListingDate = listDate.toDate();
+
+      const status = "scheduled";
+      const existingCourse = await this.courseRepository.findById(courseId);
+      if (existingCourse?.status !== "accepted") {
+        throw new BadRequestError("The course is not approved");
+      }
+      if (existingCourse?.userId.toString() !== instructorId) {
+        throw new AppError(
+          "You dont have access to this course",
+          StatusCode.FORBIDDEN
+        );
+      }
+      const course =
+        await this.courseRepository.changeCourseStatusWithInstructorIdAndCourseId(
+          instructorId,
+          courseId,
+          status
+        );
+      if (!course) {
+        throw new BadRequestError("No course");
+      }
+      await scheduleCourseList(instructorId, courseId, courseListingDate);
+      return { message: "success" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async blockOrUnblockCourse(id: string) {
+    try {
+      const course = await this.courseRepository.toggleCourseStatus(id);
+      if (!course) {
+        throw new AppError("Course not found", StatusCode.NOT_FOUND);
+      }
+      return {
+        message: course.isBlocked ? "Course blocked" : "Course unblocked",
+      };
     } catch (error) {
       throw error;
     }

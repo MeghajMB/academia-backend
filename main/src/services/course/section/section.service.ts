@@ -1,18 +1,21 @@
 import { BadRequestError } from "../../../util/errors/bad-request-error";
 import { ICourseRepository } from "../../../repositories/course/course.interface";
-import { Types } from "mongoose";
 import { AppError } from "../../../util/errors/app-error";
 import { StatusCode } from "../../../enums/status-code.enum";
 import { ILectureRepository } from "../../../repositories/course/lecture/lecture.interface";
 import { ISectionRepository } from "../../../repositories/course/section/section.interface";
 import moment from "moment";
 import { ISectionService } from "./section.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../../container/types";
+import mongoose from "mongoose";
 
+@injectable()
 export class SectionService implements ISectionService {
   constructor(
-    private readonly courseRepository: ICourseRepository,
-    private readonly lectureRepository: ILectureRepository,
-    private readonly sectionRepository: ISectionRepository
+    @inject(Types.CourseRepository) private readonly courseRepository: ICourseRepository,
+    @inject(Types.LectureRepository) private readonly lectureRepository: ILectureRepository,
+    @inject(Types.SectionRepository) private readonly sectionRepository: ISectionRepository
   ) {}
   async editSection(
     sectionId: string,
@@ -96,7 +99,7 @@ export class SectionService implements ISectionService {
     );
     const updatedSectionData = {
       ...sectionData,
-      courseId: new Types.ObjectId(courseId),
+      courseId: new mongoose.Types.ObjectId(courseId),
       order: sectionCount,
     };
     const section = await this.sectionRepository.create(updatedSectionData);

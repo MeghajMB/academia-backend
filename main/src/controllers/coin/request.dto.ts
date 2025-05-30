@@ -19,7 +19,7 @@ export type updateCoinPackageRequestDTO = z.infer<
 
 export const updateCoinRatioRequestSchema = z.object({
   goldToINRRatio: z.number().min(0),
-  redeemCoinToGoldRatio: z.number().min(0),
+  redeemPointsToGoldRatio: z.number().min(0),
 });
 
 export type updateCoinRatioRequestDTO = z.infer<

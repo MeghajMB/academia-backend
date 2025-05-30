@@ -4,22 +4,28 @@ import { StatusCode } from "../../enums/status-code.enum";
 import {
   GetBidByIdResponseSchema,
   GetBidsForGigResponseSchema,
-  PlaceBidResponseSchema,
-} from "./response.dto";
+  NullResponseSchema,
+} from "@academia-dev/common";
 import {
   GetBidByIdRequestSchema,
   GetBidsForGigRequestSchema,
   PlaceBidRequestSchema,
 } from "./request.dto";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+
+@injectable()
 export class BidController {
-  constructor(private readonly bidService: BidService) {}
+  constructor(
+    @inject(Types.BidService) private readonly bidService: BidService
+  ) {}
 
   async placeBid(req: Request, res: Response, next: NextFunction) {
     try {
       const { gigId, bidAmt } = PlaceBidRequestSchema.parse(req.body);
       const id = req.verifiedUser!.id;
       const bid = await this.bidService.placeBid({ gigId, bidAmt }, id);
-      const response = PlaceBidResponseSchema.parse({
+      const response = NullResponseSchema.parse({
         status: "success",
         code: StatusCode.OK,
         message: "success",

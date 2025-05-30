@@ -25,7 +25,7 @@ export const googleController = async (
     accessToken: string;
     refreshToken: string;
   };
-  const { name, role, id, goldCoin, email, profilePicture, verified } = user;
+  const { name, role, id, email, profilePicture, verified } = user;
 
   await redis.set(`refreshToken:${user.id}`, refreshToken, "EX", 60 * 60 * 24);
 
@@ -38,7 +38,7 @@ export const googleController = async (
 
   res.send(`
     <script>
-      window.opener.postMessage({ accessToken: '${accessToken}',name: '${name}',role:'${role}' ,id:'${id}',email:'${email}',profilePicture:'${profilePicture}',goldCoin:'${goldCoin}',verified:'${verified}' }, "${process.env.CLIENT_URL}");
+      window.opener.postMessage({ accessToken: '${accessToken}',name: '${name}',role:'${role}' ,id:'${id}',email:'${email}',profilePicture:'${profilePicture}',verified:'${verified}' }, "${process.env.CLIENT_URL}");
       window.close();
     </script>
   `);

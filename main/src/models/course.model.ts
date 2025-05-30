@@ -13,7 +13,7 @@ export interface CourseDocument extends Document {
   totalLectures: number;
   totalSections: number;
   isBlocked: boolean;
-  status: "pending" | "accepted" | "rejected" | "draft" | "listed";
+  status: "pending" | "accepted" | "rejected" | "draft" | "listed"|"scheduled";
   rejectedReason: string;
   imageThumbnail: string;
   promotionalVideo: string;
@@ -32,7 +32,7 @@ export interface CourseDocument extends Document {
   updatedAt: Date;
 }
 
-const CourseSchema: Schema<CourseDocument> = new Schema(
+const CourseSchema: Schema<CourseDocument> = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -69,7 +69,7 @@ const CourseSchema: Schema<CourseDocument> = new Schema(
     totalSections: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected", "draft", "listed"],
+      enum: ["pending", "accepted", "rejected", "draft", "listed","scheduled"],
       default: "draft",
     },
     rejectedReason: {

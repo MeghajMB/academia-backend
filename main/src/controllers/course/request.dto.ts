@@ -97,9 +97,9 @@ export type SubmitCourseForReviewRequestDTO = z.infer<
 // List Course Request
 export const ListCourseRequestSchema = z.object({
   courseId: z.string().nonempty("Course ID is required"),
+  scheduleDate:z.string().nonempty("Date is required")
 });
 export type ListCourseRequestDTO = z.infer<typeof ListCourseRequestSchema>;
-
 
 // GetCourseAnalytics
 export const GetCourseAnalyticsRequestSchema = z.object({

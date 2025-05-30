@@ -1,13 +1,47 @@
 import { NextFunction, Request, Response } from "express";
-import { UserService } from "../../services/user/user.service";
-//errors
 import { BadRequestError } from "../../util/errors/bad-request-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { IUserController } from "./user.interface";
-import { GetInstructorProfileResponseSchema } from "./response.dto";
+import {
+  GetInstructorProfileResponseSchema,
+  GetProfileResponseSchema,
+  NullResponseSchema,
+} from "@academia-dev/common";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+import { BlockUserRequestSchema } from "../admin/request.dto";
+import { IUserService } from "../../services/user/user.interface";
+import { PutUserProfileRequestSchemaRequestSchema } from "./request.dto";
 
+@injectable()
 export class UserController implements IUserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    @inject(Types.UserService) private readonly userService: IUserService
+  ) {}
+
+  async putProfile(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.verifiedUser!;
+      const payload = PutUserProfileRequestSchemaRequestSchema.parse({
+        ...req.body,
+        userId: id,
+      });
+      const result = await this.userService.updateProfile(payload);
+      const response = NullResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "success",
+        data: null,
+      });
+      res.status(response.code).send(response);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async getProfile(
     req: Request,
@@ -19,12 +53,19 @@ export class UserController implements IUserController {
       if (!userId) {
         throw new BadRequestError("Specify userid");
       }
-      const data = await this.userService.getProfile(userId);
-      res.status(StatusCode.OK).send(data);
+      const result = await this.userService.getProfile(userId);
+      const response = GetProfileResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "success",
+        data: result,
+      });
+      res.status(response.code).send(response);
     } catch (error) {
       next(error);
     }
   }
+
   async getInstructorProfile(
     req: Request,
     res: Response,
@@ -43,6 +84,26 @@ export class UserController implements IUserController {
         data: result,
       });
       res.status(response.code).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async blockUser(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { userId } = BlockUserRequestSchema.parse(req.params);
+      await this.userService.blockUser(userId);
+      const response = NullResponseSchema.parse({
+        status: "success",
+        code: StatusCode.OK,
+        message: "success",
+        data: null,
+      });
+      res.status(200).send(response);
     } catch (error) {
       next(error);
     }

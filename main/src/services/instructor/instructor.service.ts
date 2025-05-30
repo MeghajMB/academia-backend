@@ -1,6 +1,5 @@
 //errors
 import { NotFoundError } from "../../util/errors/not-found-error";
-import { BadRequestError } from "../../util/errors/bad-request-error";
 
 //externl dependencies
 import { ICourseRepository } from "../../repositories/course/course.interface";
@@ -8,13 +7,20 @@ import { IGigRepository } from "../../repositories/gig/gig.interface";
 import { IUserRepository } from "../../repositories/user/user.interface";
 import { ITransactionRepository } from "../../repositories/transaction/transaction.interface";
 import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.interface";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
-export class InstructorService {
+@injectable()
+export class InstructorService implements InstructorService {
   constructor(
+    @inject(Types.userRepository)
     private readonly userRepository: IUserRepository,
-    private readonly gigRepository: IGigRepository,
+    @inject(Types.GigRepository) private readonly gigRepository: IGigRepository,
+    @inject(Types.CourseRepository)
     private readonly courseRepository: ICourseRepository,
+    @inject(Types.TransactionRepository)
     private readonly transactionRepository: ITransactionRepository,
+    @inject(Types.EnrollmentRepository)
     private readonly enrollmentRepository: IEnrollmentRepository
   ) {}
 
@@ -108,13 +114,14 @@ export class InstructorService {
           this.gigRepository.getGigEarnings(userId, filter, start, end),
         ]);
       return {
-        courseEarnings:courseEarningsResult,
+        courseEarnings: courseEarningsResult,
         studentGrowth: studentGrowthResult,
-        gigEarnings:gigEarningsResult,
+        gigEarnings: gigEarningsResult,
       };
     } catch (error) {
       console.log(error);
       throw error;
     }
   }
+  
 }

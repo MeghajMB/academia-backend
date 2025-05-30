@@ -3,7 +3,7 @@ import { CustomError } from './custom-error';
 export class NotFoundError extends CustomError {
   statusCode = 404;
 
-  constructor(public message: string = 'Data not found') {
+  constructor(public message = 'Data not found') {
     super(message);
 
     // Ensures the correct prototype chain
