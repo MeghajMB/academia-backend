@@ -11,21 +11,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Authenticate Docker Hub
-        run: docker login -u $DOCKER_USERNAME -p $DOCKERHUB_TOKEN
+        run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN
         env:  
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Image
-        run: cd transcoding-dev && docker build -t $DOCKER_USERNAME/academia-transcoder:latest .
+        run: cd transcoding-dev && docker build -t $DOCKERHUB_USERNAME/academia-transcoder:latest .
 
       - name: Push Image
-        run: docker push $DOCKER_USERNAME/academia-transcoder:latest
+        run: docker push $DOCKERHUB_USERNAME/academia-transcoder:latest
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
