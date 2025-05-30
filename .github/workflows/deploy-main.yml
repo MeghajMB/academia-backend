@@ -16,20 +16,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Authenticate Docker Hub
-        run: docker login -u $DOCKER_USERNAME -p $DOCKERHUB_TOKEN
-        env:  
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Image
-        run: cd main && docker build -t $DOCKER_USERNAME/academia-main:latest .
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: cd main && docker build -t ${{ secrets.DOCKER_USERNAME }}/academia-main:latest .
 
       - name: Push Image
-        run: docker push $DOCKER_USERNAME/academia-main:latest
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/academia-main:latest
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -43,10 +36,7 @@ jobs:
 
       - name: Get GKE credentials
         run: |
-          gcloud container clusters get-credentials $GCP_CLUSTER_NAME --region $GCP_REGION
-        env:  
-          GCP_CLUSTER_NAME: ${{ secrets.GCP_CLUSTER_NAME}}
-          GCP_REGION: ${{ secrets.GCP_REGION }}
+          gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME}} --region ${{ secrets.GCP_REGION }}
 
       - name: Rollout restart deployment
         run: |
