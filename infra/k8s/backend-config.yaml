@@ -4,6 +4,7 @@ metadata:
   name: academia-backend-config
   namespace: default
 spec:
+  timeoutSec: 3600
   healthCheck:
     checkIntervalSec: 30
     timeoutSec: 5

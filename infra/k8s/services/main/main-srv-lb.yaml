@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: academia-srv-udp
+  namespace: default
+  labels:
+    app: academia-main
+spec:
+  type: LoadBalancer
+  selector:
+    app: academia-main
+  ports:
+    - name: academia-srv-udp-20000
+      protocol: UDP
+      port: 20000
+      targetPort: 20000
+    - name: academia-srv-udp-20001
+      protocol: UDP
+      port: 20001
+      targetPort: 20001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: academia-srv-tcp
+  namespace: default
+  labels:
+    app: academia-main
+spec:
+  type: LoadBalancer
+  selector:
+    app: academia-main
+  ports:
+    - name: academia-srv-tcp-20000
+      protocol: TCP
+      port: 20000
+      targetPort: 20000
+    - name: academia-srv-tcp-20001
+      protocol: TCP
+      port: 20001
+      targetPort: 20001
+

@@ -1,24 +1,33 @@
 import * as mediasoup from "mediasoup";
 import os from "os";
 import config from "../config/configuration";
+import { SctpCapabilities } from "mediasoup/node/lib/sctpParametersTypes";
 
 class MediasoupManager {
   public workers: mediasoup.types.Worker<mediasoup.types.AppData>[];
   public nextWorkerIndex: number;
-  public rooms: Record<string, {
+  public rooms: Record<
+    string,
+    {
       router: mediasoup.types.Router<mediasoup.types.AppData>;
       consumerTransports: Record<string, mediasoup.types.WebRtcTransport>;
       producerTransports: Record<string, mediasoup.types.WebRtcTransport>;
       producers: Record<string, mediasoup.types.Producer>;
-      producerMetadata: Record<string, {
+      producerMetadata: Record<
+        string,
+        {
           userId: string;
           userName: string; // Display name
-          profilePicture:string;
+          profilePicture: string;
           kind: "audio" | "video"; // Track type
           type?: "camera" | "screen" | "mic";
-        }>;
+        }
+      >;
       consumers: Record<string, mediasoup.types.Consumer>;
-    }>;
+      audioLevelObserver: mediasoup.types.AudioLevelObserver<mediasoup.types.AppData>;
+      activeSpeakerObserver: mediasoup.types.ActiveSpeakerObserver<mediasoup.types.AppData>;
+    }
+  >;
 
   constructor() {
     this.workers = [];
@@ -35,7 +44,7 @@ class MediasoupManager {
       const worker = await mediasoup.createWorker({
         logLevel: "warn",
         rtcMinPort: 20000,
-        rtcMaxPort: 30000,
+        rtcMaxPort: 20001,
       });
 
       worker.on("died", () => {
@@ -60,21 +69,46 @@ class MediasoupManager {
     // Round-robin selection of workers
     const worker = this.workers[this.nextWorkerIndex];
     this.nextWorkerIndex = (this.nextWorkerIndex + 1) % this.workers.length;
-
+    // create the router with the mediacodecs
     const router = await worker.createRouter({
-      mediaCodecs: [
-        {
-          kind: "audio",
-          mimeType: "audio/opus",
-          clockRate: 48000,
-          channels: 2,
-        },
-        {
-          kind: "video",
-          mimeType: "video/VP8",
-          clockRate: 90000,
-        },
-      ],
+      mediaCodecs: config.mediasoup.mediaCodecs,
+    });
+    /**
+     * Create a mediasoup AudioLevelObserver.
+     * This has the users which are currenly speaking as arrays.can loop through everything to update ui in fronend if needed
+     */
+    const audioLevelObserver = await router.createAudioLevelObserver({
+      maxEntries: 1,
+      threshold: -80,
+      interval: 800,
+    });
+    audioLevelObserver.on("volumes", (volumes) => {
+      const { producer, volume } = volumes[0];
+      const peerId = producer.appData.peerId;
+      //here notify all the users who the current speaker is by emitting the event 'activeSpeaker'
+      /* 
+      socket.emit('activeSpeaker',{
+						peerId : producer.appData.peerId,
+						volume : volume
+					})
+       */
+    });
+    audioLevelObserver.on("silence", () => {
+      //here notify all the users that the current speaker is noone by emitting the event 'activeSpeaker'
+      /* 
+      socket.emit('activeSpeaker', { peerId: null })
+       */
+    });
+    /**
+     *Create a mediasoup ActiveSpeakerObserver.
+     *This is the dominant speaker(speaker whose audio is the highest) usually for switching speaker(ui)
+     */
+
+    const activeSpeakerObserver = await router.createActiveSpeakerObserver();
+    activeSpeakerObserver.on("dominantspeaker", (data) => {
+      const { producer } = data;
+      const peerId = producer.appData.peerId;
+      /* socket.emit('dominantSpeaker', { peerId }) */
     });
 
     this.rooms[roomId] = {
@@ -84,6 +118,8 @@ class MediasoupManager {
       producers: {},
       consumers: {},
       producerMetadata: {},
+      audioLevelObserver,
+      activeSpeakerObserver,
     };
 
     console.log(`Created new router for room: ${roomId}`);
@@ -93,7 +129,8 @@ class MediasoupManager {
   async createWebRtcTransport(
     sessionId: string,
     senderOrConsumer: "sender" | "consumer",
-    userId: string
+    userId: string,
+    sctpCapabilities: SctpCapabilities
   ) {
     const room = this.rooms[sessionId];
     if (!room) {
@@ -106,6 +143,10 @@ class MediasoupManager {
       enableTcp: true,
       preferUdp: true,
       appData: { userId },
+      initialAvailableOutgoingBitrate: 1000000,
+      iceConsentTimeout: 20,
+      enableSctp: Boolean(sctpCapabilities),
+      numSctpStreams: (sctpCapabilities || {}).numStreams,
     });
     if (senderOrConsumer == "sender") {
       this.rooms[sessionId].producerTransports[transport.id] = transport;
@@ -154,7 +195,7 @@ class MediasoupManager {
     userDetails: {
       userId: string;
       userName: string;
-      profilePicture:string;
+      profilePicture: string;
     };
     appData: { type: "camera" | "screen" | "mic"; paused?: boolean };
   }) {
@@ -164,7 +205,11 @@ class MediasoupManager {
       throw new Error("Transport not found");
     }
     // Create a Producer instance
-    const producer = await transport.produce({ kind, rtpParameters, appData });
+    const producer = await transport.produce({
+      kind,
+      rtpParameters,
+      appData: { ...appData, peerId: userDetails.userId },
+    });
     console.log(`ispaused in producer:` + appData.paused);
     if (appData.paused) {
       await producer.pause();
@@ -179,7 +224,7 @@ class MediasoupManager {
       kind: kind,
       userId: userDetails.userId,
       userName: userDetails.userName,
-      profilePicture:userDetails.profilePicture,
+      profilePicture: userDetails.profilePicture,
       type: appData.type as "camera" | "screen" | "mic",
     };
 
@@ -215,7 +260,7 @@ class MediasoupManager {
       rtpCapabilities,
       paused: producer?.kind === "video",
     });
-    console.log("consumer created")
+    console.log("consumer created");
     this.rooms[sessionId].consumers[consumer.id] = consumer;
     return {
       id: consumer.id,
@@ -224,7 +269,8 @@ class MediasoupManager {
       rtpParameters: consumer.rtpParameters,
       userId: this.rooms[sessionId].producerMetadata[producerId].userId,
       userName: this.rooms[sessionId].producerMetadata[producerId].userName,
-      profilePicture:this.rooms[sessionId].producerMetadata[producerId].profilePicture,
+      profilePicture:
+        this.rooms[sessionId].producerMetadata[producerId].profilePicture,
       type: this.rooms[sessionId].producerMetadata[producerId].type,
       pause: producer.paused,
     };
@@ -242,11 +288,12 @@ class MediasoupManager {
     transportId: string;
     dtlsParameters: mediasoup.types.DtlsParameters;
   }) {
-    const consumerTransport = this.rooms[sessionId].consumerTransports[transportId];
+    const consumerTransport =
+      this.rooms[sessionId].consumerTransports[transportId];
     if (!consumerTransport) throw new Error("Transport not found");
 
     await consumerTransport.connect({ dtlsParameters });
-    console.log('consumer connected')
+    console.log("consumer connected");
     return { success: "success" };
   }
   //function to close the consumer
@@ -257,7 +304,7 @@ class MediasoupManager {
     roomId: string;
     consumerId: string;
   }) {
-    console.log('consumer closed')
+    console.log("consumer closed");
     await this.rooms[roomId].consumers[consumerId].close();
   }
   //function to close the consumer
@@ -268,7 +315,7 @@ class MediasoupManager {
     roomId: string;
     consumerId: string;
   }) {
-    console.log('consumer paused')
+    console.log("consumer paused");
     await this.rooms[roomId].consumers[consumerId].pause();
   }
   async resumeConsumer({
@@ -278,7 +325,7 @@ class MediasoupManager {
     sessionId: string;
     consumerId: string;
   }) {
-    console.log('consumer resumed')
+    console.log("consumer resumed");
     await this.rooms[sessionId].consumers[consumerId].resume();
   }
   async pauseOrResumeproducer({
@@ -324,7 +371,10 @@ class MediasoupManager {
    * This function is for disconnectiong the user.
    * delets the data and closes the producers.
    */
-  async disconnectUser(sessionId: string, userId: string): Promise<string[] | []> {
+  async disconnectUser(
+    sessionId: string,
+    userId: string
+  ): Promise<string[] | []> {
     const room = this.rooms[sessionId];
     if (!room || !userId) return [];
     const deletedProducerIds: string[] = [];
@@ -357,12 +407,9 @@ class MediasoupManager {
       }
     );
 
-    if (Object.keys(room.producers).length === 0) {
-      delete this.rooms[sessionId]; // Clean up empty room
-    }
     return deletedProducerIds;
   }
-  
+
   async cleanupRoom(sessionId: string, socketId: string) {
     const room = this.rooms[sessionId];
     if (!room) return;
@@ -395,4 +442,4 @@ class MediasoupManager {
   }
 }
 
-export const mediasoupManager=new MediasoupManager();
+export const mediasoupManager = new MediasoupManager();
