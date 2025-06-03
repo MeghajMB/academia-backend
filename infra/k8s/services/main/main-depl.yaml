@@ -14,20 +14,28 @@ spec:
         app: academia-main
     spec:
       containers:
-      - name: academia-main
-        image: meghajmb/academia-main:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 3001
-        envFrom:
-        - configMapRef:
-            name: academia-main-configs
-        - secretRef:
-            name: academia-main-secrets
-        resources:
-          limits:
-            cpu: "0.1"
-            memory: "400Mi"
-          requests:
-            cpu: "0.05"
-            memory: "200Mi"
+        - name: academia-main
+          image: meghajmb/academia-main:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+            - containerPort: 20000
+              protocol: UDP
+            - containerPort: 20000
+              protocol: TCP
+            - containerPort: 20001
+              protocol: UDP
+            - containerPort: 20001
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: academia-main-configs
+            - secretRef:
+                name: academia-main-secrets
+          resources:
+            limits:
+              cpu: "0.1"
+              memory: "400Mi"
+            requests:
+              cpu: "0.05"
+              memory: "200Mi"

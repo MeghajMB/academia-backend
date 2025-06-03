@@ -1,0 +1,44 @@
+controller:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "50m" 
+      memory: "90Mi"
+    limits:
+      cpu: "200m"
+      memory: "200Mi"
+  tolerations:
+    - key: "cloud.google.com/gke-quick-remove"
+      operator: "Exists"
+      effect: "NoSchedule"
+  service:
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+    annotations:
+      cloud.google.com/load-balancer-type: "External"
+      kubernetes.io/ingress.global-static-ip-name: "academia-ip"
+    ports:
+      http: 80
+      https: 443
+admissionWebhooks:
+  enabled: true
+  createJob:
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "50Mi"
+      limits:
+        cpu: "100m"
+        memory: "100Mi"
+  patchJob:
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "50Mi"
+      limits:
+        cpu: "100m"
+        memory: "100Mi"
+  tolerations:
+    - key: "cloud.google.com/gke-quick-remove"
+      operator: "Exists"
+      effect: "NoSchedule"

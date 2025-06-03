@@ -9,6 +9,7 @@ import { CustomJwtPayload } from "../types/jwt";
 import { UserRepository } from "../repositories/user/user.repository";
 import { SessionRepository } from "../repositories/session/session.repository";
 import config from "../config/configuration";
+import { SctpCapabilities } from "mediasoup/node/lib/sctpParametersTypes";
 
 const userRepository = new UserRepository();
 const sessionRepository = new SessionRepository();
@@ -189,7 +190,8 @@ class SocketService {
           {
             sessionId,
             transportType,
-          }: { sessionId: string; transportType: "sender" | "consumer" },
+            sctpCapabilities
+          }: { sessionId: string; transportType: "sender" | "consumer",sctpCapabilities:SctpCapabilities},
           callback
         ) => {
           const mediasoupManager = this._mediasoupManager;
@@ -198,7 +200,8 @@ class SocketService {
               await mediasoupManager.createWebRtcTransport(
                 sessionId,
                 transportType,
-                socket.userId!
+                socket.userId!,
+                sctpCapabilities
               );
             console.log(
               "Transport create for" + sessionId + "type" + transportType
