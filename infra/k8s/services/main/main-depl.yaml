@@ -34,7 +34,7 @@ spec:
                 name: academia-main-secrets
           resources:
             limits:
-              cpu: "0.1"
+              cpu: "0.5"
               memory: "400Mi"
             requests:
               cpu: "0.05"

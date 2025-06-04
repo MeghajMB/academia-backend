@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: academia-srv-udp
+  namespace: default
+  labels:
+    app: academia-main
+spec:
+  type: LoadBalancer
+  selector:
+    app: academia-main
+  ports:
+    - name: academia-srv-udp-20000
+      protocol: UDP
+      port: 20000
+      targetPort: 20000
+    - name: academia-srv-udp-20001
+      protocol: UDP
+      port: 20001
+      targetPort: 20001
+    - name: academia-srv-udp-20002
+      protocol: UDP
+      port: 20002
+      targetPort: 20002
+    - name: academia-srv-udp-20003
+      protocol: UDP
+      port: 20003
+      targetPort: 20003
+    - name: academia-srv-udp-20004
+      protocol: UDP
+      port: 20004
+      targetPort: 20004
+    - name: academia-srv-udp-20005
+      protocol: UDP
+      port: 20005
+      targetPort: 20005
+    - name: academia-srv-udp-20006
+      protocol: UDP
+      port: 20006
+      targetPort: 20006
+    - name: academia-srv-udp-20007
+      protocol: UDP
+      port: 20007
+      targetPort: 20007
+    - name: academia-srv-udp-20008
+      protocol: UDP
+      port: 20008
+      targetPort: 20008
+    - name: academia-srv-udp-20009
+      protocol: UDP
+      port: 20009
+      targetPort: 20009
+    - name: academia-srv-udp-20010
+      protocol: UDP
+      port: 20010
+      targetPort: 20010
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: academia-srv-tcp
+  namespace: default
+  labels:
+    app: academia-main
+spec:
+  type: LoadBalancer
+  selector:
+    app: academia-main
+  ports:
+    - name: academia-srv-tcp-20000
+      protocol: TCP
+      port: 20000
+      targetPort: 20000
+    - name: academia-srv-tcp-20001
+      protocol: TCP
+      port: 20001
+      targetPort: 20001
+    - name: academia-srv-tcp-20002
+      protocol: TCP
+      port: 20002
+      targetPort: 20002
+    - name: academia-srv-tcp-20003
+      protocol: TCP
+      port: 20003
+      targetPort: 20003
+    - name: academia-srv-tcp-20004
+      protocol: TCP
+      port: 20004
+      targetPort: 20004
+    - name: academia-srv-tcp-20005
+      protocol: TCP
+      port: 20005
+      targetPort: 20005
+    - name: academia-srv-tcp-20006
+      protocol: TCP
+      port: 20006
+      targetPort: 20006
+    - name: academia-srv-tcp-20007
+      protocol: TCP
+      port: 20007
+      targetPort: 20007
+    - name: academia-srv-tcp-20008
+      protocol: TCP
+      port: 20008
+      targetPort: 20008
+    - name: academia-srv-tcp-20009
+      protocol: TCP
+      port: 20009
+      targetPort: 20009
+    - name: academia-srv-tcp-20010
+      protocol: TCP
+      port: 20010
+      targetPort: 20010
+

@@ -44,7 +44,7 @@ class MediasoupManager {
       const worker = await mediasoup.createWorker({
         logLevel: "warn",
         rtcMinPort: 20000,
-        rtcMaxPort: 20001,
+        rtcMaxPort: 20010,
       });
 
       worker.on("died", () => {
@@ -148,12 +148,15 @@ class MediasoupManager {
       enableSctp: Boolean(sctpCapabilities),
       numSctpStreams: (sctpCapabilities || {}).numStreams,
     });
+    //sctp is for additional features like bots and recording
     if (senderOrConsumer == "sender") {
       this.rooms[sessionId].producerTransports[transport.id] = transport;
     } else {
       this.rooms[sessionId].consumerTransports[transport.id] = transport;
     }
-
+    console.log("This is the ip=",PUBLIC_IP)
+    console.log("This is the transport")
+    console.log(transport)
     return {
       id: transport.id,
       iceParameters: transport.iceParameters,
