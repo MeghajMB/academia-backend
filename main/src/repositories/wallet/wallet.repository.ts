@@ -1,18 +1,22 @@
-import mongoose, { Types, ClientSession } from "mongoose";
-import { WalletDocument, WalletModel } from "../../models/wallet.model";
+import mongoose, { ClientSession, Model } from "mongoose";
+import { WalletDocument } from "../../models/wallet.model";
 import { BaseRepository } from "../base/base.repository";
 import { IWalletRepository } from "./wallet.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
 @injectable()
 export class WalletRepository
   extends BaseRepository<WalletDocument>
   implements IWalletRepository
 {
-  constructor() {
-    super(WalletModel);
+  constructor(
+    @inject(Types.WalletModel)
+    private readonly walletModel: Model<WalletDocument>
+  ) {
+    super(walletModel);
   }
 
   async addRedeemPoints(
@@ -21,7 +25,7 @@ export class WalletRepository
     session?: ClientSession
   ): Promise<WalletDocument | null> {
     try {
-      const updatedUser = await WalletModel.findOneAndUpdate(
+      const updatedUser = await this.walletModel.findOneAndUpdate(
         { userId },
         { $inc: { redeemPoints: pointsToAdd } },
         { session, new: true }
@@ -37,11 +41,11 @@ export class WalletRepository
   }
 
   async createWallet(
-    userId: Types.ObjectId,
+    userId: mongoose.Types.ObjectId,
     session: ClientSession
   ): Promise<WalletDocument> {
     try {
-      const wallet = new WalletModel({ userId });
+      const wallet = new this.walletModel({ userId });
       await wallet.save({ session });
       return wallet;
     } catch (error: unknown) {
@@ -54,10 +58,10 @@ export class WalletRepository
   }
 
   async findWalletWithUserId(
-    userId: Types.ObjectId
+    userId: mongoose.Types.ObjectId
   ): Promise<WalletDocument | null> {
     try {
-      const wallet = await WalletModel.findOne({ userId });
+      const wallet = await this.walletModel.findOne({ userId });
       return wallet;
     } catch (error: unknown) {
       console.error(error);
@@ -69,12 +73,12 @@ export class WalletRepository
   }
 
   async addGoldCoins(
-    userId: Types.ObjectId,
+    userId: mongoose.Types.ObjectId,
     coinsToAdd: number,
     session?: ClientSession
   ): Promise<WalletDocument | null> {
     try {
-      const updatedWallet = await WalletModel.findOneAndUpdate(
+      const updatedWallet = await this.walletModel.findOneAndUpdate(
         { userId },
         { $inc: { goldCoins: coinsToAdd } },
         { session, new: true }
@@ -91,12 +95,12 @@ export class WalletRepository
   }
 
   async deductGoldCoins(
-    userId: Types.ObjectId,
+    userId: mongoose.Types.ObjectId,
     coinsToDeduct: number,
     session?: ClientSession
   ): Promise<WalletDocument | null> {
     try {
-      const wallet = await WalletModel.findOneAndUpdate(
+      const wallet = await this.walletModel.findOneAndUpdate(
         { userId, goldCoins: { $gte: coinsToDeduct } },
         { $inc: { goldCoin: -coinsToDeduct } },
         { session, new: true }

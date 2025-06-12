@@ -6,6 +6,8 @@ import { IReviewRepository } from "../../repositories/review/review.interface";
 import { IReviewService } from "../../services/review/review.interface";
 import { ReviewService } from "../../services/review/review.service";
 import { ReviewRepository } from "../../repositories/review/review.repository";
+import { Model } from "mongoose";
+import { ReviewDocument, ReviewModel } from "../../models/review.model";
 
 export const reviewModule: ContainerModule = new ContainerModule(
   (options: ContainerModuleLoadOptions) => {
@@ -23,5 +25,9 @@ export const reviewModule: ContainerModule = new ContainerModule(
       .bind<IReviewRepository>(Types.ReviewRepository)
       .to(ReviewRepository)
       .inSingletonScope();
+
+    options
+      .bind<Model<ReviewDocument>>(Types.ReviewModel)
+      .toConstantValue(ReviewModel);
   }
 );

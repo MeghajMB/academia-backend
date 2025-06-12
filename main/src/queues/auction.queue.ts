@@ -4,18 +4,12 @@ import { redis } from "../lib/redis";
 import { areBidsStillProcessing } from "../kafka/consumers/modules/bid.consumer";
 import { scheduleSessionCompletion } from "./session.queue";
 
-import { NotificationService } from "../services/notification/notification.service";
-import { GigRepository } from "../repositories/gig/gig.repository";
-import { SessionRepository } from "../repositories/session/session.repository";
-import { NotificationRepository } from "../repositories/notification/notification.repository";
 import { scheduleSessionNotification } from "./session-notification.queue";
-
-//dependency injection
-const gigRepository = new GigRepository();
-const sessionRepository = new SessionRepository();
-const notificationService = new NotificationService(
-  new NotificationRepository()
-);
+import { container } from "../container";
+import { IGigRepository } from "../repositories/gig/gig.interface";
+import { Types } from "../container/types";
+import { ISessionRepository } from "../repositories/session/session.interface";
+import { INotificationService } from "../services/notification/notification.interface";
 
 // Create a queue for scheduled tasks
 const auctionQueue = new Queue("auctionQueue", { connection: redis });
@@ -42,9 +36,16 @@ async function waitForKafkaBids(gigId: string) {
 const auctionWorker = new Worker(
   "auctionQueue",
   async (job) => {
-    const { gigId } = job.data;
-    console.log(`Closing auction for gig: ${gigId}`);
     try {
+      const { gigId } = job.data;
+      console.log(`Closing auction for gig: ${gigId}`);
+      const gigRepository = container.get<IGigRepository>(Types.GigRepository);
+      const sessionRepository = container.get<ISessionRepository>(
+        Types.SessionRepository
+      );
+      const notificationService = container.get<INotificationService>(
+        Types.NotificationService
+      );
       await waitForKafkaBids(gigId);
       const gig = await gigRepository.findById(gigId);
       if (!gig || gig.status !== "active") {

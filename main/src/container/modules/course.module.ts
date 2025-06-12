@@ -20,6 +20,14 @@ import { ILectureRepository } from "../../repositories/course/lecture/lecture.in
 import { LectureRepository } from "../../repositories/course/lecture/lecture.repository";
 import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.interface";
 import { EnrollmentRepository } from "../../repositories/enrollment/enrollment.repository";
+import { Model } from "mongoose";
+import { CourseDocument, CourseModel } from "../../models/course.model";
+import { SectionDocument, SectionModel } from "../../models/section.model";
+import { LectureDocument, LectureModel } from "../../models/lecture.model";
+import {
+  EnrollmentDocument,
+  EnrollmentModel,
+} from "../../models/enrollment.model";
 
 export const courseModule: ContainerModule = new ContainerModule(
   (options: ContainerModuleLoadOptions) => {
@@ -40,6 +48,10 @@ export const courseModule: ContainerModule = new ContainerModule(
       .to(CourseRepository)
       .inSingletonScope();
 
+    options
+      .bind<Model<CourseDocument>>(Types.CourseModel)
+      .toConstantValue(CourseModel);
+
     /* Section */
 
     options
@@ -56,6 +68,10 @@ export const courseModule: ContainerModule = new ContainerModule(
       .bind<ISectionRepository>(Types.SectionRepository)
       .to(SectionRepository)
       .inSingletonScope();
+
+    options
+      .bind<Model<SectionDocument>>(Types.SectionModel)
+      .toConstantValue(SectionModel);
 
     /* Lecture */
 
@@ -74,11 +90,19 @@ export const courseModule: ContainerModule = new ContainerModule(
       .to(LectureRepository)
       .inSingletonScope();
 
+    options
+      .bind<Model<LectureDocument>>(Types.LectureModel)
+      .toConstantValue(LectureModel);
+
     /* Enrollment */
 
     options
       .bind<IEnrollmentRepository>(Types.EnrollmentRepository)
       .to(EnrollmentRepository)
       .inSingletonScope();
+
+    options
+      .bind<Model<EnrollmentDocument>>(Types.EnrollmentModel)
+      .toConstantValue(EnrollmentModel);
   }
 );

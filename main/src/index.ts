@@ -12,7 +12,7 @@ import { runConsumers } from "./kafka/consumers";
 let socketService: SocketService;
 const start = async () => {
   try {
-    await mongoose.connect(config.mongo.uri!);
+    await mongoose.connect(config.mongo.uri);
     console.log("Connected to MongoDB");
     const server = createServer(app);
     socketService = new SocketService(server);

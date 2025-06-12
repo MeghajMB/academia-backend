@@ -10,6 +10,13 @@ import { IWalletRepository } from "../../repositories/wallet/wallet.interface";
 import { WalletRepository } from "../../repositories/wallet/wallet.repository";
 import { ITransactionRepository } from "../../repositories/transaction/transaction.interface";
 import { TransactionRepository } from "../../repositories/transaction/transaction.repository";
+import { Model } from "mongoose";
+import { WalletDocument, WalletModel } from "../../models/wallet.model";
+import { PaymentDocument, PaymentModel } from "../../models/payment.model";
+import {
+  TransactionDocument,
+  TransactionModel,
+} from "../../models/transaction.model";
 
 export const paymentModule: ContainerModule = new ContainerModule(
   (options: ContainerModuleLoadOptions) => {
@@ -28,6 +35,10 @@ export const paymentModule: ContainerModule = new ContainerModule(
       .to(PaymentRepository)
       .inSingletonScope();
 
+    options
+      .bind<Model<PaymentDocument>>(Types.PaymentModel)
+      .toConstantValue(PaymentModel);
+
     /* Wallet */
 
     options
@@ -35,11 +46,19 @@ export const paymentModule: ContainerModule = new ContainerModule(
       .to(WalletRepository)
       .inSingletonScope();
 
+    options
+      .bind<Model<WalletDocument>>(Types.WalletModel)
+      .toConstantValue(WalletModel);
+
     /* Transacction */
 
     options
       .bind<ITransactionRepository>(Types.TransactionRepository)
       .to(TransactionRepository)
       .inSingletonScope();
+
+    options
+      .bind<Model<TransactionDocument>>(Types.TransactionModel)
+      .toConstantValue(TransactionModel);
   }
 );

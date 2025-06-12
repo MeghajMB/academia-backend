@@ -23,7 +23,7 @@ import { IReviewRepository } from "../../repositories/review/review.interface";
 @injectable()
 export class AdminService implements IAdminService {
   constructor(
-    @inject(Types.userRepository)
+    @inject(Types.UserRepository)
     private readonly userRepository: IUserRepository,
     @inject(Types.CategoryRepository)
     private readonly categoryRepository: ICategoryRepository,

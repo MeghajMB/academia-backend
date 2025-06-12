@@ -1,28 +1,32 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { BaseRepository } from "../../base/base.repository";
 import { ILectureRepository } from "./lecture.interface";
-import { LectureDocument, LectureModel } from "../../../models/lecture.model";
+import { LectureDocument } from "../../../models/lecture.model";
 import { DatabaseError } from "../../../util/errors/database-error";
 import { StatusCode } from "../../../enums/status-code.enum";
 import { LectureWithPopulatedData } from "./lecture.types";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../../container/types";
 
 @injectable()
 export class LectureRepository
   extends BaseRepository<LectureDocument>
   implements ILectureRepository
 {
-  constructor() {
-    super(LectureModel);
+  constructor(
+    @inject(Types.LectureModel)
+    private readonly lectureModel: Model<LectureDocument>
+  ) {
+    super(lectureModel);
   }
 
   async findByIdWithPopulatedData(
     lectureId: string
   ): Promise<LectureWithPopulatedData | null> {
     try {
-      const lecture = await LectureModel.findById(lectureId).populate(
-        "courseId"
-      );
+      const lecture = await this.lectureModel
+        .findById(lectureId)
+        .populate("courseId");
       return lecture as unknown as LectureWithPopulatedData | null;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -33,14 +37,14 @@ export class LectureRepository
   }
 
   async updateOrderOfLectureInSameSection(
-    sectionId: Types.ObjectId,
-    lectureId: Types.ObjectId,
+    sectionId: mongoose.Types.ObjectId,
+    lectureId: mongoose.Types.ObjectId,
     draggedOrder: number,
     targetOrder: number
   ): Promise<LectureDocument | null> {
     try {
       if (draggedOrder > targetOrder) {
-        await LectureModel.updateMany(
+        await this.lectureModel.updateMany(
           {
             sectionId,
             order: { $gte: targetOrder, $lt: draggedOrder },
@@ -48,7 +52,7 @@ export class LectureRepository
           { $inc: { order: 1 } }
         );
       } else {
-        await LectureModel.updateMany(
+        await this.lectureModel.updateMany(
           {
             sectionId,
             order: { $gt: draggedOrder, $lte: targetOrder },
@@ -57,9 +61,12 @@ export class LectureRepository
         );
       }
 
-      const updatedLecture = await LectureModel.findByIdAndUpdate(lectureId, {
-        order: targetOrder,
-      });
+      const updatedLecture = await this.lectureModel.findByIdAndUpdate(
+        lectureId,
+        {
+          order: targetOrder,
+        }
+      );
 
       return updatedLecture;
     } catch (error: unknown) {
@@ -71,23 +78,23 @@ export class LectureRepository
   }
 
   async updateOrderOfLectureInDifferentSection(
-    lectureId: Types.ObjectId,
-    draggedSectionId: Types.ObjectId,
-    targetSectionId: Types.ObjectId,
+    lectureId: mongoose.Types.ObjectId,
+    draggedSectionId: mongoose.Types.ObjectId,
+    targetSectionId: mongoose.Types.ObjectId,
     draggedLectureOrder: number,
     targetOrder: number
   ): Promise<LectureDocument | null> {
     try {
-      await LectureModel.updateMany(
+      await this.lectureModel.updateMany(
         { sectionId: draggedSectionId, order: { $gte: draggedLectureOrder } },
         { $inc: { order: -1 } }
       );
 
-      await LectureModel.updateMany(
+      await this.lectureModel.updateMany(
         { sectionId: targetSectionId, order: { $gte: targetOrder } },
         { $inc: { order: 1 } }
       );
-      const lecture = await LectureModel.findByIdAndUpdate(
+      const lecture = await this.lectureModel.findByIdAndUpdate(
         lectureId,
         { sectionId: targetSectionId, order: targetOrder },
         { new: true }
@@ -103,7 +110,8 @@ export class LectureRepository
 
   async getLecturesWithCourseId(courseId: string): Promise<LectureDocument[]> {
     try {
-      const lectures = await LectureModel.find({ courseId: courseId })
+      const lectures = await this.lectureModel
+        .find({ courseId: courseId })
         .sort({
           order: 1,
         })
@@ -122,7 +130,7 @@ export class LectureRepository
     key: string
   ): Promise<LectureDocument | null> {
     try {
-      const updatedLecture = await LectureModel.findByIdAndUpdate(
+      const updatedLecture = await this.lectureModel.findByIdAndUpdate(
         lectureId,
         { $set: { videoUrl: key, status: "processed" } },
         { new: true }
@@ -139,7 +147,7 @@ export class LectureRepository
 
   async countDocumentWithSectionId(sectionId: string): Promise<number> {
     try {
-      const lectureCount = await LectureModel.countDocuments({
+      const lectureCount = await this.lectureModel.countDocuments({
         sectionId: sectionId,
       });
       return lectureCount;
@@ -154,7 +162,7 @@ export class LectureRepository
 
   async getTotalLecturesOfCourse(courseId: string): Promise<number> {
     try {
-      const lectureCount = await LectureModel.countDocuments({
+      const lectureCount = await this.lectureModel.countDocuments({
         courseId: courseId,
       });
       return lectureCount;
@@ -170,7 +178,7 @@ export class LectureRepository
     filters: Partial<Record<keyof LectureDocument, any>>
   ): Promise<number> {
     try {
-      const result = await LectureModel.deleteMany(filters);
+      const result = await this.lectureModel.deleteMany(filters);
       return result.deletedCount; // Returns the number of deleted lectures
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -185,7 +193,7 @@ export class LectureRepository
     scheduledDeletionDate: Date
   ): Promise<void> {
     try {
-      await LectureModel.updateMany(
+      await this.lectureModel.updateMany(
         { sectionId },
         { $set: { scheduledDeletionDate, status: "archived" } }
       );
@@ -202,7 +210,7 @@ export class LectureRepository
     lectureData: { title: string; videoUrl: string; duration: number }
   ): Promise<LectureDocument | null> {
     try {
-      const lecture = await LectureModel.findByIdAndUpdate(
+      const lecture = await this.lectureModel.findByIdAndUpdate(
         lectureId,
         lectureData,
         { new: true }

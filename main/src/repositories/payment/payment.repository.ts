@@ -1,23 +1,28 @@
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { BaseRepository } from "../base/base.repository";
-import { PaymentDocument, PaymentModel } from "../../models/payment.model";
+import { PaymentDocument } from "../../models/payment.model";
 import { IPaymentRepository } from "./payment.interface";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+import { Model } from "mongoose";
 
 @injectable()
 export class PaymentRepository
   extends BaseRepository<PaymentDocument>
   implements IPaymentRepository
 {
-  constructor() {
-    super(PaymentModel);
+  constructor(
+    @inject(Types.PaymentModel)
+    private readonly paymentModel: Model<PaymentDocument>
+  ) {
+    super(paymentModel);
   }
   async findByRazorpayOrderId(
     orderId: string
   ): Promise<PaymentDocument | null> {
     try {
-      const orderDetails = await PaymentModel.findOne({
+      const orderDetails = await this.paymentModel.findOne({
         razorpayOrderId: orderId,
       });
       return orderDetails;

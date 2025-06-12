@@ -11,11 +11,9 @@ import {
   GetTransactionHistoryResponseSchema,
 } from "@academia-dev/common";
 import { GetTransactionHistoryRequestSchema } from "./request.dto";
-import config from "../../config/configuration";
 import { redis } from "../../lib/redis";
 import {
   publishRazorPaySuccessPayment,
-  runProducer,
 } from "../../kafka/producers/producer";
 import { RazorpayPaymentCapturedWebhook } from "../../types/razorpay";
 

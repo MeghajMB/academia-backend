@@ -3,22 +3,27 @@ import { DatabaseError } from "../../util/errors/database-error";
 import { CategoryDocument, CategoryModel } from "../../models/categoy.model";
 import { ICategoryRepository } from "./category.interface";
 import { BaseRepository } from "../base/base.repository";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
+import { Model } from "mongoose";
 
 @injectable()
 export class CategoryRepository
   extends BaseRepository<CategoryDocument>
   implements ICategoryRepository
 {
-  constructor(){
-    super(CategoryModel)
+  constructor(
+    @inject(Types.CategoryModel)
+    private readonly categoryModel: Model<CategoryDocument>
+  ) {
+    super(categoryModel);
   }
   async createCategory(category: {
     name: string;
     description: string;
-  }): Promise<CategoryDocument > {
+  }): Promise<CategoryDocument> {
     try {
-      const createdCategory = new CategoryModel(category);
+      const createdCategory = new this.categoryModel(category);
       const newCategory = await createdCategory.save();
       return newCategory;
     } catch (error: unknown) {
@@ -35,7 +40,7 @@ export class CategoryRepository
     limit: number
   ): Promise<CategoryDocument[]> {
     try {
-      const category = await CategoryModel.find()
+      const category = await this.categoryModel.find()
         .skip(skip)
         .limit(limit)
         .sort({ name: 1 })
@@ -53,7 +58,7 @@ export class CategoryRepository
 
   async findByName(name: string): Promise<CategoryDocument | null> {
     try {
-      const category = await CategoryModel.findOne({
+      const category = await this.categoryModel.findOne({
         name: { $regex: `^${name}$`, $options: "i" },
       }).lean();
       if (!category) return null;
@@ -73,7 +78,7 @@ export class CategoryRepository
     updatedData: { name: string; description: string }
   ): Promise<CategoryDocument | null> {
     try {
-      const updatedCategory = await CategoryModel.findByIdAndUpdate(
+      const updatedCategory = await this.categoryModel.findByIdAndUpdate(
         categoryId,
         { $set: updatedData },
         { new: true }

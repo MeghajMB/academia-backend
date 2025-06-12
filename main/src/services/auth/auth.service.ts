@@ -41,7 +41,7 @@ import { Types } from "../../container/types";
 @injectable()
 export class AuthService implements IAuthService {
   constructor(
-    @inject(Types.userRepository)
+    @inject(Types.UserRepository)
     private readonly userRepository: IUserRepository,
     @inject(Types.WalletRepository)
     private readonly walletRepository: IWalletRepository

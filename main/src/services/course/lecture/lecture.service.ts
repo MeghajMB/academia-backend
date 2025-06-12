@@ -25,7 +25,7 @@ export class LectureService implements ILectureService {
     private readonly lectureRepository: ILectureRepository,
     @inject(Types.EnrollmentRepository)
     private readonly enrollmentRepository: IEnrollmentRepository,
-    @inject(Types.userRepository)
+    @inject(Types.UserRepository)
     private readonly userRepository: IUserRepository,
     @inject(Types.FileService) private readonly fileService: IFileService,
     @inject(Types.WalletRepository)

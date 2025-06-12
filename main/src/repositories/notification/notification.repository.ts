@@ -1,27 +1,30 @@
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
 import { StatusCode } from "../../enums/status-code.enum";
-import {
-  NotificationDocument,
-  NotificationModel,
-} from "../../models/notification.model";
+import { NotificationDocument } from "../../models/notification.model";
 import { DatabaseError } from "../../util/errors/database-error";
 import { BaseRepository } from "../base/base.repository";
 import { INotificationRepository } from "./notification.interface";
+import { Types } from "../../container/types";
+import { Model } from "mongoose";
 
 @injectable()
 export class NotificationRepository
   extends BaseRepository<NotificationDocument>
   implements INotificationRepository
 {
-  constructor() {
-    super(NotificationModel);
+  constructor(
+    @inject(Types.NotificationModel)
+    private readonly notificationModel: Model<NotificationDocument>
+  ) {
+    super(notificationModel);
   }
 
   async getUserUnreadNotifications(
     userId: string
   ): Promise<NotificationDocument[]> {
     try {
-      return await NotificationModel.find({ userId, isRead: false })
+      return await this.notificationModel
+        .find({ userId, isRead: false })
         .sort({
           createdAt: -1,
         })
@@ -35,7 +38,10 @@ export class NotificationRepository
   }
   async countUnreadNotifications(userId: string) {
     try {
-      return await NotificationModel.countDocuments({ userId, isRead: false });
+      return await this.notificationModel.countDocuments({
+        userId,
+        isRead: false,
+      });
     } catch (error: unknown) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -46,7 +52,7 @@ export class NotificationRepository
 
   async markAsRead(notificationId: string) {
     try {
-      return await NotificationModel.findByIdAndUpdate(
+      return await this.notificationModel.findByIdAndUpdate(
         notificationId,
         { isRead: true },
         { new: true }
@@ -60,7 +66,7 @@ export class NotificationRepository
   }
   async markAllAsRead(userId: string) {
     try {
-      const result = await NotificationModel.updateMany(
+      const result = await this.notificationModel.updateMany(
         { userId },
         { $set: { isRead: true } }
       );

@@ -3,7 +3,6 @@ import { NotificationService } from "../../services/notification/notification.se
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   GetUserNotificationsResponseSchema,
-  MarkNotificationAsReadResponseSchema,
   NullResponseSchema,
   SendNotificationResponseSchema,
 } from "@academia-dev/common";

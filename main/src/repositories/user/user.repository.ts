@@ -1,24 +1,31 @@
-import { ClientSession } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { IUserRepository } from "./user.interface";
-import { UserDocument, UserModel } from "../../models/user.model";
+import { UserDocument } from "../../models/user.model";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { BaseRepository } from "../base/base.repository";
 import { UserSignData } from "./user.types";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
 @injectable()
 export class UserRepository
   extends BaseRepository<UserDocument>
   implements IUserRepository
 {
-  constructor() {
-    super(UserModel);
+  constructor(
+    @inject(Types.UserModel)
+    private readonly userModel: Model<UserDocument>
+  ) {
+    super(userModel);
   }
 
-  async createUserWithSession(userDetails: UserSignData, session: ClientSession): Promise<UserDocument> {
+  async createUserWithSession(
+    userDetails: UserSignData,
+    session: ClientSession
+  ): Promise<UserDocument> {
     try {
-      const user = new UserModel(userDetails);
+      const user = new this.userModel(userDetails);
       await user.save({ session });
       return user;
     } catch (error: unknown) {
@@ -29,13 +36,13 @@ export class UserRepository
       );
     }
   }
-  
+
   async awardPurpleCoins(
     userId: string,
     coins: number
   ): Promise<UserDocument | null> {
     try {
-      const user = await UserModel.findByIdAndUpdate(
+      const user = await this.userModel.findByIdAndUpdate(
         userId,
         { $inc: { purpleCoin: coins } }, // Increment purpleCoin by the given amount
         { new: true } // Return the updated user document
@@ -55,7 +62,7 @@ export class UserRepository
 
   async findByEmail(email: string): Promise<UserDocument | null> {
     try {
-      const user = await UserModel.findOne({ email });
+      const user = await this.userModel.findOne({ email });
       if (!user) return null;
 
       return user;
@@ -76,7 +83,8 @@ export class UserRepository
     limit: number
   ): Promise<UserDocument[]> {
     try {
-      const users = await UserModel.find(filters)
+      const users = await this.userModel
+        .find(filters)
         .skip(skip)
         .limit(limit)
         .sort({ name: 1 });
@@ -98,11 +106,12 @@ export class UserRepository
     search: string
   ): Promise<UserDocument[]> {
     try {
-      const query: Record<string,any> = { role };
+      const query: Record<string, any> = { role };
       if (search) {
         query.name = { $regex: search, $options: "i" };
       }
-      const users = await UserModel.find(query)
+      const users = await this.userModel
+        .find(query)
         .skip(skip)
         .limit(limit)
         .sort({ name: 1 })
@@ -122,7 +131,7 @@ export class UserRepository
 
   async countDocuments(key: string, value: string): Promise<number> {
     try {
-      const count = await UserModel.countDocuments({ [key]: value });
+      const count = await this.userModel.countDocuments({ [key]: value });
       return count;
     } catch (error: unknown) {
       if (error instanceof Error) {

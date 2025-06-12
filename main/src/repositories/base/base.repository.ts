@@ -85,6 +85,7 @@ export abstract class BaseRepository<T extends Document>
       );
     }
   }
+  
   async countAll(): Promise<number> {
     try {
       const entityCount = await this.model.countDocuments();

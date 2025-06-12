@@ -1,6 +1,6 @@
-import mongoose, { ClientSession, Types } from "mongoose";
+import mongoose, { ClientSession, Model } from "mongoose";
 import { BaseRepository } from "../base/base.repository";
-import { GigModel, GigDocument } from "../../models/gig.model";
+import { GigDocument } from "../../models/gig.model";
 import { IGigRepository } from "./gig.interface";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
@@ -9,15 +9,19 @@ import {
   getGigMetricsRepositoryResponse,
   GigWithInstructorData,
 } from "./gig.types";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
 @injectable()
 export class GigRepository
   extends BaseRepository<GigDocument>
   implements IGigRepository
 {
-  constructor() {
-    super(GigModel);
+  constructor(
+    @inject(Types.GigModel)
+    private readonly gigModel: Model<GigDocument>
+  ) {
+    super(gigModel);
   }
   async getGigEarnings(
     userId: string,
@@ -26,7 +30,7 @@ export class GigRepository
     end: Date
   ): Promise<AggregatedGigEarnings[] | []> {
     try {
-      const result = await GigModel.aggregate([
+      const result = await this.gigModel.aggregate([
         {
           $match: {
             instructorId: new mongoose.Types.ObjectId(userId),
@@ -83,10 +87,10 @@ export class GigRepository
     userId: string
   ): Promise<getGigMetricsRepositoryResponse[] | []> {
     try {
-      const gigMetrics = await GigModel.aggregate([
+      const gigMetrics = await this.gigModel.aggregate([
         {
           $match: {
-            instructorId: new Types.ObjectId(userId),
+            instructorId: new mongoose.Types.ObjectId(userId),
           },
         },
         {
@@ -163,7 +167,8 @@ export class GigRepository
       }
       if (sort) {
       }
-      const gigs = await GigModel.find(query)
+      const gigs = await this.gigModel
+        .find(query)
         .skip(skip)
         .limit(limit)
         .sort(sortQuery);
@@ -184,7 +189,7 @@ export class GigRepository
     session: ClientSession
   ): Promise<GigDocument | null> {
     try {
-      const updatedGig = await GigModel.findByIdAndUpdate(
+      const updatedGig = await this.gigModel.findByIdAndUpdate(
         gigId,
         {
           currentBidder: bidderId,
@@ -211,30 +216,32 @@ export class GigRepository
         sessionDate.getTime() + sessionDuration * 60000
       );
 
-      const gig = await GigModel.findOne({
-        instructorId: new mongoose.Types.ObjectId(instructorId),
-        $or: [
-          // New gig starts during an existing gig
-          {
-            sessionDate: { $gte: sessionDate, $lt: gigEndTime },
-          },
-          // New gig starts before an existing gig but overlaps
-          {
-            sessionDate: { $lte: sessionDate },
-            $expr: {
-              $gt: [
-                {
-                  $add: [
-                    "$sessionDate",
-                    { $multiply: ["$sessionDuration", 60000] },
-                  ],
-                },
-                sessionDate,
-              ],
+      const gig = await this.gigModel
+        .findOne({
+          instructorId: new mongoose.Types.ObjectId(instructorId),
+          $or: [
+            // New gig starts during an existing gig
+            {
+              sessionDate: { $gte: sessionDate, $lt: gigEndTime },
             },
-          },
-        ],
-      }).lean();
+            // New gig starts before an existing gig but overlaps
+            {
+              sessionDate: { $lte: sessionDate },
+              $expr: {
+                $gt: [
+                  {
+                    $add: [
+                      "$sessionDate",
+                      { $multiply: ["$sessionDuration", 60000] },
+                    ],
+                  },
+                  sessionDate,
+                ],
+              },
+            },
+          ],
+        })
+        .lean();
       return gig;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -246,10 +253,12 @@ export class GigRepository
 
   async getActiveGigsWithPopulatedData(): Promise<GigWithInstructorData[]> {
     try {
-      const activeGigs = await GigModel.find({
-        status: "active",
-        biddingExpiresAt: { $gt: new Date() },
-      }).populate("instructorId");
+      const activeGigs = await this.gigModel
+        .find({
+          status: "active",
+          biddingExpiresAt: { $gt: new Date() },
+        })
+        .populate("instructorId");
       return activeGigs as unknown as GigWithInstructorData[];
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -260,7 +269,10 @@ export class GigRepository
   }
   async getActiveGigsOfInstructor(userId: string): Promise<GigDocument[]> {
     try {
-      return await GigModel.find({ instructorId: userId, status: "active" });
+      return await this.gigModel.find({
+        instructorId: userId,
+        status: "active",
+      });
     } catch (error: unknown) {
       throw new DatabaseError(
         "An error occurred while checking for conflicting gigs",

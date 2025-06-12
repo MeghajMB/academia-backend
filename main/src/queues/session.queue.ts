@@ -1,9 +1,9 @@
 import { Queue, Worker } from "bullmq";
 import { redis } from "../lib/redis";
-import { SessionService } from "../services/session/session.service";
-import { NotificationService } from "../services/notification/notification.service";
-import { NotificationRepository } from "../repositories/notification/notification.repository";
-import { SessionRepository } from "../repositories/session/session.repository";
+import { container } from "../container";
+import { Types } from "../container/types";
+import { INotificationService } from "../services/notification/notification.interface";
+import { ISessionService } from "../services/session/session.interface";
 
 const sessionQueue = new Queue("sessionQueue", { connection: redis });
 
@@ -18,16 +18,18 @@ export async function scheduleSessionCompletion(
   );
 }
 
-const sessionService = new SessionService(new SessionRepository());
-const notificationService = new NotificationService(
-  new NotificationRepository()
-);
 const sessionWorker = new Worker(
   "sessionQueue",
   async (job) => {
     try {
-    const { sessionId } = job.data;
-    console.log(`Finalizing session: ${sessionId}`);
+      const sessionService = container.get<ISessionService>(
+        Types.SessionService
+      );
+      const notificationService = container.get<INotificationService>(
+        Types.NotificationService
+      );
+      const { sessionId } = job.data;
+      console.log(`Finalizing session: ${sessionId}`);
       const users = await sessionService.finalizeSession(sessionId);
       await Promise.all(
         users.map((user) =>

@@ -6,6 +6,8 @@ import { IGigService } from "../../services/gig/gig.interface";
 import { GigService } from "../../services/gig/gig.service";
 import { IGigRepository } from "../../repositories/gig/gig.interface";
 import { GigRepository } from "../../repositories/gig/gig.repository";
+import { Model } from "mongoose";
+import { GigDocument, GigModel } from "../../models/gig.model";
 
 export const gigModule: ContainerModule = new ContainerModule(
   (options: ContainerModuleLoadOptions) => {
@@ -23,5 +25,9 @@ export const gigModule: ContainerModule = new ContainerModule(
       .bind<IGigRepository>(Types.GigRepository)
       .to(GigRepository)
       .inSingletonScope();
+
+    options
+      .bind<Model<GigDocument>>(Types.GigModel)
+      .toConstantValue(GigModel);
   }
 );

@@ -1,8 +1,5 @@
 import { ITransactionRepository } from "./transaction.interface";
-import {
-  TransactionDocument,
-  TransactionModel,
-} from "../../models/transaction.model";
+import { TransactionDocument } from "../../models/transaction.model";
 import { BaseRepository } from "../base/base.repository";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
@@ -12,16 +9,20 @@ import {
   TransactionAnalyticsResult,
   TransactionBase,
 } from "./transaction.types";
-import { ClientSession, PipelineStage, Types } from "mongoose";
-import { injectable } from "inversify";
+import mongoose, { ClientSession, Model, PipelineStage } from "mongoose";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
 @injectable()
 export class TransactionRepository
   extends BaseRepository<TransactionDocument>
   implements ITransactionRepository
 {
-  constructor() {
-    super(TransactionModel);
+  constructor(
+    @inject(Types.TransactionModel)
+    private readonly transactionModel: Model<TransactionDocument>
+  ) {
+    super(transactionModel);
   }
 
   async fetchAdminTransactionAnalytics(
@@ -81,9 +82,9 @@ export class TransactionRepository
         },
       ];
 
-      const transactionStats = await TransactionModel.aggregate(
-        pipeline
-      ).exec();
+      const transactionStats = await this.transactionModel
+        .aggregate(pipeline)
+        .exec();
 
       const updatedTransactionStats = transactionStats.map((item) => ({
         date: item._id,
@@ -93,7 +94,7 @@ export class TransactionRepository
         count: item.count,
       }));
 
-      const summaryResult = await TransactionModel.aggregate([
+      const summaryResult = await this.transactionModel.aggregate([
         {
           $match: { ...matchStage },
         },
@@ -143,7 +144,7 @@ export class TransactionRepository
       if (payload.type !== "all") {
         matchCriteria.type = payload.type;
       }
-      const transactions = await TransactionModel.aggregate([
+      const transactions = await this.transactionModel.aggregate([
         {
           $match: matchCriteria,
         },
@@ -174,7 +175,7 @@ export class TransactionRepository
     end: Date
   ): Promise<AggregatedEarnings[] | []> {
     try {
-      const result = await TransactionModel.aggregate([
+      const result = await this.transactionModel.aggregate([
         {
           $match: {
             purchaseType: "course",
@@ -193,7 +194,7 @@ export class TransactionRepository
         { $unwind: "$course" },
         {
           $match: {
-            "course.userId": new Types.ObjectId(userId),
+            "course.userId": new mongoose.Types.ObjectId(userId),
           },
         },
         {
@@ -251,7 +252,7 @@ export class TransactionRepository
     session: ClientSession
   ): Promise<TransactionDocument> {
     try {
-      const transaction = new TransactionModel({
+      const transaction = new this.transactionModel({
         userId,
         amount,
         purchaseType,

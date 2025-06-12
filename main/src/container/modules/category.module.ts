@@ -6,6 +6,8 @@ import { ICategoryService } from "../../services/category/category.interface";
 import { CategoryService } from "../../services/category/category.service";
 import { ICategoryRepository } from "../../repositories/category/category.interface";
 import { CategoryRepository } from "../../repositories/category/category.repository";
+import { Model } from "mongoose";
+import { CategoryDocument, CategoryModel } from "../../models/categoy.model";
 
 export const categoryModule: ContainerModule = new ContainerModule(
   (options: ContainerModuleLoadOptions) => {
@@ -23,5 +25,9 @@ export const categoryModule: ContainerModule = new ContainerModule(
       .bind<ICategoryRepository>(Types.CategoryRepository)
       .to(CategoryRepository)
       .inSingletonScope();
+
+    options
+      .bind<Model<CategoryDocument>>(Types.CategoryModel)
+      .toConstantValue(CategoryModel);
   }
 );
