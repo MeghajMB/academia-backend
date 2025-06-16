@@ -87,6 +87,10 @@ export const Types = {
   WalletRepository: Symbol.for("WalletRepository"),
   WalletModel: Symbol.for("WalletModel"),
 
+  /* Payment Geteway */
+
+  RazorpayGateway: Symbol.for("RazorpayGateway"),
+
   /* Review */
 
   ReviewController: Symbol.for("ReviewController"),

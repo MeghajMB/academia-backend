@@ -2,7 +2,7 @@ import { container } from "../../../container";
 import { Types } from "../../../container/types";
 import { kafka } from "../../../lib/kafka";
 import { RazorpayPaymentCapturedWebhook } from "../../../types/razorpay";
-import { IPaymentService } from "../../../services/payment/payment.interface";
+import { IPaymentService } from "../../../services/payment/interfaces/payment.interface";
 
 const consumer = kafka.consumer({ groupId: "payment-group" });
 

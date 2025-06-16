@@ -1,15 +1,16 @@
-import { Orders } from "razorpay/dist/types/orders";
 import {
   GetTransactionHistoryParams,
   getWalletServiceResponse,
-} from "./payment.types";
-import { RazorpayPaymentCapturedWebhook } from "../../types/razorpay";
+} from "../payment.types";
+import { RazorpayPaymentCapturedWebhook } from "../../../types/razorpay";
+import { PaymentGatewayType } from "../../../enums/payment-gateway.enum";
 
 export interface IPaymentService {
-  createRazorPayOrder(
+  createOrder(
     itemId: string,
     type: string,
-    userId: string
+    userId: string,
+    gateway: PaymentGatewayType
   ): Promise<{
     id: string;
     amount: string | number;

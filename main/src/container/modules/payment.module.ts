@@ -2,7 +2,7 @@ import { ContainerModule, ContainerModuleLoadOptions } from "inversify";
 import { Types } from "../types";
 import { IPaymentController } from "../../controllers/payment/payment.interface";
 import { PaymentController } from "../../controllers/payment/payment.controller";
-import { IPaymentService } from "../../services/payment/payment.interface";
+import { IPaymentService } from "../../services/payment/interfaces/payment.interface";
 import { PaymentService } from "../../services/payment/payment.service";
 import { IPaymentRepository } from "../../repositories/payment/payment.interface";
 import { PaymentRepository } from "../../repositories/payment/payment.repository";
@@ -17,6 +17,8 @@ import {
   TransactionDocument,
   TransactionModel,
 } from "../../models/transaction.model";
+import { IPaymentGateway } from "../../services/payment/interfaces/payment-gateway.interface";
+import { RazorpayGateway } from "../../services/payment/gateways/razorpay.gateway";
 
 export const paymentModule: ContainerModule = new ContainerModule(
   (options: ContainerModuleLoadOptions) => {
@@ -50,7 +52,7 @@ export const paymentModule: ContainerModule = new ContainerModule(
       .bind<Model<WalletDocument>>(Types.WalletModel)
       .toConstantValue(WalletModel);
 
-    /* Transacction */
+    /* Transaction */
 
     options
       .bind<ITransactionRepository>(Types.TransactionRepository)
@@ -60,5 +62,12 @@ export const paymentModule: ContainerModule = new ContainerModule(
     options
       .bind<Model<TransactionDocument>>(Types.TransactionModel)
       .toConstantValue(TransactionModel);
+
+    /* Gateway */
+
+    options
+      .bind<IPaymentGateway>(Types.RazorpayGateway)
+      .to(RazorpayGateway)
+      .inSingletonScope();
   }
 );
