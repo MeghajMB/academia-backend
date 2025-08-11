@@ -2,13 +2,18 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import jwt from "jsonwebtoken";
 
 import passport from "passport";
-import { UserRepository } from "../repositories/user/user.repository";
 import config from "../config/configuration";
 import mongoose from "mongoose";
-import { WalletRepository } from "../repositories/wallet/wallet.repository";
+import { container } from "../container";
+import { Types } from "../container/types";
+import { IWalletRepository } from "../repositories/wallet/wallet.interface";
+import { IUserRepository } from "../repositories/user/user.interface";
 
-const userRepository = new UserRepository();
-const walletRepository = new WalletRepository();
+const userRepository = container.get<IUserRepository>(Types.UserRepository);
+const walletRepository = container.get<IWalletRepository>(
+  Types.WalletRepository
+);
+
 passport.use(
   new GoogleStrategy(
     {
@@ -55,7 +60,7 @@ passport.use(
           config.jwt.accessTokenSecret,
           { expiresIn: "15m" }
         );
-        
+
         const refreshToken = jwt.sign(
           { id: user.id },
           config.jwt.refreshTokenSecret,

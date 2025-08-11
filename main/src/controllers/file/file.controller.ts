@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCode } from "../../enums/status-code.enum";
-import { FileService } from "../../services/file/file.service";
 import {
   GenerateGetSignedUrlResponseSchema,
   GeneratePutSignedUrlResponseSchema,
@@ -12,11 +11,12 @@ import {
 import { IFileController } from "./file.interface";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { IFileService } from "../../services/file/file.interface";
 
 @injectable()
 export class FileController implements IFileController {
   constructor(
-    @inject(Types.FileService) private readonly fileService: FileService
+    @inject(Types.FileService) private readonly fileService: IFileService
   ) {}
 
   async generateGetSignedUrl(req: Request, res: Response, next: NextFunction) {

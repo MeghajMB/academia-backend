@@ -11,7 +11,10 @@ export interface IReviewService {
     studentId: string
   ): Promise<AddReviewResponse>;
 
-  getReviewsByCourse(courseId: string): Promise<ReviewsWithStats>;
+  getReviewsByCourse(
+    courseId: string,
+    userId: string | undefined
+  ): Promise<ReviewsWithStats>;
 
   getReviewsByStudent(studentId: string): Promise<
     {
@@ -24,5 +27,14 @@ export interface IReviewService {
     }[]
   >;
 
+  editReview(
+    payload: {
+      courseId: string;
+      rating: number;
+      comment: string;
+      reviewId: string;
+    },
+    user: string
+  ): Promise<void>;
   deleteReview(reviewId: string, studentId: string): Promise<void>;
 }

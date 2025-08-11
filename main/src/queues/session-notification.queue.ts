@@ -1,14 +1,9 @@
 import { Queue, Worker } from "bullmq";
 import { redis } from "../lib/redis";
 
-import { NotificationService } from "../services/notification/notification.service";
-import { NotificationRepository } from "../repositories/notification/notification.repository";
-import { Types } from "mongoose";
-
-//dependency injection
-const notificationService = new NotificationService(
-  new NotificationRepository()
-);
+import { container } from "../container";
+import { INotificationService } from "../services/notification/notification.interface";
+import { Types } from "../container/types";
 
 // Create a queue for scheduled tasks
 const sessionNotificationQueue = new Queue("sessionNotificationQueue", {
@@ -30,9 +25,12 @@ export async function scheduleSessionNotification(
 const sessionNotificationWorker = new Worker(
   "sessionNotificationQueue",
   async (job) => {
+    try {
     const { users } = job.data;
     console.log(`Sendong notifications to users about session`);
-    try {
+      const notificationService = container.get<INotificationService>(
+        Types.NotificationService
+      );
       await Promise.all(
         users.map((user: string) =>
           notificationService.sendNotification(

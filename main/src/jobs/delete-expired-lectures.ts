@@ -1,16 +1,19 @@
 import cron from "node-cron";
-import { LectureRepository } from "../repositories/course/lecture/lecture.repository";
+import { container } from "../container";
+import { ILectureRepository } from "../repositories/course/lecture/lecture.interface";
+import { Types } from "../container/types";
 
-const lectureRepository = new LectureRepository();
+const lectureRepository = container.get<ILectureRepository>(
+  Types.LectureRepository
+);
 
 const deleteExpiredLectures = async () => {
   try {
-
     const deletedLectureCount = await lectureRepository.deleteLecturesByFilter({
       status: "archived",
       scheduledDeletionDate: { $lte: new Date() },
     });
-    console.log(`successfully deleted ${deletedLectureCount} lectures`)
+    console.log(`successfully deleted ${deletedLectureCount} lectures`);
   } catch (error) {
     console.error(" Error deleting expired lectures:", error);
   }

@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import { ReviewService } from "../../services/review/review.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   AddReviewRequestSchema,
@@ -17,11 +16,12 @@ import {
 import { IReviewController } from "./review.interface";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { IReviewService } from "../../services/review/review.interface";
 
 @injectable()
 export class ReviewController implements IReviewController {
   constructor(
-    @inject(Types.ReviewService) private readonly reviewService: ReviewService
+    @inject(Types.ReviewService) private readonly reviewService: IReviewService
   ) {}
 
   async addReview(req: Request, res: Response, next: NextFunction) {

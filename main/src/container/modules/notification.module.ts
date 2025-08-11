@@ -6,6 +6,11 @@ import { INotificationService } from "../../services/notification/notification.i
 import { NotificationService } from "../../services/notification/notification.service";
 import { INotificationRepository } from "../../repositories/notification/notification.interface";
 import { NotificationRepository } from "../../repositories/notification/notification.repository";
+import { Model } from "mongoose";
+import {
+  NotificationDocument,
+  NotificationModel,
+} from "../../models/notification.model";
 
 export const notificationModule: ContainerModule = new ContainerModule(
   (options: ContainerModuleLoadOptions) => {
@@ -23,5 +28,9 @@ export const notificationModule: ContainerModule = new ContainerModule(
       .bind<INotificationRepository>(Types.NotificationRepository)
       .to(NotificationRepository)
       .inSingletonScope();
+
+    options
+      .bind<Model<NotificationDocument>>(Types.NotificationModel)
+      .toConstantValue(NotificationModel);
   }
 );

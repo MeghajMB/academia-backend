@@ -1,8 +1,5 @@
-import mongoose, { RootFilterQuery, Types } from "mongoose";
-import {
-  EnrollmentModel,
-  EnrollmentDocument,
-} from "../../models/enrollment.model";
+import mongoose, { Model, RootFilterQuery } from "mongoose";
+import { EnrollmentDocument } from "../../models/enrollment.model";
 import { BaseRepository } from "../base/base.repository";
 import { IEnrollmentRepository } from "./enrollment.interface";
 import { DatabaseError } from "../../util/errors/database-error";
@@ -13,16 +10,20 @@ import {
   EnrollmentAnalyticsResult,
   EnrollmentWithCourse,
 } from "./enrollment.types";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
 import { PipelineStage } from "mongoose";
+import { Types } from "../../container/types";
 
 @injectable()
 export class EnrollmentRepository
   extends BaseRepository<EnrollmentDocument>
   implements IEnrollmentRepository
 {
-  constructor() {
-    super(EnrollmentModel);
+  constructor(
+    @inject(Types.EnrollmentModel)
+    private readonly enrollmentModel: Model<EnrollmentDocument>
+  ) {
+    super(enrollmentModel);
   }
 
   async fetchAdminEnrollmentAnalytics(
@@ -81,9 +82,11 @@ export class EnrollmentRepository
         },
       ];
 
-      const enrollmentStats = await EnrollmentModel.aggregate(pipeline).exec();
+      const enrollmentStats = await this.enrollmentModel
+        .aggregate(pipeline)
+        .exec();
 
-      const summaryResult = await EnrollmentModel.aggregate([
+      const summaryResult = await this.enrollmentModel.aggregate([
         {
           $match: { ...matchStage },
         },
@@ -128,7 +131,7 @@ export class EnrollmentRepository
           break;
       }
 
-      const result = await EnrollmentModel.aggregate([
+      const result = await this.enrollmentModel.aggregate([
         {
           $match: {
             purchaseDate: { $gte: start, $lte: end },
@@ -145,7 +148,7 @@ export class EnrollmentRepository
         { $unwind: "$course" },
         {
           $match: {
-            "course.userId": new Types.ObjectId(userId),
+            "course.userId": new mongoose.Types.ObjectId(userId),
           },
         },
         {
@@ -183,8 +186,8 @@ export class EnrollmentRepository
   }
   async getEnrollmentMetrics(courseId: string): Promise<EnrollmentDocument[]> {
     try {
-      const enrollments = await EnrollmentModel.aggregate([
-        { $match: { courseId: new Types.ObjectId(courseId) } },
+      const enrollments = await this.enrollmentModel.aggregate([
+        { $match: { courseId: new mongoose.Types.ObjectId(courseId) } },
         {
           $group: {
             _id: "$courseId",
@@ -205,7 +208,7 @@ export class EnrollmentRepository
     filter: RootFilterQuery<EnrollmentDocument> | undefined
   ): Promise<number> {
     try {
-      const count = await EnrollmentModel.countDocuments(filter);
+      const count = await this.enrollmentModel.countDocuments(filter);
       return count;
     } catch (error) {
       throw new DatabaseError(
@@ -217,9 +220,10 @@ export class EnrollmentRepository
 
   async findByStudentId(studentId: string): Promise<EnrollmentWithCourse[]> {
     try {
-      const enrolledcourse = await EnrollmentModel.find({
-        studentId,
-      })
+      const enrolledcourse = await this.enrollmentModel
+        .find({
+          studentId,
+        })
         .populate("courseId")
         .lean();
       return enrolledcourse as unknown as EnrollmentWithCourse[];
@@ -238,7 +242,7 @@ export class EnrollmentRepository
     session: mongoose.mongo.ClientSession
   ): Promise<EnrollmentDocument> {
     try {
-      const enrollment = new EnrollmentModel({
+      const enrollment = new this.enrollmentModel({
         courseId,
         studentId: userId,
         transactionId,
@@ -257,7 +261,7 @@ export class EnrollmentRepository
     filter: Partial<Record<keyof EnrollmentDocument, any>>
   ): Promise<Enrollment | null> {
     try {
-      const enrolledcourse = await EnrollmentModel.findOne(filter).lean();
+      const enrolledcourse = await this.enrollmentModel.findOne(filter).lean();
       return enrolledcourse as Enrollment | null;
     } catch (error) {
       throw new DatabaseError(
@@ -275,7 +279,7 @@ export class EnrollmentRepository
     awarded100Percent: boolean
   ): Promise<EnrollmentDocument | null> {
     try {
-      const updatedEnrollment = await EnrollmentModel.findOneAndUpdate(
+      const updatedEnrollment = await this.enrollmentModel.findOneAndUpdate(
         { _id: enrollmentId },
         {
           $push: { "progress.completedLectures": lectureId },

@@ -1,18 +1,21 @@
-import mongoose, { ClientSession } from "mongoose";
-import { BidModel, BidDocument } from "../../models/bid.model";
+import mongoose, { ClientSession, Model } from "mongoose";
+import { BidDocument } from "../../models/bid.model";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
 import { BaseRepository } from "../base/base.repository";
 import { IBidRepository } from "./bid.interface";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
 @injectable()
 export class BidRepository
   extends BaseRepository<BidDocument>
   implements IBidRepository
 {
-  constructor() {
-    super(BidModel);
+  constructor(
+    @inject(Types.BidModel) private readonly bidModel: Model<BidDocument>
+  ) {
+    super(bidModel);
   }
   async createOrUpdateBid(
     bidData: {
@@ -23,15 +26,17 @@ export class BidRepository
     session: ClientSession
   ): Promise<BidDocument> {
     try {
-      const existingBid = await BidModel.findOne({
-        userId: bidData.userId,
-        gigId: bidData.gigId,
-      }).session(session);
+      const existingBid = await this.bidModel
+        .findOne({
+          userId: bidData.userId,
+          gigId: bidData.gigId,
+        })
+        .session(session);
       if (existingBid) {
         existingBid.amount = bidData.amount;
         return await existingBid.save({ session });
       }
-      const bid = new BidModel(bidData);
+      const bid = new this.bidModel(bidData);
       return await bid.save({ session });
     } catch (error) {
       throw new DatabaseError(
@@ -40,11 +45,13 @@ export class BidRepository
       );
     }
   }
-  async getHighestBid(
-    gigId: string
-  ): Promise<{ gigId: string; amount: number; userId: mongoose.Types.ObjectId } | null> {
+  async getHighestBid(gigId: string): Promise<{
+    gigId: string;
+    amount: number;
+    userId: mongoose.Types.ObjectId;
+  } | null> {
     try {
-      const result = await BidModel.aggregate([
+      const result = await this.bidModel.aggregate([
         { $match: { gigId } },
         {
           $group: {
@@ -67,7 +74,10 @@ export class BidRepository
   }
 
   async findBidsByGigId(gigId: string): Promise<BidDocument[]> {
-    const bids = await BidModel.find({ gigId }).sort({ amount: -1 }).lean();
+    const bids = await this.bidModel
+      .find({ gigId })
+      .sort({ amount: -1 })
+      .lean();
     return bids;
   }
 }

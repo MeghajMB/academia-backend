@@ -1,5 +1,5 @@
-import { PipelineStage, Types } from "mongoose";
-import { SessionDocument, SessionModel } from "../../models/session.model";
+import mongoose, { Model, PipelineStage } from "mongoose";
+import { SessionDocument } from "../../models/session.model";
 import { BaseRepository } from "../base/base.repository";
 import { ISessionRepository } from "./session.interface";
 import {
@@ -9,7 +9,8 @@ import {
 } from "./session.types";
 import { DatabaseError } from "../../util/errors/database-error";
 import { StatusCode } from "../../enums/status-code.enum";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
 @injectable()
 export class SessionRepository
@@ -17,8 +18,11 @@ export class SessionRepository
   implements ISessionRepository
 {
   //implements ISessionRepository
-  constructor() {
-    super(SessionModel);
+  constructor(
+    @inject(Types.SessionModel)
+    private readonly sessionModel: Model<SessionDocument>
+  ) {
+    super(sessionModel);
   }
 
   async fetchAdminSessionAnalytics(
@@ -76,9 +80,9 @@ export class SessionRepository
         },
       ];
 
-      const sessionStats = await SessionModel.aggregate(pipeline).exec();
+      const sessionStats = await this.sessionModel.aggregate(pipeline).exec();
 
-      const summaryResult = await SessionModel.aggregate([
+      const summaryResult = await this.sessionModel.aggregate([
         {
           $match: {
             ...matchStage,
@@ -111,7 +115,9 @@ export class SessionRepository
       const { limit, status, search, page = 1, userId } = input;
 
       const filter: Record<string, any> = {
-        participants: { $elemMatch: { userId: new Types.ObjectId(userId) } },
+        participants: {
+          $elemMatch: { userId: new mongoose.Types.ObjectId(userId) },
+        },
       };
 
       if (status && status !== "all") {
@@ -122,7 +128,10 @@ export class SessionRepository
       const pipeline: any[] = [
         {
           $match: {
-            $or: [{ instructorId: new Types.ObjectId(userId) }, filter],
+            $or: [
+              { instructorId: new mongoose.Types.ObjectId(userId) },
+              filter,
+            ],
           },
         },
         {
@@ -180,7 +189,7 @@ export class SessionRepository
         },
       });
 
-      const sessions = await SessionModel.aggregate(pipeline);
+      const sessions = await this.sessionModel.aggregate(pipeline);
 
       return sessions as GetUsersSessionsResult[] | [];
     } catch (error) {

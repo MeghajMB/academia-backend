@@ -1,7 +1,6 @@
 import { StatusCode } from "../../enums/status-code.enum";
 import { AppError } from "../../util/errors/app-error";
 import { BadRequestError } from "../../util/errors/bad-request-error";
-import { ICourseRepository } from "../../repositories/course/course.interface";
 import { IEnrollmentRepository } from "../../repositories/enrollment/enrollment.interface";
 import { IReviewService } from "./review.interface";
 import { AddReviewResponse, ReviewsWithStats } from "./review.types";
@@ -17,8 +16,6 @@ export class ReviewService implements IReviewService {
     private readonly reviewRepository: IReviewRepository,
     @inject(Types.EnrollmentRepository)
     private readonly enrollmentRepository: IEnrollmentRepository,
-    @inject(Types.CourseRepository)
-    private readonly courseRepository: ICourseRepository
   ) {}
 
   async addReview(

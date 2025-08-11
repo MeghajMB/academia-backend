@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import { BidService } from "../../services/bid/bid.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   GetBidByIdResponseSchema,
@@ -13,11 +12,12 @@ import {
 } from "./request.dto";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { IBidService } from "../../services/bid/bid.interface";
 
 @injectable()
 export class BidController {
   constructor(
-    @inject(Types.BidService) private readonly bidService: BidService
+    @inject(Types.BidService) private readonly bidService: IBidService
   ) {}
 
   async placeBid(req: Request, res: Response, next: NextFunction) {

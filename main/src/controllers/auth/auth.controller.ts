@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import { AuthService } from "../../services/auth/auth.service";
 import { StatusCode } from "../../enums/status-code.enum";
 import {
   ForgotPasswordRequestSchema,
@@ -22,11 +21,12 @@ import {
 import { IAuthController } from "./auth.interface";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
+import { IAuthService } from "../../services/auth/auth.interface";
 
 @injectable()
 export class AuthController implements IAuthController {
   constructor(
-    @inject(Types.AuthService) private readonly authService: AuthService
+    @inject(Types.AuthService) private readonly authService: IAuthService
   ) {}
 
   async signUp(req: Request, res: Response, next: NextFunction): Promise<void> {

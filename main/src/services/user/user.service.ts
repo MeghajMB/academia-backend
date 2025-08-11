@@ -14,7 +14,7 @@ import { PutUserProfileRequestSchemaRequestDTO } from "../../controllers/user/re
 @injectable()
 export class UserService implements IUserService {
   constructor(
-    @inject(Types.userRepository)
+    @inject(Types.UserRepository)
     private readonly userRepository: IUserRepository
   ) {}
 

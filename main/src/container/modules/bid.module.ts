@@ -6,6 +6,8 @@ import { IBidService } from "../../services/bid/bid.interface";
 import { BidService } from "../../services/bid/bid.service";
 import { IBidRepository } from "../../repositories/bid/bid.interface";
 import { BidRepository } from "../../repositories/bid/bid.repository";
+import { BidDocument, BidModel } from "../../models/bid.model";
+import { Model } from "mongoose";
 
 export const bidModule: ContainerModule = new ContainerModule(
   (options: ContainerModuleLoadOptions) => {
@@ -23,5 +25,9 @@ export const bidModule: ContainerModule = new ContainerModule(
       .bind<IBidRepository>(Types.BidRepository)
       .to(BidRepository)
       .inSingletonScope();
+
+    options
+      .bind<Model<BidDocument>>(Types.BidModel)
+      .toConstantValue(BidModel);
   }
 );

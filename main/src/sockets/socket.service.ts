@@ -6,13 +6,17 @@ import { NotificationModel } from "../models/notification.model";
 import { mediasoupManager } from "../lib/mediaSoup";
 import jwt from "jsonwebtoken";
 import { CustomJwtPayload } from "../types/jwt";
-import { UserRepository } from "../repositories/user/user.repository";
-import { SessionRepository } from "../repositories/session/session.repository";
 import config from "../config/configuration";
 import { SctpCapabilities } from "mediasoup/node/lib/sctpParametersTypes";
+import { container } from "../container";
+import { IUserRepository } from "../repositories/user/user.interface";
+import { Types } from "../container/types";
+import { ISessionRepository } from "../repositories/session/session.interface";
 
-const userRepository = new UserRepository();
-const sessionRepository = new SessionRepository();
+const userRepository = container.get<IUserRepository>(Types.UserRepository);
+const sessionRepository = container.get<ISessionRepository>(
+  Types.SessionRepository
+);
 
 export interface CustomSocket extends Socket {
   userId?: string;
@@ -197,8 +201,12 @@ class SocketService {
           {
             sessionId,
             transportType,
-            sctpCapabilities
-          }: { sessionId: string; transportType: "sender" | "consumer",sctpCapabilities:SctpCapabilities},
+            sctpCapabilities,
+          }: {
+            sessionId: string;
+            transportType: "sender" | "consumer";
+            sctpCapabilities: SctpCapabilities;
+          },
           callback
         ) => {
           const mediasoupManager = this._mediasoupManager;

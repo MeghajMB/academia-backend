@@ -1,6 +1,6 @@
-import { FilterQuery, Types } from "mongoose";
+import mongoose, { FilterQuery, Model } from "mongoose";
 import { StatusCode } from "../../enums/status-code.enum";
-import { CourseModel, CourseDocument } from "../../models/course.model";
+import { CourseDocument } from "../../models/course.model";
 import { BaseRepository } from "../base/base.repository";
 import { ICourseRepository } from "./course.interface";
 import { DatabaseError } from "../../util/errors/database-error";
@@ -13,26 +13,30 @@ import {
   getAnalyticsSummaryResponse,
 } from "./course.types";
 import { CategoryDocument } from "../../models/categoy.model";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
 @injectable()
 export class CourseRepository
   extends BaseRepository<CourseDocument>
   implements ICourseRepository
 {
-  constructor() {
-    super(CourseModel);
+  constructor(
+    @inject(Types.CourseModel)
+    private readonly courseModel: Model<CourseDocument>
+  ) {
+    super(courseModel);
   }
   async getAnalyticsSummary(
     courseId: string,
     userId: string
   ): Promise<getAnalyticsSummaryResponse> {
     try {
-      const metricsSummary = await CourseModel.aggregate([
+      const metricsSummary = await this.courseModel.aggregate([
         {
           $match: {
-            _id: new Types.ObjectId(courseId),
-            userId: new Types.ObjectId(userId),
+            _id: new mongoose.Types.ObjectId(courseId),
+            userId: new mongoose.Types.ObjectId(userId),
             status: "listed",
           },
         },
@@ -122,7 +126,7 @@ export class CourseRepository
                 0,
               ],
             },
-            reviews:1
+            reviews: 1,
           },
         },
       ]);
@@ -147,15 +151,15 @@ export class CourseRepository
     userId: string,
     start: Date,
     end: Date,
-    filter:'month'|'quarter'|'year'
+    filter: "month" | "quarter" | "year"
   ): Promise<[getAnalyticsResponse] | []> {
     try {
-      const result = await CourseModel.aggregate([
+      const result = await this.courseModel.aggregate([
         {
           $match: {
-            userId: new Types.ObjectId(userId),
+            userId: new mongoose.Types.ObjectId(userId),
             status: "listed",
-            _id: new Types.ObjectId(courseId),
+            _id: new mongoose.Types.ObjectId(courseId),
           },
         },
         {
@@ -270,7 +274,7 @@ export class CourseRepository
             transactions: { $arrayElemAt: ["$transactions.transactions", 0] },
           },
         },
-      ]);   
+      ]);
       return result as [getAnalyticsResponse] | [];
     } catch (error: unknown) {
       console.log(error);
@@ -284,10 +288,10 @@ export class CourseRepository
     userId: string
   ): Promise<fetchCourseMetricsRepositoryResponse[]> {
     try {
-      const courseMetrics = await CourseModel.aggregate([
+      const courseMetrics = await this.courseModel.aggregate([
         {
           $match: {
-            userId: new Types.ObjectId(userId),
+            userId: new mongoose.Types.ObjectId(userId),
             status: "listed",
           },
         },
@@ -425,7 +429,7 @@ export class CourseRepository
     session: object
   ): Promise<CourseDocument> {
     try {
-      const createdCourse = new CourseModel(course);
+      const createdCourse = new this.courseModel(course);
       await createdCourse.save(session);
       return createdCourse;
     } catch (error: unknown) {
@@ -448,7 +452,7 @@ export class CourseRepository
     limit: number;
   }): Promise<FetchAllPaginatedCoursesResult[]> {
     try {
-      const courses = await CourseModel.aggregate([
+      const courses = await this.courseModel.aggregate([
         { $match: query },
         {
           $lookup: {
@@ -512,7 +516,8 @@ export class CourseRepository
     courseId: string
   ): Promise<CourseWithPopulatedFields | null> {
     try {
-      const existingCourse = await CourseModel.findById(courseId)
+      const existingCourse = await this.courseModel
+        .findById(courseId)
         .populate("category")
         .populate("userId")
         .lean();
@@ -527,7 +532,8 @@ export class CourseRepository
 
   async findNewCourses(): Promise<CourseWithPopulatedCategory[]> {
     try {
-      const newCourses = await CourseModel.find({ status: "listed" })
+      const newCourses = await this.courseModel
+        .find({ status: "listed" })
         .populate<CourseDocument & { category: CategoryDocument }>("category")
         .sort({ createdAt: -1 })
         .limit(4)
@@ -544,7 +550,9 @@ export class CourseRepository
 
   async findCourseByName(title: string): Promise<CourseDocument | null> {
     try {
-      const existingCourse = await CourseModel.findOne({ title: title }).lean();
+      const existingCourse = await this.courseModel
+        .findOne({ title: title })
+        .lean();
       return existingCourse;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -562,10 +570,12 @@ export class CourseRepository
     status: "pending" | "accepted" | "rejected" | "draft" | "listed"
   ): Promise<CourseDocument[]> {
     try {
-      const courses = await CourseModel.find({
-        userId: instructorId,
-        status: status,
-      }).lean();
+      const courses = await this.courseModel
+        .find({
+          userId: instructorId,
+          status: status,
+        })
+        .lean();
       return courses;
     } catch (error: unknown) {
       throw new DatabaseError(
@@ -579,7 +589,8 @@ export class CourseRepository
     filter: FilterQuery<CourseDocument>
   ): Promise<CourseWithPopulatedCategory[]> {
     try {
-      const courses = await CourseModel.find(filter)
+      const courses = await this.courseModel
+        .find(filter)
         .populate<{ category: CategoryDocument }>("category")
         .lean();
       return courses;
@@ -597,7 +608,7 @@ export class CourseRepository
     status: string
   ): Promise<CourseDocument | null> {
     try {
-      const course = await CourseModel.findOneAndUpdate(
+      const course = await this.courseModel.findOneAndUpdate(
         { _id: courseId, userId: instructorId },
         { status: status, rejectedReason: "" },
         { new: true }
@@ -617,7 +628,7 @@ export class CourseRepository
 
   async countDocuments(key: string, value: string): Promise<number> {
     try {
-      const count = await CourseModel.countDocuments({ [key]: value });
+      const count = await this.courseModel.countDocuments({ [key]: value });
 
       return count;
     } catch (error: unknown) {
@@ -633,7 +644,7 @@ export class CourseRepository
 
   async toggleCourseStatus(courseId: string): Promise<CourseDocument | null> {
     try {
-      const updatedCourse = await CourseModel.findByIdAndUpdate(
+      const updatedCourse = await this.courseModel.findByIdAndUpdate(
         courseId,
         [{ $set: { isBlocked: { $not: "$isBlocked" } } }], // MongoDB toggle
         { new: true }
@@ -657,7 +668,8 @@ export class CourseRepository
     limit: number
   ): Promise<CourseWithPopulatedCategory[]> {
     try {
-      const courses = await CourseModel.find(filters)
+      const courses = await this.courseModel
+        .find(filters)
         .populate<{ category: CategoryDocument }>("category")
         .skip(skip)
         .limit(limit)
@@ -680,7 +692,7 @@ export class CourseRepository
     rejectReason: string
   ): Promise<CourseDocument | null> {
     try {
-      const updatedCourse = await CourseModel.findByIdAndUpdate(
+      const updatedCourse = await this.courseModel.findByIdAndUpdate(
         courseId,
         { $set: { status: "rejected", rejectedReason: rejectReason } },
         { new: true }
@@ -701,7 +713,7 @@ export class CourseRepository
     courseId: string
   ): Promise<CourseDocument | null> {
     try {
-      const updatedCourse = await CourseModel.findByIdAndUpdate(
+      const updatedCourse = await this.courseModel.findByIdAndUpdate(
         courseId,
         { $set: { status: "accepted" }, $unset: { rejectedReason: "" } },
         { new: true }

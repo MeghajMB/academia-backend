@@ -13,7 +13,7 @@ import { Types } from "../../container/types";
 @injectable()
 export class InstructorService implements InstructorService {
   constructor(
-    @inject(Types.userRepository)
+    @inject(Types.UserRepository)
     private readonly userRepository: IUserRepository,
     @inject(Types.GigRepository) private readonly gigRepository: IGigRepository,
     @inject(Types.CourseRepository)

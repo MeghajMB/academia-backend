@@ -5,17 +5,15 @@ import { IPaymentController } from "./payment.interface";
 import { inject, injectable } from "inversify";
 import { Types } from "../../container/types";
 import { StatusCode } from "../../enums/status-code.enum";
-import { IPaymentService } from "../../services/payment/payment.interface";
+import { IPaymentService } from "../../services/payment/interfaces/payment.interface";
 import {
   GetUserWalletResponseSchema,
   GetTransactionHistoryResponseSchema,
 } from "@academia-dev/common";
 import { GetTransactionHistoryRequestSchema } from "./request.dto";
-import config from "../../config/configuration";
 import { redis } from "../../lib/redis";
 import {
   publishRazorPaySuccessPayment,
-  runProducer,
 } from "../../kafka/producers/producer";
 import { RazorpayPaymentCapturedWebhook } from "../../types/razorpay";
 
@@ -70,15 +68,16 @@ export class PaymentController implements IPaymentController {
 
   async createOrder(req: Request, res: Response, next: NextFunction) {
     try {
-      const { itemId, type } = req.body;
+      const { itemId, type,gateway="razorpay" } = req.body;
       const userId = req.verifiedUser!.id;
       if (!itemId || !type) {
         throw new BadRequestError("Invalid data");
       }
-      const order = await this.paymentService.createRazorPayOrder(
+      const order = await this.paymentService.createOrder(
         itemId,
         type,
-        userId
+        userId,
+        gateway
       );
 
       res.send({
@@ -90,6 +89,7 @@ export class PaymentController implements IPaymentController {
       next(error);
     }
   }
+  
   /* Code when using razorpay webhooks */
   async verifyPayment(req: Request, res: Response, next: NextFunction) {
     try {

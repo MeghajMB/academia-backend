@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import { ReviewDocument, ReviewModel } from "../../models/review.model";
+import mongoose, { Model } from "mongoose";
+import { ReviewDocument } from "../../models/review.model";
 import { BaseRepository } from "../base/base.repository";
 import { IReviewRepository } from "./review.interface";
 import { DatabaseError } from "../../util/errors/database-error";
@@ -10,16 +10,20 @@ import {
   ReviewWithPopulatedStudentId,
 } from "./review.types";
 import { UserDocument } from "../../models/user.model";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
 import { CourseDocument } from "../../models/course.model";
+import { Types } from "../../container/types";
 
 @injectable()
 export class ReviewRepository
   extends BaseRepository<ReviewDocument>
   implements IReviewRepository
 {
-  constructor() {
-    super(ReviewModel);
+  constructor(
+    @inject(Types.ReviewModel)
+    private readonly reviewModel: Model<ReviewDocument>
+  ) {
+    super(reviewModel);
   }
 
   async fetchAdminReviewAnalytics(
@@ -27,7 +31,7 @@ export class ReviewRepository
     dateGroup: "daily" | "monthly" | "yearly"
   ): Promise<ReviewAnalyticsResult[]> {
     try {
-      const result = await ReviewModel.aggregate([
+      const result = await this.reviewModel.aggregate([
         { $match: { ...matchStage } },
         {
           $group: {
@@ -63,7 +67,8 @@ export class ReviewRepository
     courseId: string
   ): Promise<ReviewWithPopulatedStudentId[]> {
     try {
-      const reviews = ReviewModel.find({ courseId })
+      const reviews = this.reviewModel
+        .find({ courseId })
         .populate("studentId")
         .lean();
       return reviews as unknown as ReviewWithPopulatedStudentId[];
@@ -79,7 +84,8 @@ export class ReviewRepository
     studentId: string
   ): Promise<ReviewWithPopulatedCourseId[]> {
     try {
-      const review = await ReviewModel.find({ studentId })
+      const review = await this.reviewModel
+        .find({ studentId })
         .populate<{ courseId: CourseDocument }>("courseId")
         .lean();
       return review;
@@ -96,7 +102,8 @@ export class ReviewRepository
     studentId: string
   ): Promise<ReviewWithPopulatedStudentId | null> {
     try {
-      return ReviewModel.findOne({ courseId, studentId })
+      return this.reviewModel
+        .findOne({ courseId, studentId })
         .populate<{ studentId: UserDocument }>("studentId")
         .lean();
     } catch (error) {
@@ -110,7 +117,7 @@ export class ReviewRepository
 
   async findReviewById(reviewId: string) {
     try {
-      return ReviewModel.findById(reviewId).lean();
+      return this.reviewModel.findById(reviewId).lean();
     } catch (error) {
       throw new DatabaseError(
         "An unexpected database error occurred",
@@ -127,7 +134,7 @@ export class ReviewRepository
     }[]
   > {
     try {
-      return ReviewModel.aggregate([
+      return this.reviewModel.aggregate([
         { $match: { courseId: new mongoose.Types.ObjectId(courseId) } },
         {
           $group: {

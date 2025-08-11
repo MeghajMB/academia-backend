@@ -1,33 +1,36 @@
 import { StatusCode } from "../../enums/status-code.enum";
 import { DatabaseError } from "../../util/errors/database-error";
 import { BaseRepository } from "../base/base.repository";
-import { CoinDocument, CoinModel } from "../../models/coin.model";
+import { CoinDocument } from "../../models/coin.model";
 import { ICoinRepository } from "./coin.interface";
 import {
   createCoinPackageRequestDTO,
   updateCoinPackageRequestDTO,
   updateCoinRatioRequestDTO,
 } from "../../controllers/coin/request.dto";
-import { Types, UpdateWriteOpResult } from "mongoose";
+import mongoose, { Model, UpdateWriteOpResult } from "mongoose";
 import { CreateCoinPackageRepository } from "./types";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { Types } from "../../container/types";
 
 @injectable()
 export class CoinRepository
   extends BaseRepository<CoinDocument>
   implements ICoinRepository
 {
-  constructor() {
-    super(CoinModel);
+  constructor(
+    @inject(Types.CoinModel) private readonly coinModel: Model<CoinDocument>
+  ) {
+    super(coinModel);
   }
   async deleteCoinPackage(id: string): Promise<UpdateWriteOpResult> {
     try {
-      const result = await CoinModel.updateOne(
+      const result = await this.coinModel.updateOne(
         { isActive: true },
         {
           $pull: {
             purchasePackages: {
-              _id: new Types.ObjectId(id),
+              _id: new mongoose.Types.ObjectId(id),
             },
           },
         }
@@ -48,9 +51,9 @@ export class CoinRepository
     try {
       const newPackage = {
         ...payload,
-        _id: new Types.ObjectId(),
+        _id: new mongoose.Types.ObjectId(),
       };
-      const result = await CoinModel.updateOne(
+      const result = await this.coinModel.updateOne(
         { isActive: true },
         { $push: { purchasePackages: newPackage } },
         { new: true }
@@ -65,9 +68,11 @@ export class CoinRepository
     }
   }
 
-  async updateCoinPackage(payload: updateCoinPackageRequestDTO): Promise<UpdateWriteOpResult> {
+  async updateCoinPackage(
+    payload: updateCoinPackageRequestDTO
+  ): Promise<UpdateWriteOpResult> {
     try {
-      const result = await CoinModel.updateOne(
+      const result = await this.coinModel.updateOne(
         { isActive: true },
         {
           $set: {
@@ -76,10 +81,12 @@ export class CoinRepository
           },
         },
         {
-          arrayFilters: [{ "pkg._id": new Types.ObjectId(payload.packageId) }],
+          arrayFilters: [
+            { "pkg._id": new mongoose.Types.ObjectId(payload.packageId) },
+          ],
         }
       );
-  
+
       return result;
     } catch (error) {
       console.error(error);
@@ -89,13 +96,12 @@ export class CoinRepository
       );
     }
   }
-  
 
   async updateCoinRatio(
     payload: updateCoinRatioRequestDTO
   ): Promise<UpdateWriteOpResult> {
     try {
-      const updateFields: Record<string,any> = {};
+      const updateFields: Record<string, any> = {};
       if (payload.goldToINRRatio !== undefined) {
         updateFields.goldToINRRatio = payload.goldToINRRatio;
       }
@@ -103,7 +109,7 @@ export class CoinRepository
         updateFields.redeemPointsToGoldRatio = payload.redeemPointsToGoldRatio;
       }
 
-      const result = await CoinModel.updateOne(
+      const result = await this.coinModel.updateOne(
         { isActive: true },
         { $set: updateFields }
       );
